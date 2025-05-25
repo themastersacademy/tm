@@ -152,7 +152,10 @@ export async function getValidCourseEnrollment(userID, courseID) {
   const courseEnrollments = result.Items;
 
   if (courseEnrollments.length === 0) {
-    throw new Error("No active course enrollment found");
+    return {
+      success: false,
+      message: "No active course enrollment found",
+    };
   }
 
   return {
@@ -270,5 +273,3 @@ async function getCourseInBatch(courseIDs, goalID) {
     language: item.language,
   }));
 }
-
-
