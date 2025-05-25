@@ -1,0 +1,1 @@
+import { dynamoDB } from "@/src/utils/awsAgent";

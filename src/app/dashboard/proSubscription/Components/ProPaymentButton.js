@@ -1,0 +1,34 @@
+import { Stack, Button, CircularProgress } from "@mui/material";
+
+export default function ProPaymentButton({ isDisabled, loading, onClick }) {
+  return (
+    <Stack>
+      <Button
+        variant="contained"
+        disabled={isDisabled || loading}
+        onClick={onClick}
+        sx={{
+          backgroundColor:
+            isDisabled || loading ? "var(--sec-color)" : "var(--sec-color)",
+          color: "var(--white)",
+          fontSize: "16px",
+          fontFamily: "Lato",
+          fontWeight: "700",
+          padding: "10px 20px",
+          borderRadius: "5px",
+          textTransform: "none",
+          "&:hover": {
+            backgroundColor:
+              isDisabled || loading ? "var(--sec-color)" : "var(--sec-color)",
+          },
+        }}
+      >
+        {loading ? (
+          <CircularProgress sx={{ color: "var(--primary-color)" }} size={24} />
+        ) : (
+          "Proceed to Payment"
+        )}
+      </Button>
+    </Stack>
+  );
+}
