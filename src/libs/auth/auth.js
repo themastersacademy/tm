@@ -51,7 +51,8 @@ export async function getUserByEmail(email) {
     return updatedUser;
   } catch (error) {
     console.error("Error fetching user by email:", error);
-    throw new Error("Failed to retrieve user");
+    return null;
+    // throw new Error("Failed to retrieve user");
   }
 }
 
@@ -125,6 +126,7 @@ export async function updateUserEmailVerified(email) {
 }
 
 export async function createUser({ email, name, password }) {
+  
   const existingUser = await getUserByEmail(email);
   //check if user is already verified
   if (existingUser?.emailVerified) {
