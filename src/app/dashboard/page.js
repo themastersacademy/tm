@@ -18,7 +18,7 @@ export default async function Dashboard() {
   const goalEnrollments = response.data;
 
   if (!Array.isArray(goalEnrollments) || goalEnrollments.length === 0) {
-    redirect("/profile-setup");
+    redirect("/profile-setup?goal=true");
   }
 
   // 4) Otherwise, redirect to the first enrollment’s dashboard

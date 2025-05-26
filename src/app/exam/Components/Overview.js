@@ -47,7 +47,7 @@ export default function Overview({ result }) {
         gap={{ xs: "4px", md: "25px" }}
         flexWrap="wrap"
         padding="2px"
-        justifyContent={{ xs: "center", md: "flex-start" }}
+        // justifyContent={{ xs: ?"center", md: "flex-start" }}
         alignItems="center"
       >
         <StatisticCard

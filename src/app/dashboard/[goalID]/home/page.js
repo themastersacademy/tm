@@ -1,8 +1,6 @@
 "use client";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import Header from "@/src/Components/Header/Header";
-import FreeTest from "./Components/FreeTest";
-import PracticeTest from "./Components/PracticeTest";
 import CrackTest from "./Components/CrackTest";
 import InfoCard from "./Components/InfoCard";
 import gate_cse from "@/public/icons/gate_cse.svg";
@@ -12,7 +10,6 @@ import MobileHeader from "@/src/Components/MobileHeader/MobileHeader";
 import Store from "../courses/Components/Store";
 import { East } from "@mui/icons-material";
 import BannerCarousel from "@/src/Components/BannerCarousel/BannerCarousel";
-import { useState, useEffect } from "react";
 import HomeBannerSkeleton from "@/src/Components/SkeletonCards/HomeBannerSkeleton";
 import { useRouter, useParams } from "next/navigation";
 import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
@@ -20,88 +17,34 @@ import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import PrimaryCard from "@/src/Components/PrimaryCard/PrimaryCard";
 import PrimaryCardSkeleton from "@/src/Components/SkeletonCards/PrimaryCardSkeleton";
 import HeaderSkeleton from "@/src/Components/SkeletonCards/HeaderSkeleton";
-import { useSession } from "next-auth/react";
 import FAQSect from "./Components/FAQSect";
 import HowDoes from "./Components/HowDoes";
+import enroll from "@/public/images/enrollCourse.svg";
+import graduate from "@/public/images/graduate.svg";
+import achieve from "@/public/images/achieve.svg";
+import InsightCard from "./Components/InsightCard";
+import { useBanners } from "@/src/app/context/BannerProvider";
+import { useGoals } from "@/src/app/context/GoalProvider";
+import { useSession } from "next-auth/react";
 
 export default function HomePage() {
-  const [banners, setBanners] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [goalDetails, setGoalDetails] = useState([]);
+  const { banners, loading, refetchBanners } = useBanners();
+  const { goals, loading: goalLoading, refetchGoals } = useGoals();
   const router = useRouter();
   const params = useParams();
   const goalID = params.goalID;
   const { data: session } = useSession();
 
-  useEffect(() => {
-    async function fetchBanners() {
-      const cachedData = localStorage.getItem("homeBannersData");
-      if (cachedData) {
-        const { banners, timestamp } = JSON.parse(cachedData);
-        const isCacheValid = Date.now() - timestamp < 25 * 60 * 1000;
-        if (isCacheValid) {
-          setBanners(banners);
-          setLoading(false);
-          return;
-        }
-      }
-      try {
-        const response = await fetch("/api/home/banner", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const text = await response.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (parseError) {
-          throw new Error(`Invalid JSON: ${text.substring(0, 50)}...`);
-        }
-        if (!response.ok) {
-          throw new Error(data.error || `HTTP error: ${response.status}`);
-        }
-        const sortedBanners = Array.isArray(data.data)
-          ? data.data.sort(
-              (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-            )
-          : [];
-        const bannerUrls = sortedBanners.map((banner) => banner.image);
-        setBanners(bannerUrls);
-        localStorage.setItem(
-          "homeBannersData",
-          JSON.stringify({ banners: bannerUrls, timestamp: Date.now() })
-        );
-        setLoading(false);
-      } catch (err) {
-        console.error("Fetch error:", err);
-        setError(err.message);
-        setLoading(false);
-      }
-    }
-
-    fetchBanners();
-  }, []);
-
-  const fetchGoal = async () => {
-    setLoading(true);
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/goal/all`
-    );
-    const data = await response.json();
-    setGoalDetails(data.data);
-    setLoading(false);
-  };
-  useEffect(() => {
-    fetchGoal();
-  }, []);
-
   return (
     <>
       <MobileHeader />
-      <Stack alignItems="center" width="100%" maxWidth="1200px" margin="0 auto">
+      <Stack
+        alignItems="center"
+        width="100%"
+        maxWidth="1200px"
+        margin="0 auto"
+        sx={{ marginBottom: { xs: "80px", md: "0px" } }}
+      >
         <Stack padding={{ xs: "10px", md: "20px" }} gap="20px" width="100%">
           <Stack
             width="100%"
@@ -117,10 +60,6 @@ export default function HomePage() {
               <Stack width="100%" maxWidth="1200px">
                 {loading ? (
                   <HomeBannerSkeleton key="skeleton" />
-                ) : error ? (
-                  <Stack direction="row" gap="10px" alignItems="center">
-                    <Typography color="error">Error: {error}</Typography>
-                  </Stack>
                 ) : (
                   <BannerCarousel banners={banners} />
                 )}
@@ -154,13 +93,13 @@ export default function HomePage() {
                       minWidth: { xs: "max-content", md: "100%" },
                     }}
                   >
-                    {loading ? (
+                    {goalLoading ? (
                       <Stack direction="row" gap="10px">
                         <PrimaryCardSkeleton />
                         <PrimaryCardSkeleton />
                       </Stack>
-                    ) : goalDetails.length > 0 ? (
-                      goalDetails.map((item, index) => (
+                    ) : goals.length > 0 ? (
+                      goals.map((item, index) => (
                         <PrimaryCard
                           key={index}
                           title={item.title}
@@ -246,36 +185,33 @@ export default function HomePage() {
                 >
                   How does this work
                 </Typography>
-                <HowDoes />
-              </Stack>
-              <Stack gap="20px" width="100%" maxWidth="1200px">
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "16px",
-                    fontWeight: "700",
-                  }}
+                <Stack
+                  flexDirection="row"
+                  flexWrap="wrap"
+                  gap="20px"
+                  alignItems="center"
+                  justifyContent={{ xs: "center", md: "flex-start" }}
                 >
-                  Free Tests
-                </Typography>
-                <FreeTest />
+                  <HowDoes
+                    image={enroll}
+                    title="01. Enroll Course"
+                    description="Sign up and browse our courses. Choose those that align with your goals and interests, and enroll to start your learning journey."
+                  />
+                  <HowDoes
+                    image={graduate}
+                    title="02. Graduate"
+                    description="Get guidance from expert tutors, graduate successfully, and receive a certification to validate your new skills."
+                  />
+                  <HowDoes
+                    image={achieve}
+                    title="03. Achieve"
+                    description="Leverage your new skills and certification to advance your career and reach your goals. Stay connected for ongoing support."
+                  />
+                </Stack>
+                <InsightCard />
               </Stack>
-
-              {/* <Stack gap="20px" width="100%" maxWidth="1200px">
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "16px",
-                    fontWeight: "700",
-                  }}
-                >
-                  Practice Test
-                </Typography>
-                <PracticeTest />
-              </Stack> */}
-              <CrackTest />
+              {session?.user?.accountType !== "PRO" && <CrackTest />}
+              {/* <CrackTest /> */}
               <FAQSect />
             </>
           )}

@@ -19,38 +19,22 @@ import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import { useSnackbar } from "notistack";
 import LinearProgressLoading from "@/src/Components/LinearProgressLoading/LinearProgressLoading";
 import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
+import { useClassrooms } from "@/src/app/context/ClassroomProvider";
 
 export default function MyClassroom() {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const dialogOpen = () => setIsDialogOpen(true);
   const dialogClose = () => setIsDialogOpen(false);
-  const [classroomList, setClassroomList] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [localLoading, setLocalLoading] = useState(false);
   const params = useParams();
   const goalID = params.goalID;
-
-  const fetchClassroom = async () => {
-    setIsLoading(true);
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/my-classroom/get-all-enrolled-batch`
-    );
-    const data = await response.json();
-    if (data.success) {
-      setClassroomList(data.data);
-    }
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    fetchClassroom();
-  }, []);
+  const { classrooms, loading, refetchClassrooms } = useClassrooms();
 
   return (
     <Stack>
       {localLoading && <LinearProgressLoading />}
-      {isLoading ? (
+      {loading ? (
         <PageSkeleton />
       ) : (
         <Stack
@@ -99,9 +83,9 @@ export default function MyClassroom() {
             </Button>
           </Stack>
           <Stack width="100%" gap="15px">
-            {!isLoading ? (
-              classroomList.length > 0 ? (
-                classroomList.map((item, index) => (
+            {!loading ? (
+              classrooms.length > 0 ? (
+                classrooms.map((item, index) => (
                   <SecondaryCard
                     key={index}
                     title={
@@ -139,8 +123,8 @@ export default function MyClassroom() {
           <JoinClassroomDialog
             isDialogOpen={isDialogOpen}
             dialogClose={dialogClose}
-            classroomList={classroomList}
-            fetchClassroom={fetchClassroom}
+            classrooms={classrooms}
+            refetchClassrooms={refetchClassrooms}
             localLoading={localLoading}
             setLocalLoading={setLocalLoading}
           />
@@ -153,7 +137,7 @@ export default function MyClassroom() {
 const JoinClassroomDialog = ({
   isDialogOpen,
   dialogClose,
-  fetchClassroom,
+  refetchClassrooms,
   localLoading,
   setLocalLoading,
 }) => {
@@ -175,7 +159,7 @@ const JoinClassroomDialog = ({
     );
     const data = await response.json();
     if (data.success) {
-      fetchClassroom();
+      refetchClassrooms();
       setBatchCode("");
       dialogClose();
       setLocalLoading(false);

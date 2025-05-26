@@ -50,13 +50,13 @@ export default function ExamHeader({
             borderColor: "var(--delete-color)",
             textTransform: "none",
             color: "var(--delete-color)",
-            width: "120px",
+            width: "140px",
             fontFamily: "Lato",
             fontSize: { xs: "12px", md: "14px" },
             fontWeight: "700",
           }}
         >
-          End Test
+          End
         </Button>
       </Stack>
     </Stack>

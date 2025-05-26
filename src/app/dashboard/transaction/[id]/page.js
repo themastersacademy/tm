@@ -107,6 +107,7 @@ export default function Transaction() {
       enqueueSnackbar("Payment retry failed. Please try again.", {
         variant: "error",
       });
+      fetchTransactionStatus();
     }
   };
 

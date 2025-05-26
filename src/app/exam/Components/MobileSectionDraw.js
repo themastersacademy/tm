@@ -27,8 +27,13 @@ const Puller = styled("div")(({ theme }) => ({
 const drawerBleeding = 56;
 
 export default function MobileSectionDraw(props) {
-  const { window, children, handleOnPreviousQuestion, handleOnNextQuestion } =
-    props;
+  const {
+    window,
+    children,
+    handleOnPreviousQuestion,
+    handleOnNextQuestion,
+    questionState,
+  } = props;
 
   const [open, setOpen] = useState(false);
   const container =
@@ -110,6 +115,10 @@ export default function MobileSectionDraw(props) {
                   color: "var(--primary-color)",
                 }}
                 onClick={handleOnPreviousQuestion}
+                disabled={
+                  questionState.selectedQuestionIndex === 0 &&
+                  questionState.selectedSectionIndex === 0
+                }
               >
                 Previous
               </Button>
@@ -133,6 +142,14 @@ export default function MobileSectionDraw(props) {
                   pointerEvents: "auto",
                   color: "var(--primary-color)",
                 }}
+                disabled={
+                  questionState?.sectionViseQuestionCount?.length ===
+                    questionState?.selectedSectionIndex + 1 &&
+                  questionState?.sectionViseQuestionCount[
+                    questionState?.selectedSectionIndex
+                  ] ===
+                    questionState?.selectedQuestionIndex + 1
+                }
               >
                 Next
               </Button>

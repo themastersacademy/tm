@@ -1,7 +1,8 @@
 "use client";
 import { Skeleton, Stack, Typography } from "@mui/material";
 import Countdown from "react-countdown";
-// import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+
 export default function CountDownTimer({
   date,
   now,
@@ -19,7 +20,6 @@ export default function CountDownTimer({
     ];
 
     if (completed) {
-      onComplete("AUTO");
       return (
         <Stack flexDirection="row" gap="10px" alignItems="center">
           <Typography>{promptTimeOver}</Typography>
@@ -32,7 +32,9 @@ export default function CountDownTimer({
     if (basicStyled) {
       return (
         <Stack flexDirection="row" gap="2px" alignItems="center">
-          <Typography>{`${formatTime(arrayWithKeys[0].value)}h : ${formatTime(
+          <Typography
+            sx={{ fontSize: { xs: "14px", md: "16px" } }}
+          >{`${formatTime(arrayWithKeys[0].value)}h : ${formatTime(
             arrayWithKeys[1].value
           )}m : ${formatTime(arrayWithKeys[2].value)}s`}</Typography>
         </Stack>
@@ -105,7 +107,7 @@ export default function CountDownTimer({
           </Stack>
         ) : (
           <Stack flexDirection="row" gap="2px" alignItems="center">
-            <Typography>00h : 00m : 00s</Typography>
+            <Typography sx={{ fontSize: "14px" }}>00h : 00m : 00s</Typography>
           </Stack>
         )
       ) : (
@@ -114,6 +116,7 @@ export default function CountDownTimer({
           daysInHours={true}
           renderer={renderer}
           now={now}
+          onComplete={() => onComplete("AUTO")}
         />
       )}
     </Stack>

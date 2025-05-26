@@ -18,7 +18,7 @@ import {
 import Image from "next/image";
 import mCoins from "@/public/icons/mCoins.svg";
 import PlansDialogBox from "../PlansDialogBox/PlansDialogBox";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import DialogBox from "../DialogBox/DialogBox";
 import gate_cse from "@/public/icons/gate_cse.svg";
@@ -31,17 +31,17 @@ import { useGoals } from "@/src/app/context/GoalProvider";
 
 export default function Header({ button = [], back }) {
   const params = useParams();
-  const goalID = params.goalID;
+  const selectedGoalID = params.goalID;
   const pathname = usePathname();
   const router = useRouter();
-  const { goals, enrolledGoals, loading } = useGoals();
+  const { goals, enrolledGoals, loading, refetchGoals } = useGoals();
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
   const { data: session } = useSession();
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState({
-    goalID: goalID,
+    goalID: selectedGoalID,
     icon: "",
     title: "",
   });
@@ -54,8 +54,7 @@ export default function Header({ button = [], back }) {
   };
   const handleSelectChange = (event) => {
     const newGoalId = event.target.value;
-    const newPath = pathname.replace(goalID, newGoalId);
-    console.log(newPath);
+    const newPath = pathname.replace(selectedGoalID, newGoalId);
     newGoalId && router.push(newPath);
   };
   const dialogOpen = () => {
@@ -67,46 +66,54 @@ export default function Header({ button = [], back }) {
 
   // Function to handle goal enrollment
   const handleEnrollGoal = async () => {
-    if (!selectedGoal.goalID) {
-      enqueueSnackbar("Please select a goal to enroll.", {
+    const { goalID, icon, title } = selectedGoal;
+
+    if (!goalID) {
+      return enqueueSnackbar("Please select a goal to enroll.", {
         variant: "warning",
       });
-      return;
     }
 
-    try {
-      setLoading(true);
-      const response = await fetch("/api/goal-enrollment/enroll", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          goalID: selectedGoal.goalID,
-          icon: selectedGoal.icon,
-          title: selectedGoal.title,
-        }),
-      });
+    const url = "/api/goal-enrollment/enroll";
+    const payload = { goalID, icon, title };
+    const options = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    };
 
-      const result = await response.json();
-      if (result.success) {
-        fetchGoals();
-        setGoalDialogOpen(false);
-        enqueueSnackbar("Successfully enrolled in the goal!", {
-          variant: "success",
-        });
-      } else {
-        enqueueSnackbar(result.message || "Failed to enroll in the goal.", {
+    try {
+      const response = await fetch(url, options);
+
+      // Handle non-2xx status
+      if (!response.ok) {
+        throw new Error(`Server responded ${response.status}`);
+      }
+
+      const { success, message } = await response.json();
+
+      if (!success) {
+        return enqueueSnackbar(message || "Enrollment failed.", {
           variant: "error",
         });
       }
-    } catch (error) {
-      console.error("Error enrolling goal:", error);
-      enqueueSnackbar("An error occurred while enrolling in the goal.", {
-        variant: "error",
+
+      refetchGoals(); // refresh data
+      setGoalDialogOpen(false); // close dialog
+      enqueueSnackbar("Successfully enrolled!", {
+        variant: "success",
       });
-    } finally {
-      setLoading(false);
+
+      const newPath = pathname.replace(selectedGoalID, goalID);
+      router.push(newPath);
+    } catch (err) {
+      console.error("Error enrolling goal:", err);
+      enqueueSnackbar(
+        err.message.includes("Server responded")
+          ? "Enrollment service error."
+          : "An unexpected error occurred.",
+        { variant: "error" }
+      );
     }
   };
 
@@ -150,14 +157,16 @@ export default function Header({ button = [], back }) {
               />
             )}
             <Select
-              value={goalID}
+              value={selectedGoalID}
               onChange={handleSelectChange}
               displayEmpty
               renderValue={(selected) => {
                 if (!selected) {
                   return "Loading...";
                 }
-                const goal = goals.find((option) => option.id === goalID);
+                const goal = goals.find(
+                  (option) => option.id === selectedGoalID
+                );
                 return goal ? goal.title : "Loading";
               }}
               variant="outlined"
@@ -177,7 +186,7 @@ export default function Header({ button = [], back }) {
                 minWidth: "170px",
                 height: "40px",
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: goalID ? "var(--sec-color)" : "inherit",
+                  borderColor: selectedGoalID ? "var(--sec-color)" : "inherit",
                 },
                 "&:hover": {
                   "& .MuiOutlinedInput-notchedOutline": {
@@ -242,7 +251,7 @@ export default function Header({ button = [], back }) {
                   backgroundColor:
                     session?.user?.accountType === "PRO"
                       ? "var( --delete-color-acc-1)"
-                      : "var(--primary-color)",
+                      : "var(--primary-color-acc-2)",
                   color:
                     session?.user?.accountType === "PRO"
                       ? "red"

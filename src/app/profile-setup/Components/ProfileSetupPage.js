@@ -14,6 +14,7 @@ import placement from "@/public/icons/placements.svg";
 import Banking from "@/public/icons/banking.svg";
 import mastersLogo from "@/public/images/masters-logo.svg";
 import incrixLogo from "@/public/images/incrix-logo.svg";
+
 export default function ProfileSetupPage({ isMobile }) {
   const router = useRouter();
   const { data: session, update } = useSession();

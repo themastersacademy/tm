@@ -9,7 +9,6 @@ import { fetchCouponByCode } from "@/src/libs/coupon/couponController";
 import { getCourse } from "@/src/libs/courses/courseController";
 import { calculatePriceBreakdownWithCoupon } from "@/src/utils/pricing";
 import { createTransaction } from "@/src/libs/transaction/transactionController";
-import { getBillingInfo } from "@/src/libs/checkout/billingInfoController";
 import { randomUUID } from "crypto";
 import { getFullUserByID } from "@/src/libs/user/userProfile";
 

@@ -81,7 +81,7 @@ export default function Home() {
           width="100%"
           maxWidth="1200px"
           gap="20px"
-          sx={{ mb: { xs: "60px", md: "0px" } }}
+          sx={{ mb: { xs: "80px", md: "0px" } }}
         >
           <Header />
           {/* Main Content */}
@@ -110,7 +110,7 @@ export default function Home() {
                 rowGap="10px"
                 columnGap="4px"
                 flexWrap="wrap"
-                justifyContent={{ xs: "center", md: "flex-start" }}
+                justifyContent={{ xs: "space-between", md: "flex-start" }}
               >
                 <StatisticCard
                   title="Total Practice"

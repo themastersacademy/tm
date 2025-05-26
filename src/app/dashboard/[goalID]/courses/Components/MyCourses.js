@@ -1,11 +1,12 @@
 "use client";
 import { Button, Stack, Select } from "@mui/material";
 import CourseCard from "@/src/Components/CourseCard/CourseCard";
-import { East } from "@mui/icons-material";
+import { East, ShoppingBagRounded } from "@mui/icons-material";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import CourseCardSkeleton from "@/src/Components/SkeletonCards/CourseCardSkeleton";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
+import { useCourses } from "@/src/app/context/CourseProvider";
 
 export default function MyCourses() {
   const router = useRouter();
@@ -13,38 +14,7 @@ export default function MyCourses() {
   const [isLoading, setIsLoading] = useState(true);
   const [courseList, setCourseList] = useState([]);
   const { goalID } = params;
-  console.log("MyCourses goalID", goalID);
-
-  const fetchCourses = useCallback(async () => {
-    setIsLoading(true);
-    if (!goalID) return;
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/courses/get-enrolled-course`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ goalID }),
-        }
-      );
-      const data = await response.json();
-      if (data.success) {
-        setCourseList(data.data);
-      } else {
-        setCourseList([]);
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [goalID]);
-
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses, goalID]);
+  const { enrolledCourses, loading } = useCourses();
 
   return (
     <Stack
@@ -52,9 +22,9 @@ export default function MyCourses() {
       flexWrap="wrap"
       sx={{ columnGap: { xs: "4px", md: "20px" }, rowGap: "10px" }}
     >
-      {!isLoading ? (
-        courseList.length > 0 ? (
-          courseList.map((item, index) => (
+      {!loading ? (
+        enrolledCourses.length > 0 ? (
+          enrolledCourses.map((item, index) => (
             <CourseCard
               key={index}
               title={item.title}
@@ -76,6 +46,23 @@ export default function MyCourses() {
                   }}
                 >
                   View
+                </Button>
+              }
+              actionMobile={
+                <Button
+                  variant="contained"
+                  endIcon={<ShoppingBagRounded />}
+                  sx={{
+                    textTransform: "none",
+                    color: "var(--white)",
+                    backgroundColor: "var(--primary-color)",
+                    borderRadius: "0px 0px 10px 10px",
+                  }}
+                  onClick={() => {
+                    router.push(`/dashboard/${goalID}/courses/${item.id}`);
+                  }}
+                >
+                  Purchase
                 </Button>
               }
             />
