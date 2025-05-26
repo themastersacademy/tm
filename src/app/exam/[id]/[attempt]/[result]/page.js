@@ -1,7 +1,7 @@
 "use client";
 import SecondaryCard from "@/src/Components/SecondaryCard/SecondaryCard";
 import { ArrowBackIosNewRounded } from "@mui/icons-material";
-import { Chip, Stack, Typography } from "@mui/material";
+import { Chip, Stack, Typography, useMediaQuery } from "@mui/material";
 import { useRouter, useParams } from "next/navigation";
 import Overview from "@/src/app/exam/Components/Overview";
 import mock from "@/public/icons/mocks.svg";
@@ -20,6 +20,7 @@ export default function Result() {
   const [isLoading, setIsLoading] = useState(true);
   const [userAnswerList, setUserAnswerList] = useState([]);
   let questionIndex = 0;
+  const isMobile = useMediaQuery("(max-width: 400px)");
 
   const fetchResult = async () => {
     try {
@@ -66,7 +67,7 @@ export default function Result() {
           <Stack flexDirection="row" gap="6px" alignItems="center">
             <ArrowBackIosNewRounded
               fontSize="small"
-              onClick={() => router.push(`/dashboard/${goalID}/exam`)}
+              onClick={() => router.push(`/dashboard/${goalID}/history`)}
               sx={{ cursor: "pointer" }}
             />
             <Typography
@@ -79,11 +80,11 @@ export default function Result() {
             <SecondaryCard
               title={result?.title || "Mock"}
               subTitle={
-                <Stack flexDirection="row" gap="30px">
+                <Stack flexDirection="row" gap={{ xs: "8px", md: "30px" }}>
                   <Typography
                     sx={{
                       fontFamily: "Lato",
-                      fontSize: "14px",
+                      fontSize: { xs: "12px", md: "14px" },
                       color: "var(--text3)",
                     }}
                   >
@@ -96,20 +97,21 @@ export default function Result() {
                   <Typography
                     sx={{
                       fontFamily: "Lato",
-                      fontSize: "14px",
+                      fontSize: { xs: "12px", md: "14px" },
                       color: "var(--text3)",
                     }}
                   >
-                    {result?.totalQuestions || "0"} Questions
+                    {result?.totalQuestions || "0"}
+                    {isMobile ? "Q" : "Questions"}
                   </Typography>
                   <Typography
                     sx={{
                       fontFamily: "Lato",
-                      fontSize: "14px",
+                      fontSize: { xs: "12px", md: "14px" },
                       color: "var(--text3)",
                     }}
                   >
-                    {result?.duration || "0"} Minutes
+                    {result?.duration || "0"} {isMobile ? "Mins" : "Minutes"}
                   </Typography>
                 </Stack>
               }

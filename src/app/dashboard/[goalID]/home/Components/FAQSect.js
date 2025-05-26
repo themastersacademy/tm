@@ -60,16 +60,27 @@ export default function FAQSect() {
   return (
     <Container maxWidth="md">
       <Stack gap={3} alignItems="center" py={4}>
-        <Typography
-          fontWeight={700}
-          sx={{
-            fontFamily: "Lato",
-            fontSize: isMobile ? "22px" : "28px",
-            textAlign: "center",
-          }}
-        >
-          Frequently Asked Questions
-        </Typography>
+        <Stack gap="5px" width="100%" alignItems="center">
+          <Typography
+            fontWeight={700}
+            sx={{
+              fontFamily: "Lato",
+              fontSize: isMobile ? "22px" : "28px",
+              textAlign: "center",
+            }}
+          >
+            Frequently Asked Questions
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: "Lato",
+              fontSize: isMobile ? "14px" : "16px",
+              color: "var(--text3)",
+            }}
+          >
+            Have questions? We’ve got answers.
+          </Typography>
+        </Stack>
 
         <Stack gap={1} width="100%">
           {faqData.map((faq, index) => (

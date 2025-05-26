@@ -15,8 +15,8 @@ export default function MobileSidebar({
       <IconButton
         sx={{
           position: "fixed",
-          bottom: 60,
-          right: 16,
+          bottom: 70,
+          right: 12,
           display: { xs: "flex", md: "none" },
           backgroundColor: "var(--primary-color)",
           color: "white",

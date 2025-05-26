@@ -13,6 +13,7 @@ export default function DialogBox({
   title="",
   icon="",
   actionButton="",
+  sx={} 
 }) {
   return (
     <Dialog
@@ -22,11 +23,12 @@ export default function DialogBox({
       sx={{
         "& .MuiDialog-paper": {
           width: "600px",
-          maxWidth: { xs: "100%", md: "600px" },
+          maxWidth: { xs: "100%", md: "600px"  },
           borderRadius: "10px",
           border: "1px solid",
           borderColor: "var(--border-color)",
-          padding:"0px"
+          padding:"0px",
+          ...sx
         },
       }}
     >
@@ -44,7 +46,7 @@ export default function DialogBox({
         {title}
         {icon}
       </DialogTitle>
-      <DialogContent sx={{ padding: 0, }}>{children}</DialogContent>
+      <DialogContent sx={{ padding: 0, ...sx }}>{children}</DialogContent>
       <DialogActions sx={{ justifyContent: "center" }}>
         <Stack>{actionButton || ""}</Stack>
       </DialogActions>

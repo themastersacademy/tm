@@ -1,6 +1,6 @@
 "use client";
 import { Button, Skeleton, Stack, Typography } from "@mui/material";
-import { InsertDriveFile } from "@mui/icons-material";
+import { InsertDriveFile, ShoppingBagRounded } from "@mui/icons-material";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import GoalHead from "@/src/Components/GoalHead/GoalHead";
@@ -15,6 +15,7 @@ import GoalContents from "../Components/GoalContents";
 import MobileSidebar from "../Components/MobileSidebar";
 import LinearProgressLoading from "@/src/Components/LinearProgressLoading/LinearProgressLoading";
 import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
+import { useSession } from "next-auth/react";
 
 const fetchGoalDetails = async (goalID, signal) => {
   const res = await fetch(
@@ -45,6 +46,7 @@ export default function HomeGoalID() {
   const router = useRouter();
   const params = useParams();
   const goalID = params.goalID;
+  const { data: session } = useSession();
   const [goalDetails, setGoalDetails] = useState({});
   const [blogList, setBlogList] = useState([]);
   const [selectedBlog, setSelectedBlog] = useState(null);
@@ -116,6 +118,7 @@ export default function HomeGoalID() {
               )
             }
             icon={goalDetails.icon}
+            isPro={session?.user?.accountType !== "PRO"}
           />
 
           <Stack
@@ -199,6 +202,25 @@ export default function HomeGoalID() {
                             color: "var(--primary-color)",
                             fontFamily: "Lato",
                             fontSize: "12px",
+                          }}
+                        >
+                          Purchase
+                        </Button>
+                      }
+                      actionMobile={
+                        <Button
+                          variant="contained"
+                          endIcon={<ShoppingBagRounded />}
+                          sx={{
+                            textTransform: "none",
+                            color: "var(--white)",
+                            backgroundColor: "var(--primary-color)",
+                            borderRadius: "0px 0px 10px 10px",
+                          }}
+                          onClick={() => {
+                            router.push(
+                              `/dashboard/${goalID}/courses/${course.id}`
+                            );
                           }}
                         >
                           Purchase

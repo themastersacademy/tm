@@ -7,7 +7,7 @@ import placements from "@/public/icons/placements.svg";
 import { ArrowBackIosRounded, East } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 
-export default function GoalHead({ goal, goalLoading, title, icon }) {
+export default function GoalHead({ goal, goalLoading, title, icon, isPro }) {
   const router = useRouter();
 
   return (
@@ -66,12 +66,13 @@ export default function GoalHead({ goal, goalLoading, title, icon }) {
           {title}
         </Typography>
       </Stack>
-      <Button
-        variant="text"
-        endIcon={<East />}
-        onClick={() => {
-          router.push("/dashboard/proSubscription");
-        }}
+      {isPro && (
+        <Button
+          variant="text"
+          endIcon={<East />}
+          onClick={() => {
+            router.push("/dashboard/proSubscription");
+          }}
         sx={{
           textTransform: "none",
           width: "120px",
@@ -83,8 +84,9 @@ export default function GoalHead({ goal, goalLoading, title, icon }) {
         }}
         disableElevation
       >
-        Get Pro
-      </Button>
+          Get Pro
+        </Button>
+      )}
     </Stack>
   );
 }

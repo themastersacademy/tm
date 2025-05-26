@@ -1,40 +1,28 @@
 "use client";
 import SecondaryCard from "@/src/Components/SecondaryCard/SecondaryCard";
-import { Button, Stack, Typography } from "@mui/material";
+import {
+  Button,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import mocks from "@/public/icons/mocks.svg";
 import Header from "@/src/Components/Header/Header";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter} from "next/navigation";
 import Image from "next/image";
 import { ArrowBackIos } from "@mui/icons-material";
 import MobileHeader from "@/src/Components/MobileHeader/MobileHeader";
-import { useEffect, useState } from "react";
 import SecondaryCardSkeleton from "@/src/Components/SkeletonCards/SecondaryCardSkeleton";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
+import { useExams } from "@/src/app/context/ExamProvider";
 
 export default function History() {
+  const { history, loading} = useExams();
   const router = useRouter();
-  const [historyList, setHistoryList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const params = useParams();
-  const goalID = params.goalID;
-
-  const fetchHistory = async () => {
-    setLoading(true);
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/history?goalID=${goalID}`
-    );
-    const data = await response.json();
-    if (data.success) {
-      setHistoryList(data.data);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchHistory();
-  }, [goalID]);
-
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   return (
     <>
       <Stack sx={{ display: { xs: "block", md: "none" } }}>
@@ -46,7 +34,7 @@ export default function History() {
         <Stack width="100%" maxWidth="1200px" margin="0 auto">
           <Stack
             padding={{ xs: "10px", md: "20px" }}
-            sx={{ marginBottom: { xs: "60px", md: "0px" } }}
+            sx={{ marginBottom: { xs: "80px", md: "0px" } }}
             gap="20px"
             justifyContent="center"
           >
@@ -97,18 +85,13 @@ export default function History() {
                 minWidth="100%"
               >
                 {!loading ? (
-                  historyList.length > 0 ? (
-                    historyList.map((item, index) => (
+                  history.length > 0 ? (
+                    history.map((item, index) => (
                       <SecondaryCard
                         key={index}
                         title={`${item.title} (${item.type} exam)`}
                         icon={
-                          <Image
-                            src={mocks}
-                            alt=""
-                            width={24}
-                            height={24}
-                          />
+                          <Image src={mocks} alt="" width={24} height={24} />
                         }
                         button={
                           item.status === "COMPLETED" ? (
@@ -123,6 +106,7 @@ export default function History() {
                                 textTransform: "none",
                                 color: "var(--sec-color)",
                                 fontSize: "12px",
+                                padding: "0px",
                               }}
                             >
                               View Result
@@ -137,6 +121,7 @@ export default function History() {
                                 textTransform: "none",
                                 color: "var(--primary-color)",
                                 fontSize: "12px",
+                                padding: "0px",
                               }}
                             >
                               Continue Test
@@ -144,21 +129,23 @@ export default function History() {
                           )
                         }
                         subTitle={
-                          <Stack flexDirection="row" gap="5px">
+                          <Stack flexDirection="row" gap="7px">
                             <Typography
                               sx={{ fontFamily: "Lato", fontSize: "12px" }}
                             >
-                              {item.obtainedMarks} / {item.totalMarks} Marks
+                              {item.obtainedMarks} / {item.totalMarks}{" "}
+                              {isMobile ? "Marks" : "Marks"}
                             </Typography>
                             <Typography
                               sx={{ fontFamily: "Lato", fontSize: "12px" }}
                             >
-                              {item.totalQuestions} Questions
+                              {item.totalQuestions}{" "}
+                              {isMobile ? "Q" : "Questions"}
                             </Typography>
                             <Typography
                               sx={{ fontFamily: "Lato", fontSize: "12px" }}
                             >
-                              {item.duration} minutes
+                              {item.duration} {isMobile ? "mins" : "minutes"}
                             </Typography>
                           </Stack>
                         }

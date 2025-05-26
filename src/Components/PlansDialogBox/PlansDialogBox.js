@@ -9,39 +9,30 @@ import {
   MenuItem,
 } from "@mui/material";
 import DialogBox from "../DialogBox/DialogBox";
-import { CheckBox, Close } from "@mui/icons-material"
-import { useRouter, useParams } from "next/navigation";
+import { CheckBox, Close } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useSubscription } from "@/src/app/context/SubscriptionProvider";
 
 export default function PlansDialogBox({
   plansDialogOpen,
   handlePlansDialogClose,
+  sx = {},
 }) {
   const router = useRouter();
-  const [plans, setPlans] = useState([]);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
+  const { plans } = useSubscription();
   const { data: session } = useSession();
 
+  const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
   useEffect(() => {
-    const fetchPlans = async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription/get-all-plans`
-      );
-      const data = await response.json();
-      if (data.success) {
-        setPlans(data.data);
-        setSelectedPlan(data.data[0]);
-        setSelectedPlanIndex(0);
-        setIsLoading(false);
-      } else {
-        console.error("Failed to fetch plans:", data.message);
-      }
-    };
-    fetchPlans();
-  }, []);
+    if (plans.length > 0 && selectedPlan === null) {
+      setSelectedPlan(plans[0]);
+      setSelectedPlanIndex(0);
+    }
+  }, [plans, selectedPlan]);
 
   const handlePlanChange = (index) => {
     setSelectedPlan(plans[index]);
@@ -72,113 +63,92 @@ export default function PlansDialogBox({
           alignItems="center"
           sx={{ width: "100%" }}
         >
-          <Stack
-            sx={{
-              border: "1px solid var(--border-color)",
-              borderRadius: "10px",
-              padding: "20px",
-              width: "250px",
-              height: "380px",
-            }}
-          >
-            <Stack sx={{ marginBottom: "20px" }}>
-              <Typography
-                sx={{
-                  fontFamily: "Lato",
-                  fontSize: "20px",
-                  fontWeight: "500",
-                }}
-              >
-                Free
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: "Lato",
-                  fontSize: "28px",
-                  fontWeight: "500",
-                }}
-              >
-                ₹0
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: "Lato",
-                  fontSize: "12px",
-                  fontWeight: "500",
-                }}
-              >
-                per user
-              </Typography>
-            </Stack>
-            <Stack gap="10px">
-              <Typography
-                sx={{
-                  fontFamily: "Lato",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                For Students
-              </Typography>
-              <Stack flexDirection="row" gap="10px" alignItems="center">
-                <CheckBox sx={{ color: "var(--sec-color)" }} />
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "14px",
-                  }}
-                >
-                  No practise test
-                </Typography>
-              </Stack>
-              <Stack flexDirection="row" gap="10px" alignItems="center">
-                <CheckBox sx={{ color: "var(--sec-color)" }} />
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "14px",
-                  }}
-                >
-                  Limited mock tests
-                </Typography>
-              </Stack>
-              <Stack flexDirection="row" gap="10px" alignItems="center">
-                <CheckBox sx={{ color: "var(--sec-color)" }} />
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "14px",
-                  }}
-                >
-                  No free video courses
-                </Typography>
-              </Stack>
-              <Stack flexDirection="row" gap="10px" alignItems="center">
-                <CheckBox sx={{ color: "var(--sec-color)" }} />
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "14px",
-                  }}
-                >
-                  Basic Tracking
-                </Typography>
-              </Stack>
-            </Stack>
+          {/* Free Plan Card */}
+          {session?.user?.accountType !== "PRO" && (
             <Stack
               sx={{
-                backgroundColor: "var(--sec-color-acc-1)",
-                color: "var(--sec-color)",
-                textTransform: "none",
-                marginTop: "35px",
-                borderRadius: "5px",
-                padding: "10px",
-                alignItems: "center",
+                border: "1px solid var(--border-color)",
+                borderRadius: "10px",
+                padding: "20px",
+                width: "250px",
+                height: "380px",
               }}
             >
-              <Typography>Current Plan</Typography>
+              <Stack sx={{ marginBottom: "20px" }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Lato",
+                    fontSize: "20px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Free
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Lato",
+                    fontSize: "28px",
+                    fontWeight: "500",
+                  }}
+                >
+                  ₹0
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Lato",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                  }}
+                >
+                  per user
+                </Typography>
+              </Stack>
+              <Stack gap="10px">
+                <Typography
+                  sx={{
+                    fontFamily: "Lato",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  For Students
+                </Typography>
+                {[
+                  "No practise test",
+                  "Limited mock tests",
+                  "No free video courses",
+                  "Basic Tracking",
+                ].map((text, i) => (
+                  <Stack
+                    key={i}
+                    flexDirection="row"
+                    gap="10px"
+                    alignItems="center"
+                  >
+                    <CheckBox sx={{ color: "var(--sec-color)" }} />
+                    <Typography sx={{ fontFamily: "Lato", fontSize: "14px" }}>
+                      {text}
+                    </Typography>
+                  </Stack>
+                ))}
+              </Stack>
+              <Stack
+                sx={{
+                  backgroundColor: "var(--sec-color-acc-1)",
+                  color: "var(--sec-color)",
+                  textTransform: "none",
+                  marginTop: "35px",
+                  borderRadius: "5px",
+                  padding: "10px",
+                  alignItems: "center",
+                }}
+              >
+                <Typography>Current Plan</Typography>
+              </Stack>
             </Stack>
-          </Stack>
+          )}
+
+          {/* Pro Plan Card */}
           <Stack
             sx={{
               backgroundColor: "var(--primary-color)",
@@ -199,16 +169,19 @@ export default function PlansDialogBox({
               >
                 Pro
               </Typography>
-              <Typography
-                sx={{
-                  fontFamily: "Lato",
-                  fontSize: "28px",
-                  fontWeight: "500",
-                  color: "var(--white)",
-                }}
+              {session?.user?.accountType !== "PRO" && (
+                <Typography
+                  sx={{
+                    fontFamily: "Lato",
+                    fontSize: "28px",
+                    fontWeight: "500",
+                    color: "var(--white)",
+                  }}
               >
-                ₹{selectedPlan?.priceWithTax}
+                ₹{selectedPlan?.priceWithTax ?? "--"}
               </Typography>
+              )}
+              {session?.user?.accountType !== "PRO" && (
               <Typography
                 sx={{
                   fontFamily: "Lato",
@@ -217,8 +190,9 @@ export default function PlansDialogBox({
                   color: "var(--white)",
                 }}
               >
-                {selectedPlan?.discountInPercent}% off
-              </Typography>
+                {selectedPlan?.discountInPercent ?? "--"}% off
+                </Typography>
+              )}  
             </Stack>
             <Stack gap="4px">
               <Typography
@@ -231,76 +205,55 @@ export default function PlansDialogBox({
               >
                 For Students & Aspirants
               </Typography>
-              <Stack flexDirection="row" gap="10px" alignItems="center">
-                <CheckBox sx={{ color: "var(--white)" }} />
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "12px",
-                    color: "var(--white)",
-                  }}
+              {[
+                "Unlimited practise tests",
+                "Advanced mock tests",
+                "Free video courses",
+                "Advanced tracking",
+              ].map((text, i) => (
+                <Stack
+                  key={i}
+                  flexDirection="row"
+                  gap="10px"
+                  alignItems="center"
                 >
-                  Unlimited practise tests
-                </Typography>
-              </Stack>
-              <Stack flexDirection="row" gap="10px" alignItems="center">
-                <CheckBox sx={{ color: "var(--white)" }} />
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "12px",
-                    color: "var(--white)",
-                  }}
-                >
-                  Advanced mock tests
-                </Typography>
-              </Stack>
-              <Stack flexDirection="row" gap="10px" alignItems="center">
-                <CheckBox sx={{ color: "var(--white)" }} />
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "12px",
-                    color: "var(--white)",
-                  }}
-                >
-                  Free video courses
-                </Typography>
-              </Stack>
-              <Stack flexDirection="row" gap="10px" alignItems="center">
-                <CheckBox sx={{ color: "var(--white)" }} />
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "12px",
-                    color: "var(--white)",
-                  }}
-                >
-                  Advanced tracking
-                </Typography>
-              </Stack>
+                  <CheckBox sx={{ color: "var(--white)" }} />
+                  <Typography
+                    sx={{
+                      fontFamily: "Lato",
+                      fontSize: "12px",
+                      color: "var(--white)",
+                    }}
+                  >
+                    {text}
+                  </Typography>
+                </Stack>
+              ))}
             </Stack>
 
-            {session?.user?.accountType !== "PRO" && (
-              <Stack
-                sx={{
-                  display: "flex",
-                  gap: "10px",
-                  marginTop: "auto",
-                }}
-              >
-                <Stack sx={{ marginTop: "auto" }}>
+            <Stack sx={{ marginTop: "auto" }}>
+              {session?.user?.accountType === "PRO" ? (
+                <Stack
+                  sx={{
+                    backgroundColor: "var(--primary-color-acc-2)",
+                    color: "var(--primary-color)",
+                    textTransform: "none",
+                    borderRadius: "5px",
+                    padding: "10px",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography>Current Plan</Typography>
+                </Stack>
+              ) : (
+                <Stack sx={{ display: "flex", gap: "10px" }}>
                   <Select
                     variant="outlined"
-                    value={selectedPlan?.duration || ""}
-                    onChange={(e) => {
-                      handlePlanChange(e.target.value);
-                    }}
+                    value={selectedPlanIndex}
+                    onChange={(e) => handlePlanChange(e.target.value)}
                     displayEmpty
                     renderValue={(selected) => {
-                      const plan = selected
-                        ? plans.find((p) => p.duration === selected)
-                        : plans[0];
+                      const plan = plans[selected] ?? plans[0];
                       return `${plan.duration} ${
                         plan.type === "MONTHLY" ? "month" : "year"
                       }`;
@@ -312,7 +265,6 @@ export default function PlansDialogBox({
                           padding: "8px",
                           "& .MuiList-root": {
                             paddingBottom: 0,
-                            borderColor: "white",
                           },
                         },
                       },
@@ -325,10 +277,8 @@ export default function PlansDialogBox({
                       "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                         borderColor: "black",
                       },
-                      "&:hover": {
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: "black",
-                        },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "black",
                       },
                     }}
                   >
@@ -340,26 +290,25 @@ export default function PlansDialogBox({
                       </MenuItem>
                     ))}
                   </Select>
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/proSubscription?plan=${subscriptionPlanID}`
+                      );
+                    }}
+                    sx={{
+                      backgroundColor: "var(--primary-color-acc-2)",
+                      color: "var(--primary-color)",
+                      textTransform: "none",
+                    }}
+                    disableElevation
+                  >
+                    Subscribe
+                  </Button>
                 </Stack>
-                <Button
-                  variant="contained"
-                  onClick={() => {
-                    router.push(
-                      `/dashboard/proSubscription?plan=${subscriptionPlanID}`
-                    );
-                  }}
-                  sx={{
-                    backgroundColor: "var(--primary-color-acc-2)",
-                    color: "var(--primary-color)",
-                    textTransform: "none",
-                    marginTop: "auto",
-                  }}
-                  disableElevation
-                >
-                  Subscribe
-                </Button>
-              </Stack>
-            )}
+              )}
+            </Stack>
           </Stack>
         </Stack>
       </DialogContent>

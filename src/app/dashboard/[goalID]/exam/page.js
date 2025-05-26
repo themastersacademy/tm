@@ -10,7 +10,6 @@ import {
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import PrimaryCard from "@/src/Components/PrimaryCard/PrimaryCard";
-import Practice from "@/public/icons/practice.svg";
 import mocks from "@/public/icons/mocks.svg";
 import { East } from "@mui/icons-material";
 import troffy from "@/public/icons/week2.svg";
@@ -23,8 +22,10 @@ import LinearProgressLoading from "@/src/Components/LinearProgressLoading/Linear
 import { useSnackbar } from "notistack";
 import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
 import ExamGroups from "./Components/ExamGroups";
+import { useExams } from "@/src/app/context/ExamProvider";
 
 export default function Exams() {
+  const { group, mock, loading, subjects, error } = useExams();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
@@ -32,25 +33,20 @@ export default function Exams() {
   const params = useParams();
   const goalID = params.goalID;
   const { enqueueSnackbar } = useSnackbar();
-  const [testSeries, setTestSeries] = useState([]);
-  const [groupExams, setGroupExams] = useState([]);
-  const [loadingTestSeries, setLoadingTestSeries] = useState(true);
-  const [loadingGroupExams, setLoadingGroupExams] = useState(true);
-  const [loadingSubjects, setLoadingSubjects] = useState(true);
-  const pageLoading = loadingTestSeries || loadingGroupExams || loadingSubjects;
   const [loacalLoading, setLoacalLoading] = useState(false);
-  const [allSubjects, setAllSubjects] = useState([]);
   const [difficultyLevel, setDifficultyLevel] = useState("all");
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [subjectOptions, setSubjectOptions] = useState([]);
 
   useEffect(() => {
-    const subjects = allSubjects.map((subject) => ({
-      label: subject.title,
-      value: subject.subjectID,
-    }));
-    setSubjectOptions(subjects);
-  }, [allSubjects]);
+    if (subjects) {
+      const subjectsOptions = subjects.map((subject) => ({
+        label: subject.title,
+        value: subject.subjectID,
+      }));
+      setSubjectOptions(subjectsOptions);
+    }
+  }, [subjects]);
 
   const difficultyLevelOptions = [
     { label: "All", value: "all" },
@@ -58,73 +54,6 @@ export default function Exams() {
     { label: "Medium", value: 1 },
     { label: "Hard", value: 2 },
   ];
-
-  const fetchTestSeries = useCallback(async () => {
-    setLoadingTestSeries(true);
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/type/${goalID}/mock/all`
-      );
-      const data = await response.json();
-      if (data.success) {
-        setTestSeries(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching test series:", error);
-    }
-    setLoadingTestSeries(false);
-  }, [goalID]);
-
-  useEffect(() => {
-    fetchTestSeries();
-  }, [fetchTestSeries, goalID]);
-
-  const fetchGroupExams = useCallback(async () => {
-    setLoadingGroupExams(true);
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/type/${goalID}/group/all`
-      );
-      const data = await response.json();
-      if (data.success) {
-        setGroupExams(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching group exams:", error);
-    }
-    setLoadingGroupExams(false);
-  }, [goalID]);
-
-  useEffect(() => {
-    fetchGroupExams();
-  }, [fetchGroupExams, goalID]);
-
-  const fetchAllSubjects = useCallback(async () => {
-    setLoadingSubjects(true);
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/goal/get-all-subject`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ goalID }),
-        }
-      );
-      const data = await response.json();
-      if (data.success) {
-        setAllSubjects(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching all subjects:", error);
-    }
-    setLoadingSubjects(false);
-  }, [goalID]);
-
-  useEffect(() => {
-    fetchAllSubjects();
-  }, [fetchAllSubjects, goalID]);
 
   const handleStartTest = async () => {
     if (!selectedSubject) {
@@ -157,7 +86,7 @@ export default function Exams() {
   return (
     <Stack width="100%" alignItems="center">
       {loacalLoading && <LinearProgressLoading />}
-      {pageLoading ? (
+      {loading ? (
         <PageSkeleton />
       ) : (
         <Stack width="100%" maxWidth="1200px">
@@ -168,7 +97,8 @@ export default function Exams() {
           >
             <Header />
             <Stack gap="20px">
-              <Stack spacing={2}
+              <Stack
+                spacing={2}
                 sx={{ display: { xs: "none", md: "block" }, gap: "30px" }}
               >
                 <Typography
@@ -189,9 +119,9 @@ export default function Exams() {
               </Typography>
 
               <Stack gap="20px" flexDirection="row" flexWrap="wrap">
-                {!loadingTestSeries ? (
-                  testSeries.length > 0 ? (
-                    testSeries.map((test) => (
+                {!loading ? (
+                  mock && mock.length > 0 ? (
+                    mock.map((test) => (
                       <PrimaryCard
                         key={test.id}
                         title={test.title}
@@ -231,9 +161,9 @@ export default function Exams() {
                 Exam groups
               </Typography>
               <Stack flexDirection="row" flexWrap="wrap" gap="20px">
-                {!loadingGroupExams ? (
-                  groupExams.length > 0 ? (
-                    groupExams.map((group, index) => (
+                {!loading ? (
+                  group && group.length > 0 ? (
+                    group.map((group, index) => (
                       <PrimaryCard
                         key={index}
                         title={group.title}
@@ -270,8 +200,8 @@ export default function Exams() {
             </Stack>
           </Stack>
           <ResponsiveTestSeries
-            testSeries={testSeries}
-            groupExams={groupExams}
+            testSeries={mock}
+            groupExams={group}
             subjectOptions={subjectOptions}
           />
         </Stack>

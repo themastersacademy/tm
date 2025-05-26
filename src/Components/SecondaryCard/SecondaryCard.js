@@ -21,7 +21,7 @@ export default function SecondaryCard({
       elevation={0}
       onClick={onClick}
     >
-      <Stack flexDirection="row">
+      <Stack flexDirection="row" gap="2px">
         <Stack flexDirection="row" alignItems="center" gap="15px">
           <Stack
             sx={{
@@ -64,7 +64,7 @@ export default function SecondaryCard({
           marginLeft="auto"
           alignItems="center"
           flexDirection="row"
-          gap="10px"
+          
         >
           {button}
         </Stack>

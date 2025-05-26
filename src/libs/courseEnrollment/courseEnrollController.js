@@ -9,7 +9,6 @@ import { fetchCouponByCode } from "@/src/libs/coupon/couponController";
 import { getCourse } from "@/src/libs/courses/courseController";
 import { calculatePriceBreakdownWithCoupon } from "@/src/utils/pricing";
 import { createTransaction } from "@/src/libs/transaction/transactionController";
-import { getBillingInfo } from "@/src/libs/checkout/billingInfoController";
 import { randomUUID } from "crypto";
 import { getFullUserByID } from "@/src/libs/user/userProfile";
 
@@ -152,7 +151,10 @@ export async function getValidCourseEnrollment(userID, courseID) {
   const courseEnrollments = result.Items;
 
   if (courseEnrollments.length === 0) {
-    throw new Error("No active course enrollment found");
+    return {
+      success: false,
+      message: "No active course enrollment found",
+    };
   }
 
   return {
@@ -270,5 +272,3 @@ async function getCourseInBatch(courseIDs, goalID) {
     language: item.language,
   }));
 }
-
-

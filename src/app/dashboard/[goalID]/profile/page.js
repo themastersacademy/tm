@@ -10,6 +10,7 @@ import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
+// import { useSubscription } from "@/src/app/context/SubscriptionProvider";
 import VerticalTabs from "@/src/Components/VerticalTabs/VerticalTabs";
 import BasicInfo from "./Components/BasicInfo";
 
@@ -18,6 +19,7 @@ export default function Profile() {
   const router = useRouter();
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+  // const { plans } = useSubscription();
 
   const handlePlansDialogOpen = () => {
     setPlansDialogOpen(true);
@@ -81,7 +83,6 @@ export default function Profile() {
       content: <BasicInfo session={session} handleLogout={handleLogout} />,
     },
     { label: "Transaction", content: "Transaction" },
-    // { label: "Payment", content: "Payment" },
   ];
 
   return (
@@ -93,6 +94,7 @@ export default function Profile() {
         sx={{ minHeight: "100vh", overflowY: "visible" }}
         width="100%"
         alignItems="center"
+        justifyContent="center"
       >
         <Stack width="100%" gap="20px" maxWidth="1200px" minHeight="100vh">
           <Stack
@@ -200,7 +202,7 @@ export default function Profile() {
             sx={{
               marginTop: "auto",
               gap: "5px",
-              paddingBottom: { xs: "50px", md: "0px" },
+              paddingBottom: { xs: "80px", md: "0px" },
             }}
           >
             <Image src={incrix_logo} alt="logo" style={{ color: "red" }} />

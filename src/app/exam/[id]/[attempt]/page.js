@@ -61,6 +61,9 @@ export default function Exam() {
         .then((data) => {
           if (data.success) {
             router.push(`/exam/${examID}/${attemptID}/result`);
+            if (document.fullscreenElement) {
+              toggleFullScreen();
+            }
           } else {
             console.log("Exam submission failed");
           }
@@ -83,12 +86,6 @@ export default function Exam() {
           setUserAnswers(attemptInfo.userAnswers);
           setServerTimestamp(attemptInfo.serverTimestamp);
           setClientPerfAtFetch(performance.now());
-          // const timeLimit =
-          //   attemptInfo.startTimeStamp + attemptInfo.duration * 1000 * 60;
-          // const remainingTime = timeLimit - now();
-          // if (remainingTime <= 0) {
-          //   handleEndTest("AUTO");
-          // }
           await fetch(`${attemptInfo.blobSignedUrl}`).then((res) =>
             res
               .json()
@@ -343,6 +340,7 @@ export default function Exam() {
     }
   }
 
+
   if (loading) {
     return <LoadingComp />;
   }
@@ -404,6 +402,7 @@ export default function Exam() {
           <MobileSectionDraw
             handleOnNextQuestion={handleOnNextQuestion}
             handleOnPreviousQuestion={handleOnPreviousQuestion}
+            questionState={questionState}
           >
             <SectionComponent
               questions={questions}

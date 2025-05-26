@@ -25,7 +25,7 @@ const BannerCarousel = ({ banners }) => {
           }}
         >
           <Image
-            src={banner}
+            src={banner.image}
             alt={`banner-${index}`}
             width={1200}
             height={600}
@@ -33,7 +33,6 @@ const BannerCarousel = ({ banners }) => {
               objectFit: "contain",
               width: "100%",
               height: "100%",
-              // borderRadius:"20px"
             }}
           />
         </Box>

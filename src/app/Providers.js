@@ -50,7 +50,9 @@ export default function ClientProviders({ children, session }) {
           info: StyledMaterialDesignContent,
         }}
       >
-        <GoalProvider>{children}</GoalProvider>
+        <GoalProvider>
+            {children}
+        </GoalProvider>
       </SnackbarProvider>
     </SessionProvider>
   );

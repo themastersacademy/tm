@@ -5,7 +5,7 @@ export default function StatisticCard({ icon, title, count }) {
   return (
     <Card
       sx={{
-        minWidth: { xs: "150px", md: "170px" },
+        minWidth: { xs: "160px", md: "170px" },
         maxHeight: "100px",
         padding: "20px 16px",
         border: "1px solid var(--border-color)",

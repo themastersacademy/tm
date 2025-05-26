@@ -1,57 +1,18 @@
 "use client";
-import { Button, Stack } from "@mui/material";
-import defaultThumbnail from "@/public/images/defaultThumbnail.svg";
+import { Button, Stack, useTheme } from "@mui/material";
 import CourseCard from "@/src/Components/CourseCard/CourseCard";
 import { ShoppingBagRounded } from "@mui/icons-material";
-import { useEffect, useState } from "react";
 import CourseCardSkeleton from "@/src/Components/SkeletonCards/CourseCardSkeleton";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import { useRouter, useParams } from "next/navigation";
+import { useCourses } from "@/src/app/context/CourseProvider";
 
 export default function Store() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [storeList, setStoreList] = useState([]);
   const params = useParams();
   const goalID = params.goalID;
   const router = useRouter();
-
-  const fetchStoreList = async (goalId) => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/home/goal-details`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ goalID: goalId }),
-        }
-      );
-      const data = await response.json();
-      if (data.success) {
-        setStoreList(data.data.coursesList || []);
-      } else {
-        console.error("Failed to fetch courses:", data.message);
-        setStoreList([]);
-      }
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-      setStoreList([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (goalID) {
-      fetchStoreList(goalID);
-    } else {
-      console.warn("No goalID found, skipping fetch.");
-      setIsLoading(false); // Stop loading if no goalId
-      setStoreList([]); // Reset storeList to show NoDataFound
-    }
-  }, [goalID]);
+  const { storeCourses, loading } = useCourses();
+  const isMobile = useTheme().breakpoints.down("xs");
 
   return (
     <Stack
@@ -59,9 +20,9 @@ export default function Store() {
       flexWrap="wrap"
       sx={{ columnGap: { xs: "4px", md: "15px" }, rowGap: "10px" }}
     >
-      {!isLoading ? (
-        storeList.length > 0 ? (
-          storeList.map((item, index) => (
+      {!loading ? (
+        storeCourses.length > 0 ? (
+          storeCourses.map((item, index) => (
             <CourseCard
               key={index}
               title={item.title}
@@ -82,8 +43,25 @@ export default function Store() {
                   }}
                   sx={{
                     textTransform: "none",
-                    color: "var(--primary-color)",
                     fontSize: "12px",
+                    color: "var(--primary-color)",
+                  }}
+                >
+                  Purchase
+                </Button>
+              }
+              actionMobile={
+                <Button
+                  variant="contained"
+                  endIcon={<ShoppingBagRounded />}
+                  sx={{
+                    textTransform: "none",
+                    color: "var(--white)",
+                    backgroundColor: "var(--primary-color)",
+                    borderRadius: "0px 0px 10px 10px",
+                  }}
+                  onClick={() => {
+                    router.push(`/dashboard/${goalID}/courses/${item.id}`);
                   }}
                 >
                   Purchase

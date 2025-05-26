@@ -22,7 +22,6 @@ import Countdown from "react-countdown";
 import { enqueueSnackbar, closeSnackbar } from "notistack";
 import Link from "next/link";
 import Image from "next/image";
-import { Skeleton } from "@mui/material";
 import CountDownTimer from "../Components/CountDownTimer";
 import KnowYourTest from "../Components/KnowYourTest";
 import InstructionLoading from "../Components/InstructionLoading";
