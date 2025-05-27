@@ -2,18 +2,16 @@
 import SecondaryCard from "@/src/Components/SecondaryCard/SecondaryCard";
 import { ArrowBackIosNewRounded } from "@mui/icons-material";
 import { Chip, Stack, Typography, useMediaQuery } from "@mui/material";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Overview from "@/src/app/exam/Components/Overview";
 import mock from "@/public/icons/mocks.svg";
 import Image from "next/image";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import ResultSection from "@/src/Components/ResultSection/ResultSection";
 import Loading from "./loading";
 
 export default function Result() {
   const router = useRouter();
-  const params = useParams();
-  const goalID = params.goalID;
   const [result, setResult] = useState(null);
   const [questionList, setQuestionList] = useState([]);
   const [answerList, setAnswerList] = useState([]);
@@ -67,7 +65,7 @@ export default function Result() {
           <Stack flexDirection="row" gap="6px" alignItems="center">
             <ArrowBackIosNewRounded
               fontSize="small"
-              onClick={() => router.push(`/dashboard/${goalID}/history`)}
+              onClick={() => router.push(`/dashboard?path=history`)}
               sx={{ cursor: "pointer" }}
             />
             <Typography

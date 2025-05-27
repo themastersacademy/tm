@@ -78,6 +78,11 @@ export default function MobileSectionDraw(props) {
           disableSwipeToOpen={false}
           sx={{ display: { xs: "flex", md: "none" } }}
           keepMounted
+          ModalProps={{
+            BackdropProps: {
+              style: { backgroundColor: "transparent" },
+            },
+          }}
         >
           <Stack
             sx={{

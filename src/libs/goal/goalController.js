@@ -45,10 +45,23 @@ export async function getGoalSubjectList(goalID) {
   const command = new GetCommand(params);
   try {
     const result = await dynamoDB.send(command);
+    if (!result.Item) {
+      return {
+        success: false,
+        message: "Goal not found",
+      };
+    }
+    if (result.Item.subjectList.length === 0) {
+      return {
+        success: false,
+        message: "No subjects found",
+      };
+    }
+    const subjectList = result.Item.subjectList;
     return {
       success: true,
       message: "Goal subject list fetched successfully",
-      data: result.Item.subjectList,
+      data: subjectList,
     };
   } catch (error) {
     throw new Error(error);

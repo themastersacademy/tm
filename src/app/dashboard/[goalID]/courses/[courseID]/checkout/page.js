@@ -39,15 +39,14 @@ export default function Checkout() {
     zip: "",
   });
   const [billingInfoList, setBillingInfoList] = useState([]);
-  const [isBillingInfoLoading, setIsBillingInfoLoading] = useState(true);
   const [showBillingForm, setShowBillingForm] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [selectedAddressIndex, setSelectedAddressIndex] = useState(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState(null);
-
+  
   const handleAddressSelect = (index) => {
-    setSelectedAddressIndex(index);
+    setSelectedAddressIndex((prevIndex) => (prevIndex === index ? null : index));
   };
 
   const courseEnroll = async () => {

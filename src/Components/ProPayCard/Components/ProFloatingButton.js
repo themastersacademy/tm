@@ -1,7 +1,11 @@
 import { Stack, Button, Typography, Skeleton } from "@mui/material";
 import { useSession } from "next-auth/react";
 
-export default function ProFloatingButton({ isDisabled, onClick }) {
+export default function ProFloatingButton({
+  isDisabled,
+  onClick,
+  priceBreakdown,
+}) {
   const { data: session } = useSession();
   return (
     <Stack
@@ -15,13 +19,14 @@ export default function ProFloatingButton({ isDisabled, onClick }) {
           <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
             Total:
           </Typography>
-          {/* {priceBreakdown?.totalPrice ? (
+
+          {priceBreakdown ? (
             <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
               Pay: ₹{priceBreakdown.totalPrice.toFixed(2)}
             </Typography>
           ) : (
-            <Skeleton variant="text" width={100} />
-          )} */}
+            <Skeleton width={80} height={24} />
+          )}
         </Stack>
         <Stack>
           <Typography sx={{ fontSize: "12px" }}>

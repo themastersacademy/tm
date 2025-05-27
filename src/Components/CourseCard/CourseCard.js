@@ -1,6 +1,6 @@
 "use client";
-import { Circle, ShoppingBagRounded } from "@mui/icons-material";
-import { Button, Stack, Typography } from "@mui/material";
+import { Circle } from "@mui/icons-material";
+import { Stack, Typography } from "@mui/material";
 import Image from "next/image";
 import defaultThumbnail from "@/public/images/defaultThumbnail.svg";
 
@@ -17,12 +17,15 @@ export default function CourseCard({
 
   return (
     <Stack
+      maxWidth={{ xs: "400px", sm: "202px" }}
       width={{ xs: "100%", sm: "202px" }}
-      minHeight={{ xs: "170px", md: "220px" }}
+      minHeight={{ xs: "auto", sm: "320px" }}
       sx={{
         border: "1px solid var(--border-color)",
         borderRadius: "10px",
         backgroundColor: "var(--white)",
+        display: "flex", 
+        flexDirection: "column",
       }}
     >
       <Stack
@@ -34,7 +37,7 @@ export default function CourseCard({
             src={imageSrc}
             alt="Course Thumbnail"
             width="200"
-            height="137"
+            height="120"
             style={{
               borderTopLeftRadius: "10px",
               borderTopRightRadius: "10px",
@@ -45,38 +48,45 @@ export default function CourseCard({
           <Image
             src={imageSrc}
             alt="Course Thumbnail"
-            width="160"
-            height="120"
+            width="130"
+            height="80"
             style={{
               borderRadius: "10px",
             }}
           />
         </Stack>
-        <Stack padding="20px 10px" gap="6px">
+
+        {/* Course Info */}
+        <Stack padding={{ xs: "10px", sm: "20px 10px" }} gap="6px">
           <Typography
-            sx={{ fontFamily: "Lato", fontSize: "14px", fontWeight: "700" }}
+            sx={{
+              fontFamily: "Lato",
+              fontSize: { xs: "12px", sm: "14px" },
+              fontWeight: "700",
+            }}
           >
             {title}
           </Typography>
           <Stack direction="row" gap="4px" flexWrap="wrap">
             {Language.map((lang, idx) => (
-              <Button
+              <Stack
                 key={idx}
-                variant="contained"
-                disableElevation
                 sx={{
                   backgroundColor: "var(--sec-color-acc-1)",
                   color: "var(--sec-color)",
                   fontSize: "10px",
                   fontFamily: "Lato",
-                  textTransform: "none",
                   minWidth: "unset",
                   height: 20,
                   px: 1,
+                  borderRadius: "2px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
                 {lang}
-              </Button>
+              </Stack>
             ))}
           </Stack>
           <Stack direction="row" alignItems="center" gap={1}>
@@ -88,11 +98,24 @@ export default function CourseCard({
               {hours}
             </Typography>
           </Stack>
-          <Stack sx={{ display: { xs: "none", sm: "flex" } }}>
-            {actionButton}
-          </Stack>
         </Stack>
       </Stack>
+
+      {/* Action Button - Always at the bottom */}
+      {actionButton && (
+        <Stack
+          sx={{
+            display: { xs: "none", sm: "flex" },
+            backgroundColor: "var(--primary-color-acc-2)",
+            color: "var(--white)",
+            borderRadius: "0px 0px 10px 10px",
+          }}
+        >
+          {actionButton}
+        </Stack>
+      )}
+
+      {/* Mobile Action */}
       {actionMobile && (
         <Stack sx={{ display: { xs: "flex", sm: "none" } }}>
           {actionMobile}

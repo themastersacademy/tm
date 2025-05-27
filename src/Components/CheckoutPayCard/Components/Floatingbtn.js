@@ -1,6 +1,17 @@
-import { Stack, Button, Typography, Skeleton, CircularProgress } from "@mui/material";
+import {
+  Stack,
+  Button,
+  Typography,
+  Skeleton,
+  CircularProgress,
+} from "@mui/material";
 
-export default function FloatingBtn({ priceBreakdown, isDisabled, onPaymentClick, loading }) {
+export default function FloatingBtn({
+  priceBreakdown,
+  isDisabled,
+  onPaymentClick,
+  loading,
+}) {
   return (
     <Stack
       sx={{
@@ -61,7 +72,10 @@ export default function FloatingBtn({ priceBreakdown, isDisabled, onPaymentClick
           }}
         >
           {loading ? (
-            <CircularProgress sx={{ color: "var(--primary-color)" }} size={24} />
+            <CircularProgress
+              sx={{ color: "var(--primary-color)" }}
+              size={24}
+            />
           ) : (
             "Proceed to Pay"
           )}

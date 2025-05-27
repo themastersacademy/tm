@@ -263,6 +263,94 @@ export default function MyCourse() {
                   />
                 )}
               </Stack>
+              <Stack
+                flexWrap="wrap"
+                flexDirection="row"
+                gap="5px"
+                justifyContent={{
+                  xs: "center",
+                  sm: "flex-start",
+                  md: "flex-start",
+                  lg: "flex-start",
+                }}
+                alignItems={{
+                  xs: "center",
+                  sm: "flex-start",
+                  md: "flex-start",
+                  lg: "flex-start",
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: "Lato",
+                    fontSize: {
+                      xs: "12px",
+                      sm: "14px",
+                      md: "12px",
+                      lg: "14px",
+                    },
+                    fontWeight: "400",
+                    backgroundColor: "var(--sec-color-acc-1)",
+                    padding: "5px 10px",
+                    borderRadius: "2px",
+                    color: "var(--sec-color)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    width: "fit-content",
+                  }}
+                >
+                  <TranslateIcon sx={{ fontSize: "16px" }} />
+                  {courseDetails?.language?.length > 0
+                    ? courseDetails.language.join(", ")
+                    : "No languages available"}
+                </Typography>
+                <Typography
+                    sx={{
+                      fontFamily: "Lato",
+                      fontSize: {
+                        xs: "12px",
+                        sm: "14px",
+                        md: "12px",
+                        lg: "14px",
+                      },
+                      fontWeight: "400",
+                      backgroundColor: "var(--sec-color-acc-1)",
+                      padding: "5px 10px",
+                      borderRadius: "2px",
+                      color: "var(--sec-color)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                   
+                    }}
+                  >
+                    <PlayLessonIcon sx={{ fontSize: "16px" }} />
+                    {courseDetails?.lessons} Lessons
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: "Lato",
+                      fontSize: {
+                        xs: "12px",
+                        sm: "14px",
+                        md: "12px",
+                        lg: "14px",
+                      },
+                      fontWeight: "400",
+                      backgroundColor: "var(--sec-color-acc-1)",
+                      padding: "5px 10px",
+                      borderRadius: "2px",
+                      color: "var(--sec-color)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                    }}
+                  >
+                    <AccessTimeFilledIcon sx={{ fontSize: "16px" }} />
+                    {courseDetails?.duration} Hours
+                  </Typography>
+              </Stack>
 
               {/* About this course */}
               <Stack
@@ -276,7 +364,7 @@ export default function MyCourse() {
                       backgroundColor: "var(--white)",
                       padding: "20px 25px",
                       borderRadius: "10px",
-                      maxHeight: "500px",
+                      maxHeight: "auto",
                       overflow: "auto",
                     }}
                   >
@@ -313,100 +401,6 @@ export default function MyCourse() {
                     courseDetails={courseDetails}
                     lessonList={lessonList}
                   />
-                </Stack>
-              )}
-
-              {/* Language, Lessons and Duration */}
-              {isLoading ? (
-                <Skeleton
-                  variant="text"
-                  width="300px"
-                  height="50px"
-                  sx={{ backgroundColor: "var(--sec-color-acc-1)" }}
-                />
-              ) : (
-                <Stack
-                  flexDirection="row"
-                  width="350px"
-                  gap="10px"
-                  justifyContent="center"
-                  alignItems={{
-                    xs: "center",
-                    sm: "flex-start",
-                    md: "flex-start",
-                    lg: "center",
-                  }}
-                  marginTop={{ xs: "0px", sm: "20px", md: "10px", lg: "10px" }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: "Lato",
-                      fontSize: {
-                        xs: "12px",
-                        sm: "14px",
-                        md: "12px",
-                        lg: "14px",
-                      },
-                      fontWeight: "400",
-                      backgroundColor: "var(--sec-color-acc-1)",
-                      padding: "5px 10px",
-                      borderRadius: "2px",
-                      color: "var(--sec-color)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      width: "100%",
-                    }}
-                  >
-                    <TranslateIcon sx={{ fontSize: "16px" }} />
-                    {courseDetails?.language}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: "Lato",
-                      fontSize: {
-                        xs: "12px",
-                        sm: "14px",
-                        md: "12px",
-                        lg: "14px",
-                      },
-                      fontWeight: "400",
-                      backgroundColor: "var(--sec-color-acc-1)",
-                      padding: "5px 10px",
-                      borderRadius: "2px",
-                      color: "var(--sec-color)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      width: "100%",
-                    }}
-                  >
-                    <PlayLessonIcon sx={{ fontSize: "16px" }} />
-                    {courseDetails?.lessons} Lessons
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: "Lato",
-                      fontSize: {
-                        xs: "12px",
-                        sm: "14px",
-                        md: "12px",
-                        lg: "14px",
-                      },
-                      fontWeight: "400",
-                      backgroundColor: "var(--sec-color-acc-1)",
-                      padding: "5px 10px",
-                      borderRadius: "2px",
-                      color: "var(--sec-color)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      width: "100%",
-                    }}
-                  >
-                    <AccessTimeFilledIcon sx={{ fontSize: "16px" }} />
-                    {courseDetails?.duration} Hours
-                  </Typography>
                 </Stack>
               )}
 
@@ -562,7 +556,7 @@ export default function MyCourse() {
                       backgroundColor: "var(--white)",
                       padding: "20px 25px",
                       borderRadius: "10px",
-                      maxHeight: "500px",
+                      maxHeight: "auto",
                       overflow: "auto",
                       marginTop: "20px",
                     }}
