@@ -23,8 +23,6 @@ export default function CheckoutPayCard({
   planIndex,
   setSelectedPlan,
 }) {
-
-  
   const [priceBreakdown, setPriceBreakdown] = useState(
     calculatePriceBreakdownWithCoupon(
       selectedPlan.priceWithTax,
@@ -37,10 +35,14 @@ export default function CheckoutPayCard({
   useEffect(() => {
     if (courseDetails?.subscription?.plans && planIndex !== null) {
       const index = parseInt(planIndex, 10);
-      if (!isNaN(index) && index >= 0 && index < courseDetails.subscription.plans.length) {
+      if (
+        !isNaN(index) &&
+        index >= 0 &&
+        index < courseDetails.subscription.plans.length
+      ) {
         setSelectedPlan(courseDetails.subscription.plans[index]);
       } else {
-        setSelectedPlan(courseDetails.subscription.plans[0]); 
+        setSelectedPlan(courseDetails.subscription.plans[0]);
       }
     }
   }, [courseDetails, planIndex]);
@@ -86,9 +88,7 @@ export default function CheckoutPayCard({
       >
         <CardContent>
           {/* Card Header */}
-          <Stack
-            flexDirection={{ xs: "column", sm: "column", md: "column" }}
-          >
+          <Stack flexDirection={{ xs: "column", sm: "column", md: "column" }}>
             {/* Course Header Left side */}
             <Stack>
               {isLoading ? (

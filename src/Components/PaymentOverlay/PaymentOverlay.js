@@ -85,7 +85,7 @@ export default function PaymentOverlay({
       left={0}
       width={"100vw"}
       height={"100%"}
-      zIndex={1}
+      zIndex={1001}
       backgroundColor={"white"}
       display={"flex"}
       alignItems={"center"}
@@ -102,7 +102,7 @@ export default function PaymentOverlay({
         src="https://checkout.razorpay.com/v1/checkout.js"
         onLoad={onRazorpayLoad}
       />
-      <Stack>
+      <Stack display={{ xs: "none", sm: "block", md: "block", lg: "block" }}>
         <img
           src={paymentGif.src}
           alt="Payment"
@@ -116,16 +116,22 @@ export default function PaymentOverlay({
             alignItems: "center",
           }}
         />
-
-        {/* <Typography
-          variant="h6"
-          fontWeight={600}
-          textAlign={"center"}
-          color={"var(--text3)"}
-          fontSize={"20px"}
-        >
-          Payment Processing
-        </Typography> */}
+      </Stack>
+      <Stack display={{ xs: "block", sm: "none", md: "none", lg: "none" }}>
+        <img
+          src={paymentGif.src}
+          alt="Payment"
+          style={{
+            height: "auto",
+            width: "auto",
+            maxWidth: "600px",
+            minWidth: "300px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            justifySelf: "center",
+          }}
+        />
       </Stack>
     </Stack>
   );

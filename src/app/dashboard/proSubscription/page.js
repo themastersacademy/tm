@@ -70,7 +70,7 @@ export default function ProSubscription() {
 
   // Handler to select an address
   const handleAddressSelect = (index) => {
-    setSelectedAddressIndex(index);
+    setSelectedAddressIndex((prevIndex) => (prevIndex === index ? null : index));
   };
 
   const applyCoupon = async (couponCode) => {
@@ -481,12 +481,12 @@ export default function ProSubscription() {
               <Stack
                 direction={{ xs: "column", lg: "row", md: "row" }}
                 gap={{ xs: "20px", lg: "30px" }}
-                width="100%"
-                // maxWidth="1200px"
+                width={{ xs: "100%", md: "100%", lg: "100%" }}
                 justifyContent="space-between"
+                marginBottom={{ xs: "200px", md: "0px" }}
               >
                 <Stack
-                  flex={{ xs: "auto", lg: 0.6 }}
+                  flex={{ xs: "auto", md: 0.6, lg: 0.6 }}
                   gap={{ xs: "20px", lg: "30px" }}
                 >
                   {/* Billing Address Card */}
@@ -546,7 +546,11 @@ export default function ProSubscription() {
                   </Stack>
                 </Stack>
 
-                <Stack flex={{ xs: "auto", lg: 0.4 }} gap="20px" width="100%">
+                <Stack
+                  flex={{ xs: "auto", md: 0.4, lg: 0.4 }}
+                  gap="20px"
+                  width="100%"
+                >
                   <ProPayCard
                     isDisabled={selectedAddressIndex === null}
                     applyCoupon={applyCoupon}
@@ -562,6 +566,7 @@ export default function ProSubscription() {
                     selectedPlanIndex={selectedPlanIndex}
                     setSelectedPlanIndex={setSelectedPlanIndex}
                     onClick={proSubscription}
+                    onSelect={() => handleAddressSelect(index)}
                   />
                 </Stack>
               </Stack>

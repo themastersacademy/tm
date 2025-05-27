@@ -33,8 +33,11 @@ export default function Courses() {
         <Stack sx={{ display: { xs: "none", md: "block" }, width: "100%" }}>
           <Header />
         </Stack>
-        <Stack sx={{ width: "100%" }}>
-          <CustomTabs tabs={tabData} />
+        <Stack
+        paddingX={{ xs: "0px", sm: "20px", md: "0px" }}
+         sx={{ width: "100%" }}>
+          <CustomTabs
+           tabs={tabData} />
         </Stack>
       </Stack>
     </Stack>

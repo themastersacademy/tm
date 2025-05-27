@@ -6,6 +6,7 @@ import {
   Button,
   IconButton,
   CircularProgress,
+  Checkbox,
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 import DeleteDialogBox from "@/src/Components/DeleteDialogBox/DeleteDialogBox";
@@ -40,6 +41,10 @@ export default function ProAddressCard({
     setIsDeleteDialogOpen(false);
   };
 
+  const handleToggleSelect = () => {
+    onSelect(index);
+  };
+
   return (
     <>
       <Stack
@@ -52,7 +57,8 @@ export default function ProAddressCard({
         padding="20px"
         borderRadius="8px"
         sx={{ cursor: "pointer", marginBottom: "20px" }}
-        onClick={onSelect}
+        onClick={handleToggleSelect}
+        width="100%"
       >
         {/* Address Header */}
         <Stack
@@ -60,7 +66,18 @@ export default function ProAddressCard({
           alignItems="center"
           justifyContent="space-between"
         >
-          <Stack direction="row" alignItems="center">
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Checkbox
+              checked={isSelected}
+              onChange={handleToggleSelect}
+              onClick={(e) => e.stopPropagation()}
+              sx={{
+                color: "var(--primary-color)",
+                "&.Mui-checked": {
+                  color: "var(--primary-color)",
+                },
+              }}
+            />
             <Typography
               sx={{ color: "var(--primary-color)", fontWeight: "bold" }}
             >

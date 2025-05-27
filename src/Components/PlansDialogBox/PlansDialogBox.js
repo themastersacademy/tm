@@ -177,22 +177,30 @@ export default function PlansDialogBox({
                     fontWeight: "500",
                     color: "var(--white)",
                   }}
-              >
-                ₹{selectedPlan?.priceWithTax ?? "--"}
-              </Typography>
+                >
+                  ₹{selectedPlan?.priceWithTax ?? "--"}
+                </Typography>
               )}
               {session?.user?.accountType !== "PRO" && (
-              <Typography
-                sx={{
-                  fontFamily: "Lato",
-                  fontSize: "12px",
-                  fontWeight: "500",
-                  color: "var(--white)",
-                }}
-              >
-                {selectedPlan?.discountInPercent ?? "--"}% off
-                </Typography>
-              )}  
+                <Stack sx={{ backgroundColor: "var(--primary-color-acc-2)",
+                    borderRadius: "5px",
+                    padding: "5px",
+                    alignItems: "center",
+                    width:'60px'
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: "Lato",
+                      fontSize: "12px",
+                      fontWeight: "500",
+                      color: "var(--primary-color)",
+                    }}
+                  >
+                    {selectedPlan?.discountInPercent ?? "--"}% off
+                  </Typography>
+                </Stack>
+              )}
             </Stack>
             <Stack gap="4px">
               <Typography

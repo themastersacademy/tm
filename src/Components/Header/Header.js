@@ -52,11 +52,16 @@ export default function Header({ button = [], back }) {
   const handlePlansDialogClose = () => {
     setPlansDialogOpen(false);
   };
+
   const handleSelectChange = (event) => {
     const newGoalId = event.target.value;
     const newPath = pathname.replace(selectedGoalID, newGoalId);
     newGoalId && router.push(newPath);
+    document.cookie = `selectedGoalID=${newGoalId}; path=/; expires=${new Date(
+      Date.now() + 1000 * 60 * 60 * 24 * 30
+    ).toUTCString()}`;
   };
+
   const dialogOpen = () => {
     setGoalDialogOpen(true);
   };
@@ -106,6 +111,9 @@ export default function Header({ button = [], back }) {
 
       const newPath = pathname.replace(selectedGoalID, goalID);
       router.push(newPath);
+      document.cookie = `selectedGoalID=${goalID}; path=/; expires=${new Date(
+        Date.now() + 1000 * 60 * 60 * 24 * 30
+      ).toUTCString()}`;
     } catch (err) {
       console.error("Error enrolling goal:", err);
       enqueueSnackbar(

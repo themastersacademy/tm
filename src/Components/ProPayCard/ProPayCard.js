@@ -66,10 +66,10 @@ export default function ProPayCard({
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
           backgroundColor: "var(--white, #fff)",
           padding: "0px",
-          width: { sm: "100%", lg: "350px", md: "350px", xs: "350px" },
+          width: { sm: "450px", lg: "350px", md: "350px", xs: "350px" },
           height: "auto",
           maxWidth: { xs: "100%" },
-          alignSelf: "flex-end",
+          alignSelf: { xs: "center", md: "flex-end" },
         }}
       >
         <CardContent>
@@ -153,6 +153,7 @@ export default function ProPayCard({
           couponDetails={couponDetails}
           isDisabled={isDisabled}
           onClick={onClick}
+          priceBreakdown={priceBreakdown}
         />
       </Stack>
     </Stack>

@@ -18,7 +18,10 @@ export default function Store() {
     <Stack
       flexDirection="row"
       flexWrap="wrap"
+      justifyContent={{ xs: "center", sm: "flex-start", md: "flex-start" }}
+      alignItems={{ xs: "center", sm: "flex-start", md: "flex-start" }}
       sx={{ columnGap: { xs: "4px", md: "15px" }, rowGap: "10px" }}
+      gap={{ xs: "10px", sm: "15px", md: "15px" }}
     >
       {!loading ? (
         storeCourses.length > 0 ? (
@@ -43,7 +46,7 @@ export default function Store() {
                   }}
                   sx={{
                     textTransform: "none",
-                    fontSize: "12px",
+                    fontSize: "14px",
                     color: "var(--primary-color)",
                   }}
                 >
@@ -56,8 +59,8 @@ export default function Store() {
                   endIcon={<ShoppingBagRounded />}
                   sx={{
                     textTransform: "none",
-                    color: "var(--white)",
-                    backgroundColor: "var(--primary-color)",
+                    color: "var(--primary-color)",
+                    backgroundColor: "var(--primary-color-acc-2)",
                     borderRadius: "0px 0px 10px 10px",
                   }}
                   onClick={() => {

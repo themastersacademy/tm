@@ -92,10 +92,6 @@ export default function Account({ isSideNavOpen }) {
     }
   };
 
-  if (status === "loading") {
-    return <Typography>Loading...</Typography>;
-  }
-
   return (
     <>
       <Stack
@@ -183,21 +179,23 @@ export default function Account({ isSideNavOpen }) {
           <Image src={students_img} alt="profile" width={16} height={16} />
           Profile
         </MenuItem>
-        <MenuItem
-          sx={{
-            gap: "10px",
-            fontFamily: "Lato",
-            fontSize: "14px",
-            fontWeight: "700",
-          }}
-          onClick={handlePlansDialogOpen}
-        >
-          <HowToRegRounded
-            sx={{ color: "var(--primary-color)" }}
-            fontSize="small"
-          />
-          Upgrade to PRO
-        </MenuItem>
+        {session?.user?.accountType !== "PRO" && (
+          <MenuItem
+            sx={{
+              gap: "10px",
+              fontFamily: "Lato",
+              fontSize: "14px",
+              fontWeight: "700",
+            }}
+            onClick={handlePlansDialogOpen}
+          >
+            <HowToRegRounded
+              sx={{ color: "var(--primary-color)" }}
+              fontSize="small"
+            />
+            Upgrade to PRO
+          </MenuItem>
+        )}
         <MenuItem
           onClick={handleLogout}
           sx={{

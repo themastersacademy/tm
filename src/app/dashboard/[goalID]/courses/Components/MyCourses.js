@@ -20,6 +20,8 @@ export default function MyCourses() {
     <Stack
       flexDirection="row"
       flexWrap="wrap"
+      justifyContent={{ xs: "center", sm: "flex-start", md: "flex-start" }}
+      alignItems={{ xs: "center", sm: "flex-start", md: "flex-start" }}
       sx={{ columnGap: { xs: "4px", md: "20px" }, rowGap: "10px" }}
     >
       {!loading ? (
@@ -51,18 +53,18 @@ export default function MyCourses() {
               actionMobile={
                 <Button
                   variant="contained"
-                  endIcon={<ShoppingBagRounded />}
+                  endIcon={<East />}
                   sx={{
                     textTransform: "none",
-                    color: "var(--white)",
-                    backgroundColor: "var(--primary-color)",
+                    color: "var(--primary-color)",
+                    backgroundColor: "var(--primary-color-acc-2)",
                     borderRadius: "0px 0px 10px 10px",
                   }}
                   onClick={() => {
                     router.push(`/dashboard/${goalID}/courses/${item.id}`);
                   }}
                 >
-                  Purchase
+                  View
                 </Button>
               }
             />

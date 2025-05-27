@@ -117,15 +117,15 @@ const FormSignIn = memo(() => {
   if (session) {
     return (
       <Stack alignItems="center" spacing={2}>
-        <Typography>
-          Already logged in as {session.user.name || session.user.email}
-        </Typography>
-        <Button variant="contained" onClick={() => router.push("/dashboard")}>
-          Go to Dashboard
-        </Button>
-        <Button variant="contained" onClick={() => signOut()}>
-          Sign Out
-        </Button>
+        {isLoading ? (
+          <CircularProgress
+            sx={{ color: "var(--primary-color)", fontSize: "40px" }}
+          />
+        ) : (
+          <Typography>
+            Already logged in as {session.user.name || session.user.email}
+          </Typography>
+        )}
       </Stack>
     );
   }
