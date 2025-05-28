@@ -2,16 +2,17 @@
 import SecondaryCard from "@/src/Components/SecondaryCard/SecondaryCard";
 import { ArrowBackIosNewRounded } from "@mui/icons-material";
 import { Chip, Stack, Typography, useMediaQuery } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Overview from "@/src/app/exam/Components/Overview";
 import mock from "@/public/icons/mocks.svg";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import ResultSection from "@/src/Components/ResultSection/ResultSection";
 import Loading from "./loading";
 
 export default function Result() {
   const router = useRouter();
+  const params = useParams();
   const [result, setResult] = useState(null);
   const [questionList, setQuestionList] = useState([]);
   const [answerList, setAnswerList] = useState([]);
@@ -20,7 +21,7 @@ export default function Result() {
   let questionIndex = 0;
   const isMobile = useMediaQuery("(max-width: 400px)");
 
-  const fetchResult = async () => {
+  const fetchResult = useCallback(async () => {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${params.id}/${params.attempt}/result`
@@ -39,10 +40,11 @@ export default function Result() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id, params.attempt]);
+
   useEffect(() => {
     fetchResult();
-  }, []);
+  }, [fetchResult]);
 
   return (
     <Stack

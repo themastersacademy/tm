@@ -198,7 +198,7 @@ export default function MyCourse() {
               sx={{ cursor: "pointer", fontSize: "18px" }}
             />
             <Typography
-              sx={{ fontSize: { xs: "14px", sm: "18px" }, fontFamily: "Lato" }}
+              sx={{ fontSize: { xs: "12px", sm: "16px" }, fontFamily: "Lato" }}
             >
               {isLoading ? (
                 <Skeleton variant="text" width="120px" />
@@ -306,50 +306,49 @@ export default function MyCourse() {
                     : "No languages available"}
                 </Typography>
                 <Typography
-                    sx={{
-                      fontFamily: "Lato",
-                      fontSize: {
-                        xs: "12px",
-                        sm: "14px",
-                        md: "12px",
-                        lg: "14px",
-                      },
-                      fontWeight: "400",
-                      backgroundColor: "var(--sec-color-acc-1)",
-                      padding: "5px 10px",
-                      borderRadius: "2px",
-                      color: "var(--sec-color)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                   
-                    }}
-                  >
-                    <PlayLessonIcon sx={{ fontSize: "16px" }} />
-                    {courseDetails?.lessons} Lessons
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: "Lato",
-                      fontSize: {
-                        xs: "12px",
-                        sm: "14px",
-                        md: "12px",
-                        lg: "14px",
-                      },
-                      fontWeight: "400",
-                      backgroundColor: "var(--sec-color-acc-1)",
-                      padding: "5px 10px",
-                      borderRadius: "2px",
-                      color: "var(--sec-color)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                    }}
-                  >
-                    <AccessTimeFilledIcon sx={{ fontSize: "16px" }} />
-                    {courseDetails?.duration} Hours
-                  </Typography>
+                  sx={{
+                    fontFamily: "Lato",
+                    fontSize: {
+                      xs: "12px",
+                      sm: "14px",
+                      md: "12px",
+                      lg: "14px",
+                    },
+                    fontWeight: "400",
+                    backgroundColor: "var(--sec-color-acc-1)",
+                    padding: "5px 10px",
+                    borderRadius: "2px",
+                    color: "var(--sec-color)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                >
+                  <PlayLessonIcon sx={{ fontSize: "16px" }} />
+                  {courseDetails?.lessons} Lessons
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Lato",
+                    fontSize: {
+                      xs: "12px",
+                      sm: "14px",
+                      md: "12px",
+                      lg: "14px",
+                    },
+                    fontWeight: "400",
+                    backgroundColor: "var(--sec-color-acc-1)",
+                    padding: "5px 10px",
+                    borderRadius: "2px",
+                    color: "var(--sec-color)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                >
+                  <AccessTimeFilledIcon sx={{ fontSize: "16px" }} />
+                  {courseDetails?.duration} Hours
+                </Typography>
               </Stack>
 
               {/* About this course */}
@@ -466,10 +465,11 @@ export default function MyCourse() {
                           duration={item.duration}
                           iconStart={
                             item.type === "VIDEO" ? (
-                              selectedLessonId === item.id ? (
+                              selectedLessonId === item.id ||
+                              isInitialVideoId ? (
                                 <PauseCircle
                                   sx={{
-                                    color: isInitialVideo
+                                    color: isInitialVideoId
                                       ? "var(--sec-color)"
                                       : isAccessible
                                       ? "var(--sec-color)"
@@ -479,7 +479,7 @@ export default function MyCourse() {
                               ) : (
                                 <PlayCircle
                                   sx={{
-                                    color: isInitialVideo
+                                    color: isInitialVideoId
                                       ? "var(--sec-color)"
                                       : isAccessible
                                       ? "var(--sec-color)"

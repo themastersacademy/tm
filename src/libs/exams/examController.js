@@ -252,7 +252,7 @@ export async function startExam({ examID, userID }) {
   }
 }
 
-export async function getExamAttemptByID(id) {
+export async function getExamAttemptByID(id, userID) {
   if (!id) throw new Error("Exam attempt id is required");
 
   const serverTimestamp = Date.now();
@@ -279,6 +279,7 @@ export async function getExamAttemptByID(id) {
   };
 
   let Item;
+
   try {
     ({ Item } = await dynamoDB.send(new GetCommand(params)));
   } catch (err) {
@@ -286,7 +287,7 @@ export async function getExamAttemptByID(id) {
     throw new Error("Failed to fetch exam attempt");
   }
 
-  if (!Item) {
+  if (!Item || Item.userID !== userID) {
     // no item → consistent error
     throw new Error("Exam attempt not found");
   }
@@ -359,7 +360,7 @@ async function getFullExamByID(id) {
   }
 }
 
-async function getPreviousAttempt(userID, examID) {
+export async function getPreviousAttempt(userID, examID) {
   if (!userID || !examID) {
     throw new Error("Both userID and examID are required");
   }
@@ -374,20 +375,68 @@ async function getPreviousAttempt(userID, examID) {
       "#gsiSK": "GSI1-sKey",
     },
     ExpressionAttributeValues: {
-      ":pk": "EXAM_ATTEMPTS", // your GSI partition
-      ":sk": `EXAM_ATTEMPT@${userID}`, // your GSI sort
-      ":examID": examID, // filter on this field
+      ":pk": "EXAM_ATTEMPTS",
+      ":sk": `EXAM_ATTEMPT@${userID}`,
+      ":examID": examID,
     },
-    // if you only want the single latest attempt:
-    Limit: 1,
-    ScanIndexForward: false, // false → newest items first if you sort by timestamp
+    // we only need at most, say, 50 recent items to scan in-code
+    Limit: 50,
+    ScanIndexForward: false, // newest first
   };
 
+  let items;
   try {
-    const { Items } = await dynamoDB.send(new QueryCommand(params));
-    return Items?.[0] ?? null;
+    const { Items = [] } = await dynamoDB.send(new QueryCommand(params));
+    items = Items;
+    console.log("items", items);
   } catch (err) {
-    console.error("getPreviousAttempt error:", err);
-    throw new Error("Failed to fetch previous attempt");
+    console.error("getPreviousAttempt DynamoDB error:", err);
+    throw new Error("Failed to fetch previous attempts");
   }
+
+  // Filter in code
+  const matching = items.filter((it) => it.examID === examID);
+
+  if (matching.length === 0) {
+    return null;
+  }
+
+  // Sort by createdAt descending
+  matching.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  // Return the first (most recent) one
+  return matching[0];
 }
+
+// async function getPreviousAttempt(userID, examID) {
+//   if (!userID || !examID) {
+//     throw new Error("Both userID and examID are required");
+//   }
+
+//   const params = {
+//     TableName: USER_TABLE,
+//     IndexName: USER_INDEX_NAME,
+//     KeyConditionExpression: "#gsiPK = :pk AND #gsiSK = :sk",
+//     FilterExpression: "examID = :examID",
+//     ExpressionAttributeNames: {
+//       "#gsiPK": "GSI1-pKey",
+//       "#gsiSK": "GSI1-sKey",
+//     },
+//     ExpressionAttributeValues: {
+//       ":pk": "EXAM_ATTEMPTS", // your GSI partition
+//       ":sk": `EXAM_ATTEMPT@${userID}`, // your GSI sort
+//       ":examID": examID, // filter on this field
+//     },
+//     // if you only want the single latest attempt:
+//     Limit: 1,
+//     ScanIndexForward: false, // false → newest items first if you sort by timestamp
+//   };
+
+//   try {
+//     const { Items } = await dynamoDB.send(new QueryCommand(params));
+//     return Items?.[0] ?? null;
+//   } catch (err) {
+//     console.error("getPreviousAttempt error:", err);
+//     throw new Error("Failed to fetch previous attempt");
+//   }
+// }

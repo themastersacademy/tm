@@ -168,7 +168,6 @@ export async function getValidProSubscription(userID) {
 
   const result = await dynamoDB.send(new QueryCommand(proSubscriptionParams));
   const proSubscriptions = result.Items;
-  console.log("proSubscriptions", proSubscriptions);
 
   if (proSubscriptions.length === 0) {
     return {

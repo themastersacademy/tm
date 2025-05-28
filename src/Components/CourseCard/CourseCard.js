@@ -24,14 +24,12 @@ export default function CourseCard({
         border: "1px solid var(--border-color)",
         borderRadius: "10px",
         backgroundColor: "var(--white)",
-        display: "flex", 
+        display: "flex",
         flexDirection: "column",
       }}
     >
-      <Stack
-        flexDirection={{ xs: "row", sm: "column" }}
-        height="100%"
-      >
+      <Stack flexDirection={{ xs: "row", sm: "column" }} sx={{ flexGrow: 1 }}>
+        {/* Thumbnail */}
         <Stack sx={{ display: { xs: "none", sm: "flex" } }}>
           <Image
             src={imageSrc}
@@ -50,9 +48,7 @@ export default function CourseCard({
             alt="Course Thumbnail"
             width="130"
             height="80"
-            style={{
-              borderRadius: "10px",
-            }}
+            style={{ borderRadius: "10px" }}
           />
         </Stack>
 
@@ -101,7 +97,7 @@ export default function CourseCard({
         </Stack>
       </Stack>
 
-      {/* Action Button - Always at the bottom */}
+      {/* Desktop Action Button - Fixed at bottom */}
       {actionButton && (
         <Stack
           sx={{

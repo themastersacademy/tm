@@ -182,20 +182,22 @@ export default function Profile() {
             >
               Logout
             </Button>
-            <Button
-              variant="contained"
-              onClick={handlePlansDialogOpen}
-              sx={{
-                textTransform: "none",
-                fontFamily: "Lato",
-                fontSize: "14px",
-                backgroundColor: "var(--primary-color)",
-                width: "150px",
-                display: { xs: "flex", md: "none" },
-              }}
-            >
-              Upgrade To Pro
-            </Button>
+            {session?.user?.accountType !== "PRO" && (
+              <Button
+                variant="contained"
+                onClick={handlePlansDialogOpen}
+                sx={{
+                  textTransform: "none",
+                  fontFamily: "Lato",
+                  fontSize: "14px",
+                  backgroundColor: "var(--primary-color)",
+                  width: "150px",
+                  display: { xs: "flex", md: "none" },
+                }}
+              >
+                Upgrade To Pro
+              </Button>
+            )}
           </Stack>
 
           <Stack
