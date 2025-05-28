@@ -19,7 +19,6 @@ export async function getGoalList() {
   const command = new ScanCommand(params);
   try {
     const result = await dynamoDB.send(command);
-    console.log(result.Items[0].subjectList);
     return {
       success: true,
       message: "Goal list fetched successfully",

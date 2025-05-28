@@ -18,7 +18,6 @@ import { useSubscription } from "@/src/app/context/SubscriptionProvider";
 export default function PlansDialogBox({
   plansDialogOpen,
   handlePlansDialogClose,
-  sx = {},
 }) {
   const router = useRouter();
   const { plans } = useSubscription();
@@ -26,6 +25,27 @@ export default function PlansDialogBox({
 
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [formattedExpiryInfo, setFormattedExpiryInfo] = useState(null);
+
+  useEffect(() => {
+    if (
+      session?.user?.accountType === "PRO" &&
+      session?.user?.subscriptionExpiresAt
+    ) {
+      const expiresAt = new Date(Number(session.user.subscriptionExpiresAt));
+      const now = new Date();
+      const formattedDate = expiresAt.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+
+      if (expiresAt < now) {
+        setFormattedExpiryInfo(`Expired on ${formattedDate}`);
+      } else {
+        setFormattedExpiryInfo(`Expires on ${formattedDate}`);
+      }
+    }
+  }, [session]);
 
   useEffect(() => {
     if (plans.length > 0 && selectedPlan === null) {
@@ -182,11 +202,13 @@ export default function PlansDialogBox({
                 </Typography>
               )}
               {session?.user?.accountType !== "PRO" && (
-                <Stack sx={{ backgroundColor: "var(--primary-color-acc-2)",
+                <Stack
+                  sx={{
+                    backgroundColor: "var(--primary-color-acc-2)",
                     borderRadius: "5px",
                     padding: "5px",
                     alignItems: "center",
-                    width:'60px'
+                    width: "60px",
                   }}
                 >
                   <Typography
@@ -239,7 +261,24 @@ export default function PlansDialogBox({
               ))}
             </Stack>
 
-            <Stack sx={{ marginTop: "auto" }}>
+            <Stack sx={{ marginTop: "auto", display: "flex", gap: "10px" }}>
+              {formattedExpiryInfo && (
+                <Stack
+                  sx={{
+                    backgroundColor: "var(--primary-color-acc-2)",
+                    color: "var(--primary-color)",
+                    textTransform: "none",
+                    borderRadius: "5px",
+                    padding: "10px",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography sx={{ marginTop: "4px" }}>
+                    {formattedExpiryInfo}
+                  </Typography>
+                </Stack>
+              )}
+
               {session?.user?.accountType === "PRO" ? (
                 <Stack
                   sx={{

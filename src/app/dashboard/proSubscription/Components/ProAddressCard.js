@@ -79,7 +79,11 @@ export default function ProAddressCard({
               }}
             />
             <Typography
-              sx={{ color: "var(--primary-color)", fontWeight: "bold" }}
+              sx={{
+                color: "var(--primary-color)",
+                fontWeight: "bold",
+                fontSize: { xs: "14px", sm: "16px", md: "18px" },
+              }}
             >
               {title}
             </Typography>
@@ -89,7 +93,12 @@ export default function ProAddressCard({
                 onEdit(billingInfo, index);
               }}
             >
-              <Edit sx={{ color: "var(--primary-color)" }} />
+              <Edit
+                sx={{
+                  color: "var(--primary-color)",
+                  fontSize: { xs: "20px", sm: "22px", md: "22px" },
+                }}
+              />
             </IconButton>
           </Stack>
           <Stack>
@@ -105,19 +114,28 @@ export default function ProAddressCard({
                   sx={{ color: "var(--primary-color)" }}
                 />
               ) : (
-                <Delete sx={{ color: "var(--delete-color)" }} />
+                <Delete
+                  sx={{
+                    color: "var(--delete-color)",
+                    fontSize: { xs: "20px", sm: "22px", md: "22px" },
+                  }}
+                />
               )}
             </IconButton>
           </Stack>
         </Stack>
         {/* Address Details */}
         <Stack sx={{ marginTop: "20px" }}>
-          <Typography>
+          <Typography sx={{ fontSize: { xs: "14px", sm: "16px", md: "18px" } }}>
             {billingInfo.firstName} {billingInfo.lastName}
           </Typography>
-          <Typography>{billingInfo.phone}</Typography>
-          <Typography>{billingInfo.address}</Typography>
-          <Typography>
+          <Typography sx={{ fontSize: { xs: "14px", sm: "16px", md: "18px" } }}>
+            {billingInfo.phone}
+          </Typography>
+          <Typography sx={{ fontSize: { xs: "14px", sm: "16px", md: "18px" } }}>
+            {billingInfo.address}
+          </Typography>
+          <Typography sx={{ fontSize: { xs: "14px", sm: "16px", md: "18px" } }}>
             {billingInfo.city}, {billingInfo.state}, {billingInfo.zip}
           </Typography>
         </Stack>

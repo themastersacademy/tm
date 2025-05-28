@@ -1,7 +1,5 @@
 import { Box, Stack, Typography } from "@mui/material";
 import { CheckBox } from "@mui/icons-material";
-import Image from "next/image";
-import proSubscription from "@/public/images/proSubscriptionBanner.svg";
 
 export default function SubscriptionHeader() {
   return (
@@ -28,6 +26,7 @@ export default function SubscriptionHeader() {
             color: "var(--primary-color)",
             textTransform: "uppercase",
             textAlign: "center",
+            fontSize: { xs: "16px", sm: "20px", md: "24px" },
           }}
         >
           Upgrade to Pro
@@ -36,65 +35,77 @@ export default function SubscriptionHeader() {
           <Typography
             sx={{
               fontFamily: "Lato",
-              fontSize: "18px",
+              fontSize: { xs: "14px", sm: "16px", md: "18px" },
               fontWeight: "bold",
             }}
           >
             For Students & Aspirants
           </Typography>
           <Stack flexDirection="row" gap="10px" alignItems="center">
-            <CheckBox sx={{ color: "var(--sec-color)" }} />
+            <CheckBox
+              sx={{
+                color: "var(--sec-color)",
+                fontSize: { xs: "16px", sm: "18px", md: "20px" },
+              }}
+            />
             <Typography
               sx={{
                 fontFamily: "Lato",
-                fontSize: "16px",
+                fontSize: { xs: "14px", sm: "16px", md: "18px" },
               }}
             >
               Unlimited practise tests
             </Typography>
           </Stack>
           <Stack flexDirection="row" gap="10px" alignItems="center">
-            <CheckBox sx={{ color: "var(--sec-color)" }} />
+            <CheckBox
+              sx={{
+                color: "var(--sec-color)",
+                fontSize: { xs: "16px", sm: "18px", md: "20px" },
+              }}
+            />
             <Typography
               sx={{
                 fontFamily: "Lato",
-                fontSize: "16px",
+                fontSize: { xs: "14px", sm: "16px", md: "18px" },
               }}
             >
               Advanced mock tests
             </Typography>
           </Stack>
           <Stack flexDirection="row" gap="10px" alignItems="center">
-            <CheckBox sx={{ color: "var(--sec-color)" }} />
+            <CheckBox
+              sx={{
+                color: "var(--sec-color)",
+                fontSize: { xs: "16px", sm: "18px", md: "20px" },
+              }}
+            />
             <Typography
               sx={{
                 fontFamily: "Lato",
-                fontSize: "16px",
+                fontSize: { xs: "14px", sm: "16px", md: "18px" },
               }}
             >
               Free video courses
             </Typography>
           </Stack>
           <Stack flexDirection="row" gap="10px" alignItems="center">
-            <CheckBox sx={{ color: "var(--sec-color)" }} />
+            <CheckBox
+              sx={{
+                color: "var(--sec-color)",
+                fontSize: { xs: "16px", sm: "18px", md: "20px" },
+              }}
+            />
             <Typography
               sx={{
                 fontFamily: "Lato",
-                fontSize: "16px",
+                fontSize: { xs: "14px", sm: "16px", md: "18px" },
               }}
             >
               Advanced tracking
             </Typography>
           </Stack>
         </Stack>
-      </Stack>
-
-      {/* Course Title */}
-      <Stack sx={{ paddingTop: "10px", display: { sm: "none", md: "block" } }}>
-        {/* <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
-          {courseDetails?.title}
-          Title
-        </Typography> */}
       </Stack>
     </Box>
   );

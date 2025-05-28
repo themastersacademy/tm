@@ -86,7 +86,9 @@ export default function BillingInformation({
                 />
               }
               label={
-                <Typography>
+                <Typography
+                  sx={{ fontSize: { xs: "10px", sm: "14px", md: "16px" } }}
+                >
                   {editIndex !== null
                     ? "Edit Billing Address"
                     : "Add Billing Address"}
@@ -105,6 +107,7 @@ export default function BillingInformation({
                   borderRadius: "8px",
                   height: "40px",
                   opacity: isFormFilled() ? 1 : 0.6,
+                  fontSize: { xs: "10px", sm: "14px", md: "16px" },
                 }}
                 onClick={
                   editIndex !== null

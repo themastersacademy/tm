@@ -1,4 +1,5 @@
 import { getExamAttemptByID } from "@/src/libs/exams/examController";
+import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
 export async function GET(req, { params }) {
   const { examID, attemptID } = await params;
@@ -8,15 +9,12 @@ export async function GET(req, { params }) {
       message: "Exam ID and attempt ID are required",
     });
   }
-
-  try {
-    const response = await getExamAttemptByID(attemptID);
-
-    return Response.json(response);
-  } catch (error) {
-    return Response.json({
-      success: false,
-      message: error.message,
-    });
-  }
+  return withAuth(async (session) => {
+    try {
+      const response = await getExamAttemptByID(attemptID, session.id);
+      return Response.json(response);
+    } catch (error) {
+      return handleError(error);
+    }
+  });
 }

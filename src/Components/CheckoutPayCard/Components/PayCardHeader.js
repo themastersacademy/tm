@@ -37,7 +37,12 @@ export default function PayCardHeader({ courseDetails }) {
         {isLoading ? (
           <Skeleton variant="text" width="80%" height={24} />
         ) : (
-          <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
+          <Typography
+            sx={{
+              fontWeight: "bold",
+              fontSize: { xs: "14px", sm: "16px", md: "18px" },
+            }}
+          >
             {courseDetails?.title}
           </Typography>
         )}
