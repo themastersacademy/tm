@@ -169,6 +169,7 @@ export async function startExam({ examID, userID }) {
   if (!exam.isLifeTime && exam.endTimeStamp < now) {
     throw new Error("Exam ended");
   }
+  let batchMeta;
   let batchID;
   if (exam.type === "scheduled") {
     const response = await getUserBatches(userID);
@@ -181,9 +182,16 @@ export async function startExam({ examID, userID }) {
       throw new Error("User is not enrolled in the batch of this exam");
     }
     batchID = batch.batchID;
+    batchMeta = batch.batchMeta;
   }
 
   const examAttemptID = randomUUID();
+  const userMeta = {
+    id: userID,
+    name: user.name,
+    email: user.email,
+    image: user.image,
+  };
 
   const seed = exam.settings.isRandomQuestion
     ? Math.floor(Math.random() * 2 ** 31) // 32-bit integer
@@ -204,10 +212,11 @@ export async function startExam({ examID, userID }) {
       "GSI1-sKey": `EXAM_ATTEMPT@${userID}`,
       id: examAttemptID,
       userID,
+      userMeta,
+      ...(exam.type === "scheduled" ? { batchMeta } : {}),
       examID,
       title: exam.title,
       seed,
-      // TODO: Add goalID to the exam when the exam is mock, group exam and practice exam.
       goalID:
         exam.type === "mock" ||
         exam.type === "group" ||

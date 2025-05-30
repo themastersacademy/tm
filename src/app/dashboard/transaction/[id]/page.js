@@ -27,7 +27,7 @@ export default function Transaction() {
   const [error, setError] = useState(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [retryPaymentInfo, setRetryPaymentInfo] = useState(null);
-  const [shouldFetch, setShouldFetch] = useState(true); // New state to control fetch
+  const [shouldFetch, setShouldFetch] = useState(true);
 
   const userID = session?.user?.id;
 
@@ -54,7 +54,31 @@ export default function Transaction() {
         setTransaction(tx);
         setStatus(tx.status || "failed");
 
-        // Only call update if status is completed
+        if (tx.status === "pending" && tx.order?.id) {
+          const checkStatusResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/api/checkout/course-enroll/check-transaction-status`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                transactionID,
+                razorpayOrderId: tx.order.id,
+              }),
+            }
+          );
+
+          const checkStatusData = await checkStatusResponse.json();
+          if (checkStatusData.success) {
+            setStatus(checkStatusData.status);
+            setTransaction({ ...tx, status: checkStatusData.status });
+            if (checkStatusData.status === "completed") {
+              update();
+            }
+          }
+        }
+
         if (tx.status === "completed") {
           update();
         }
@@ -65,9 +89,9 @@ export default function Transaction() {
       setError(err.message);
       setStatus("error");
     } finally {
-      setShouldFetch(false); // Prevent further fetches until needed
+      setShouldFetch(false);
     }
-  }, [transactionID, userID]);
+  }, [transactionID, update, userID]);
 
   useEffect(() => {
     if (
@@ -78,13 +102,29 @@ export default function Transaction() {
     ) {
       return;
     }
-    fetchTransactionStatus();
+
+    let pollingInterval;
+    const fetchAndPoll = async () => {
+      await fetchTransactionStatus();
+      if (status === "pending") {
+        pollingInterval = setInterval(fetchTransactionStatus, 5000);
+      }
+    };
+
+    fetchAndPoll();
+
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
   }, [
     transactionID,
     userID,
     sessionStatus,
     shouldFetch,
     fetchTransactionStatus,
+    status,
   ]);
 
   const retryPayment = async () => {
@@ -122,16 +162,23 @@ export default function Transaction() {
         description: `Retry Payment for Course Enrollment`,
         billingInfo: transaction.billingInfo,
       });
-    } catch (error) {
-      enqueueSnackbar("Payment retry failed. Please try again.", {
-        variant: "error",
+
+      enqueueSnackbar("Payment retry initiated successfully", {
+        variant: "success",
       });
+    } catch (error) {
+      enqueueSnackbar(
+        error.message || "Payment retry failed. Please try again.",
+        {
+          variant: "error",
+        }
+      );
     }
   };
 
   const handlePaymentClose = useCallback(() => {
     setPaymentLoading(false);
-    setShouldFetch(true); // Trigger fetch after retry payment
+    setShouldFetch(true);
   }, []);
 
   const renderIcon = () => {
@@ -139,7 +186,7 @@ export default function Transaction() {
       return <CancelIcon sx={{ color: "red", fontSize: "40px" }} />;
     if (status === "completed")
       return <CheckCircleIcon sx={{ color: "green", fontSize: "40px" }} />;
-    if (status === "failed" || status === "created")
+    if (status === "failed" || status === "pending" || status === "cancelled")
       return <CancelIcon sx={{ color: "red", fontSize: "40px" }} />;
     return <CircularProgress sx={{ color: "var(--primary-color)" }} />;
   };
@@ -160,8 +207,12 @@ export default function Transaction() {
       ? "Error Fetching Transaction"
       : status === "completed"
       ? "Payment Success!"
-      : status === "failed" || status === "created"
+      : status === "failed"
       ? "Payment Failed!"
+      : status === "cancelled"
+      ? "Payment Cancelled!"
+      : status === "pending"
+      ? "Payment Pending!"
       : "Loading Transaction...";
 
   const message =
@@ -169,8 +220,12 @@ export default function Transaction() {
       ? error
       : status === "completed"
       ? "Your payment has been successfully done."
-      : status === "failed" || status === "created"
+      : status === "failed"
       ? "Your payment has failed. Please try again."
+      : status === "cancelled"
+      ? "Your payment was cancelled. Please try again."
+      : status === "pending"
+      ? "Your payment is pending. Please complete the payment."
       : "Fetching transaction details...";
 
   if (status === "loading") {
@@ -260,7 +315,7 @@ export default function Transaction() {
         <PaymentLoadingOverlay
           setPaymentLoading={setPaymentLoading}
           {...retryPaymentInfo}
-          onClose={handlePaymentClose} // Use the new callback
+          onClose={handlePaymentClose}
         />
       )}
       <Stack
@@ -297,7 +352,8 @@ export default function Transaction() {
 
           {(status === "completed" ||
             status === "failed" ||
-            status === "created") && (
+            status === "pending" ||
+            status === "cancelled") && (
             <>
               <hr
                 style={{
@@ -492,10 +548,12 @@ export default function Transaction() {
         </Stack>
         <Stack
           direction={{ xs: "column", sm: "row", md: "row", lg: "row" }}
-          gap={{ xs: 0, sm: 2, md: 2, lg: 2 }}
+          gap={{ xs: 0, sm: 1, md: 2, lg:2 }}
           justifyContent="center"
         >
-          {(status === "failed" || status === "created") && (
+          {(status === "failed" ||
+            status === "pending" ||
+            status === "cancelled") && (
             <Button
               variant="contained"
               onClick={retryPayment}

@@ -20,7 +20,7 @@ export default function Store() {
       flexWrap="wrap"
       justifyContent={{ xs: "center", sm: "flex-start", md: "flex-start" }}
       alignItems={{ xs: "center", sm: "flex-start", md: "flex-start" }}
-      sx={{ columnGap: { xs: "4px", md: "15px" }, rowGap: "10px" }}
+      sx={{ columnGap: { xs: "4px", md: "20px" }, rowGap: "10px" }}
       gap={{ xs: "10px", sm: "15px", md: "15px" }}
     >
       {!loading ? (

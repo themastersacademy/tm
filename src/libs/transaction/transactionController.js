@@ -4,24 +4,32 @@ import {
   UpdateCommand,
   GetCommand,
   QueryCommand,
+  ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto";
-import { createOrder, verifyPaymentWithSignature } from "@/src/utils/razorpay";
+import {
+  createOrder,
+  verifyPaymentWithSignature,
+  getOrderStatus,
+} from "@/src/utils/razorpay";
 
 const USER_TABLE = `${process.env.AWS_DB_NAME}users`;
 const USER_TABLE_INDEX = "GSI1-index";
 
-export async function createTransaction({ userID, document, amount, userMeta }) {
+export async function createTransaction({
+  userID,
+  document,
+  amount,
+  userMeta,
+}) {
   if (!userID || !document || typeof amount !== "number" || !userMeta) {
     throw new Error("createTransaction: missing or invalid parameters");
   }
   const now = Date.now();
   const transactionID = randomUUID();
 
-  // 1) Create the Razorpay order
   const order = await createOrder(amount, userID);
 
-  // 2) Persist the transaction record in DynamoDB
   await dynamoDB.send(
     new PutCommand({
       TableName: USER_TABLE,
@@ -33,18 +41,17 @@ export async function createTransaction({ userID, document, amount, userMeta }) 
         document,
         userMeta,
         amount,
-        order, // embed the entire order object
-        paymentDetails: null, // will be updated later
+        order,
+        paymentDetails: null,
+        status: "pending",
         createdAt: now,
         updatedAt: now,
       },
-      // optionally guard against accidental overwrite:
       ConditionExpression: "attribute_not_exists(pKey)",
     })
   );
 
   const transaction = await getTransaction({ transactionID, userID });
-
   return transaction;
 }
 
@@ -57,13 +64,10 @@ export async function verifyPayment({
     throw new Error("verifyPayment: missing parameters");
   }
 
-  // Fetch transaction by Razorpay order ID
   const transaction = await getTransaction({ razorpayOrderId });
   if (!transaction) {
     throw new Error("Transaction not found");
   }
-
-  // Verify payment signature with Razorpay
 
   const payment = await verifyPaymentWithSignature({
     razorpayOrderId,
@@ -72,7 +76,6 @@ export async function verifyPayment({
   });
 
   const now = Date.now();
-  // Update transaction with payment details and status
   const updateTransactionParams = {
     TableName: USER_TABLE,
     Key: {
@@ -154,7 +157,7 @@ export async function getTransaction({
         pKey: `TRANSACTION#${transactionID}`,
         sKey: `TRANSACTIONS@${userID}`,
       },
-      ConsistentRead: true, // Ensure strongly consistent read
+      ConsistentRead: true,
     };
 
     const transactionResult = await dynamoDB.send(new GetCommand(params));
@@ -187,7 +190,200 @@ export async function getTransaction({
   throw new Error("Invalid parameters for getTransaction");
 }
 
-// Helper function to fetch plan duration from course enrollment
+export async function cancelTransaction({
+  transactionID,
+  razorpayOrderId,
+  userID,
+}) {
+  if (!transactionID || !razorpayOrderId || !userID) {
+    throw new Error("cancelTransaction: missing parameters");
+  }
+
+  const transaction = await getTransaction({ razorpayOrderId });
+  if (!transaction) {
+    throw new Error("Transaction not found");
+  }
+
+  if (transaction.sKey !== `TRANSACTIONS@${userID}`) {
+    throw new Error("Unauthorized: Transaction does not belong to user");
+  }
+
+  if (transaction.status === "completed") {
+    throw new Error("Cannot cancel a completed transaction");
+  }
+
+  const now = Date.now();
+  const updateParams = {
+    TableName: USER_TABLE,
+    Key: {
+      pKey: transaction.pKey,
+      sKey: transaction.sKey,
+    },
+    UpdateExpression: "set #status = :status, updatedAt = :updatedAt",
+    ExpressionAttributeNames: {
+      "#status": "status",
+    },
+    ExpressionAttributeValues: {
+      ":status": "cancelled",
+      ":updatedAt": now,
+    },
+    ConditionExpression: "#status <> :completedStatus",
+    ExpressionAttributeValues: {
+      ":status": "cancelled",
+      ":updatedAt": now,
+      ":completedStatus": "completed",
+    },
+  };
+
+  await dynamoDB.send(new UpdateCommand(updateParams));
+
+  return {
+    success: true,
+    message: "Transaction cancelled successfully",
+  };
+}
+
+export async function checkAndUpdateTransactionStatus({
+  transactionID,
+  razorpayOrderId,
+  userID,
+}) {
+  if (!transactionID || !razorpayOrderId || !userID) {
+    throw new Error("checkAndUpdateTransactionStatus: missing parameters");
+  }
+
+  const transaction = await getTransaction({ razorpayOrderId });
+  if (!transaction) {
+    throw new Error("Transaction not found");
+  }
+
+  if (transaction.sKey !== `TRANSACTIONS@${userID}`) {
+    throw new Error("Unauthorized: Transaction does not belong to user");
+  }
+
+  if (
+    transaction.status === "completed" ||
+    transaction.status === "cancelled"
+  ) {
+    return {
+      success: true,
+      message: `Transaction already in ${transaction.status} state`,
+      status: transaction.status,
+    };
+  }
+
+  const now = Date.now();
+  const timeoutThreshold = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  const isExpired = now - transaction.createdAt > timeoutThreshold;
+
+  // Check Razorpay order status
+  const order = await getOrderStatus(razorpayOrderId);
+  let newStatus = "pending";
+
+  if (isExpired) {
+    newStatus = "cancelled"; // Cancel if order is expired
+  } else if (order.status === "created" || order.status === "attempted") {
+    newStatus = "pending"; // Keep pending if order is still open
+  } else if (order.status === "paid") {
+    // If order is paid, check payment status
+    try {
+      const payments = await razorpay.orders.fetchPayments(razorpayOrderId);
+      if (payments.items && payments.items.length > 0) {
+        const latestPayment = payments.items[0]; // Get the latest payment
+        if (latestPayment.status === "captured") {
+          newStatus = "completed";
+        } else if (
+          latestPayment.status === "failed" ||
+          latestPayment.status === "refunded"
+        ) {
+          newStatus = "failed";
+        } else {
+          newStatus = "pending"; // Other statuses like "authorized" remain pending
+        }
+      } else {
+        newStatus = "pending"; // No payments yet
+      }
+    } catch (error) {
+      console.error("Error fetching payment status:", error);
+      newStatus = "pending"; // Default to pending if payment check fails
+    }
+  } else {
+    newStatus = "cancelled"; // Any other order status (e.g., expired)
+  }
+
+  // Update transaction status in DynamoDB if changed
+  if (transaction.status !== newStatus) {
+    const updateParams = {
+      TableName: USER_TABLE,
+      Key: {
+        pKey: transaction.pKey,
+        sKey: transaction.sKey,
+      },
+      UpdateExpression: "set #status = :status, updatedAt = :updatedAt",
+      ExpressionAttributeNames: {
+        "#status": "status",
+      },
+      ExpressionAttributeValues: {
+        ":status": newStatus,
+        ":updatedAt": now,
+      },
+    };
+
+    await dynamoDB.send(new UpdateCommand(updateParams));
+  }
+
+  return {
+    success: true,
+    message: `Transaction status updated to ${newStatus}`,
+    status: newStatus,
+  };
+}
+
+export async function getUserTransactions({ userID }) {
+  if (!userID) {
+    throw new Error("User ID is required");
+  }
+
+  const params = {
+    TableName: USER_TABLE,
+    FilterExpression: "#sKey = :sKey AND begins_with(#pKey, :pKeyPrefix)",
+    ExpressionAttributeNames: {
+      "#pKey": "pKey",
+      "#sKey": "sKey",
+    },
+    ExpressionAttributeValues: {
+      ":pKeyPrefix": "TRANSACTION#",
+      ":sKey": `TRANSACTIONS@${userID}`,
+    },
+  };
+
+  try {
+    const result = await dynamoDB.send(new ScanCommand(params));
+    // Filter valid transactions server-side
+    const validTransactions = (result.Items || []).filter((item) => {
+      if (!item.status) {
+        console.warn("Transaction missing status:", item);
+        return false;
+      }
+      return ["pending", "completed", "failed", "cancelled"].includes(
+        item.status
+      );
+    });
+
+    return {
+      success: true,
+      data: validTransactions,
+      message:
+        validTransactions.length > 0
+          ? "Transactions retrieved successfully"
+          : "No transactions found",
+    };
+  } catch (error) {
+    console.error("Error fetching user transactions:", error);
+    throw new Error(`Failed to fetch transactions: ${error.message}`);
+  }
+}
+
 async function getDocument(pKey, sKey) {
   const params = {
     TableName: USER_TABLE,
@@ -203,7 +399,6 @@ async function getDocument(pKey, sKey) {
   return result.Item;
 }
 
-// Helper function to calculate expiresAt based on plan duration
 function calculateExpiresAt(duration, type, now) {
   const date = new Date(now);
   if (type === "MONTHLY") {

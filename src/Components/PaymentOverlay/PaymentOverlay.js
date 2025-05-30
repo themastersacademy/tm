@@ -5,6 +5,7 @@ import paymentGif from "@/public/images/payment-gif.gif";
 import { useRouter } from "next/navigation";
 import { enqueueSnackbar } from "notistack";
 import Script from "next/script";
+import Masters_logo from "@/public/images/masters-logo.svg";
 
 export default function PaymentOverlay({
   order,
@@ -25,6 +26,7 @@ export default function PaymentOverlay({
         name: process.env.NEXT_PUBLIC_COMPANY_NAME,
         description: description,
         order_id: order.id,
+        image: Masters_logo.src,
         handler: async function (response) {
           try {
             const verifyResponse = await fetch(
@@ -42,9 +44,20 @@ export default function PaymentOverlay({
               }
             );
 
-            await verifyResponse.json();
+            const verifyResult = await verifyResponse.json();
+
+            // Check if verification was successful
+            if (verifyResult.success) {
+              enqueueSnackbar("Payment successful!", {
+                variant: "success",
+              });
+            } else {
+              throw new Error(
+                verifyResult.message || "Payment verification failed"
+              );
+            }
           } catch (error) {
-            enqueueSnackbar("Payment verification failed", {
+            enqueueSnackbar(error.message || "Payment verification failed", {
               variant: "error",
             });
           } finally {
@@ -61,10 +74,37 @@ export default function PaymentOverlay({
           color: "#187163",
         },
         modal: {
-          ondismiss: function () {
-            onClose && onClose();
-            enqueueSnackbar("Payment cancelled", { variant: "error" });
-            router.push(`/dashboard/transaction/${transactionID}`);
+          ondismiss: async function () {
+            try {
+              const cancelResponse = await fetch(
+                `${process.env.NEXT_PUBLIC_BASE_URL}/api/checkout/course-enroll/cancel-transaction`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    transactionID,
+                    razorpayOrderId: order.id,
+                  }),
+                }
+              );
+
+              const cancelResult = await cancelResponse.json();
+              if (!cancelResult.success) {
+                throw new Error(
+                  cancelResult.message || "Failed to cancel transaction"
+                );
+              }
+              enqueueSnackbar("Payment cancelled", { variant: "info" });
+            } catch (error) {
+              enqueueSnackbar(error.message || "Failed to cancel transaction", {
+                variant: "error",
+              });
+            } finally {
+              onClose && onClose();
+              router.push(`/dashboard/transaction/${transactionID}`);
+            }
           },
         },
       };
