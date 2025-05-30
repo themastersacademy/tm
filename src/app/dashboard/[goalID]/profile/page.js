@@ -1,7 +1,7 @@
 "use client";
 import MobileHeader from "@/src/Components/MobileHeader/MobileHeader";
 import { Edit, Logout } from "@mui/icons-material";
-import { Button, Stack, Typography, IconButton } from "@mui/material";
+import { Button, Stack, Typography, IconButton, CircularProgress } from "@mui/material";
 import incrix_logo from "@/public/images/incrix-logo.svg";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
@@ -10,16 +10,15 @@ import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
-// import { useSubscription } from "@/src/app/context/SubscriptionProvider";
 import VerticalTabs from "@/src/Components/VerticalTabs/VerticalTabs";
 import BasicInfo from "./Components/BasicInfo";
+import UserTransaction from "./Components/userTransaction";
 
 export default function Profile() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
-  // const { plans } = useSubscription();
 
   const handlePlansDialogOpen = () => {
     setPlansDialogOpen(true);
@@ -29,7 +28,6 @@ export default function Profile() {
     setPlansDialogOpen(false);
   };
 
-  // Debug session state and redirect on unauthenticated
   useEffect(() => {
     console.log("Profile.js - Session Status:", status, "Session:", session);
     if (status === "unauthenticated") {
@@ -38,7 +36,6 @@ export default function Profile() {
     }
   }, [status, router]);
 
-  // Handle logout with feedback
   const handleLogout = async () => {
     try {
       await signOut({ redirect: false });
@@ -74,7 +71,12 @@ export default function Profile() {
   };
 
   if (status === "loading") {
-    return <Typography>Loading</Typography>;
+    return (
+      <Stack alignItems="center" justifyContent="center" minHeight="100vh">
+        <CircularProgress />
+        <Typography sx={{ mt: 2, fontFamily: "Lato" }}>Loading...</Typography>
+      </Stack>
+    );
   }
 
   const tabsData = [
@@ -82,7 +84,10 @@ export default function Profile() {
       label: "Basic Info",
       content: <BasicInfo session={session} handleLogout={handleLogout} />,
     },
-    { label: "Transaction", content: "Transaction" },
+    {
+      label: "Payment",
+      content: <UserTransaction userID={session?.user?.id} />,
+    },
   ];
 
   return (
@@ -216,9 +221,10 @@ export default function Profile() {
                 color: "var(--text3)",
               }}
             >
-              Crafted by Incrix Techlutions LLP, Tamil Nadu.
+              Crafted by Incrix Techlutions LLP, Tamil Nadu, India
             </Typography>
             <Typography
+            variant="body2"
               sx={{
                 fontFamily: "Lato",
                 fontSize: "12px",
