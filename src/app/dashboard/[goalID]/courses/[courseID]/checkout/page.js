@@ -20,7 +20,6 @@ export default function Checkout() {
   const courseID = params.courseID;
   const searchParams = useSearchParams();
   const planIndex = searchParams.get("plan");
-  console.log("planIndex", planIndex);
   const { data: session } = useSession();
   const router = useRouter();
   const [courseDetails, setCourseDetails] = useState(null);
@@ -44,9 +43,11 @@ export default function Checkout() {
   const [selectedAddressIndex, setSelectedAddressIndex] = useState(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState(null);
-  
+
   const handleAddressSelect = (index) => {
-    setSelectedAddressIndex((prevIndex) => (prevIndex === index ? null : index));
+    setSelectedAddressIndex((prevIndex) =>
+      prevIndex === index ? null : index
+    );
   };
 
   const courseEnroll = async () => {
@@ -109,7 +110,11 @@ export default function Checkout() {
     if (data.success) {
       setCourseDetails(data.data);
       const index = parseInt(planIndex, 10);
-      if (!isNaN(index) && index >= 0 && index < data.data.subscription.plans.length) {
+      if (
+        !isNaN(index) &&
+        index >= 0 &&
+        index < data.data.subscription.plans.length
+      ) {
         setSelectedPlan(data.data.subscription.plans[index]);
       } else {
         setSelectedPlan(data.data.subscription.plans[0]);
@@ -157,7 +162,6 @@ export default function Checkout() {
     if (!session?.user?.id) {
       console.warn("User not authenticated, cannot fetch billing info");
       setBillingInfoList([]);
-      // setIsBillingInfoLoading(false);
       return;
     }
     setIsLoading(true);
@@ -186,8 +190,6 @@ export default function Checkout() {
       enqueueSnackbar(error.message, {
         variant: "error",
       });
-    } finally {
-      // setIsBillingInfoLoading(false);
     }
   }, [session?.user?.id]);
 
@@ -234,8 +236,6 @@ export default function Checkout() {
           state: "",
           pin,
         }));
-        setCityDisabled(false);
-        setStateDisabled(false);
       }
     } else {
       setBillingInfo((prev) => ({
@@ -244,8 +244,6 @@ export default function Checkout() {
         state: "",
         pin,
       }));
-      setCityDisabled(true);
-      setStateDisabled(true);
     }
   };
 

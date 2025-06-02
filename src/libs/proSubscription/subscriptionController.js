@@ -106,8 +106,6 @@ export async function createProSubscription({
     amount: priceBreakdown.totalPrice,
   });
 
-  console.log(transaction);
-
   const params = {
     TableName: USER_TABLE,
     Item: {
@@ -148,21 +146,18 @@ export async function getValidProSubscription(userID) {
     IndexName: USER_TABLE_INDEX,
     KeyConditionExpression: "#gsi1pk = :pKey AND #gsi1sk = :sKey",
     // filter for active and not expired and subscriptionSource
-    FilterExpression:
-      "#status = :status AND #expiresAt > :now AND #subscriptionSource = :subscriptionSource",
+    FilterExpression: "#status = :status AND #expiresAt > :now",
     ExpressionAttributeNames: {
       "#gsi1pk": "GSI1-pKey",
       "#gsi1sk": "GSI1-sKey",
       "#status": "status",
       "#expiresAt": "expiresAt",
-      "#subscriptionSource": "subscriptionSource",
     },
     ExpressionAttributeValues: {
       ":pKey": `PRO_SUBSCRIPTION#${userID}`,
       ":sKey": "PRO_SUBSCRIPTIONS",
       ":status": "active",
       ":now": Date.now(),
-      ":subscriptionSource": "USER_SUBSCRIPTION",
     },
   };
 

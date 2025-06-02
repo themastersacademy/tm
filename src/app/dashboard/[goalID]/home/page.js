@@ -28,12 +28,22 @@ import { useGoals } from "@/src/app/context/GoalProvider";
 import { useSession } from "next-auth/react";
 
 export default function HomePage() {
-  const { banners, loading, refetchBanners } = useBanners();
-  const { goals, loading: goalLoading, refetchGoals } = useGoals();
   const router = useRouter();
   const params = useParams();
   const goalID = params.goalID;
+
   const { data: session } = useSession();
+  const { banners, loading: bannerLoading } = useBanners();
+  const { goals, loading: goalLoading } = useGoals();
+
+  const isLoading = bannerLoading;
+
+  const handleGoalClick = (id) => {
+    router.push(`/dashboard/${goalID}/home/${id}`);
+  };
+
+  const renderGoalIcon = (type) =>
+    type === "castle" ? gate_cse : type === "org" ? banking : placements;
 
   return (
     <>
@@ -46,39 +56,30 @@ export default function HomePage() {
         sx={{ marginBottom: { xs: "80px", md: "0px" } }}
       >
         <Stack padding={{ xs: "10px", md: "20px" }} gap="20px" width="100%">
-          <Stack
-            width="100%"
-            maxWidth="1200px"
-            sx={{ display: { xs: "none", md: "block" } }}
-          >
-            {loading ? <HeaderSkeleton /> : <Header />}
-          </Stack>
-          {loading ? (
+          {/* Desktop Header */}
+          <Box sx={{ display: { xs: "none", md: "block" } }}>
+            {isLoading ? <HeaderSkeleton /> : <Header />}
+          </Box>
+
+          {/* Banner */}
+          {isLoading ? (
             <PageSkeleton />
           ) : (
             <>
-              <Stack width="100%" maxWidth="1200px">
-                {loading ? (
-                  <HomeBannerSkeleton key="skeleton" />
-                ) : (
-                  <BannerCarousel banners={banners} />
-                )}
-              </Stack>
+              <Box width="100%">
+                {isLoading ? <HomeBannerSkeleton /> : <BannerCarousel banners={banners} />}
+              </Box>
+
               <InfoCard />
-              <Stack gap="20px" width="100%" maxWidth="1200px">
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "16px",
-                    fontWeight: "700",
-                  }}
-                >
+
+              {/* Goals Section */}
+              <Stack gap="20px">
+                <Typography variant="h6" fontWeight={700}>
                   Goals
                 </Typography>
                 <Box
                   sx={{
-                    overflowX: { xs: "auto", md: "" },
+                    overflowX: { xs: "auto", md: "initial" },
                     whiteSpace: "nowrap",
                     scrollbarWidth: "none",
                     "&::-webkit-scrollbar": { display: "none" },
@@ -86,51 +87,39 @@ export default function HomePage() {
                   }}
                 >
                   <Stack
-                    flexDirection="row"
-                    flexWrap={{ xs: "wrap" }}
+                    direction="row"
+                    flexWrap={{ xs: "wrap", md: "nowrap" }}
                     gap="10px"
-                    sx={{
-                      minWidth: { xs: "max-content", md: "100%" },
-                    }}
+                    minWidth={{ xs: "max-content", md: "100%" }}
                   >
                     {goalLoading ? (
-                      <Stack direction="row" gap="10px">
+                      <>
                         <PrimaryCardSkeleton />
                         <PrimaryCardSkeleton />
-                      </Stack>
+                      </>
                     ) : goals.length > 0 ? (
-                      goals.map((item, index) => (
+                      goals.map((goal) => (
                         <PrimaryCard
-                          key={index}
-                          title={item.title}
+                          key={goal.id}
+                          title={goal.title}
+                          icon={renderGoalIcon(goal.icon)}
+                          enrolled={goal.enrolled}
                           actionButton={
                             <Button
                               variant="text"
                               endIcon={<East />}
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/${goalID}/home/${item.id}`
-                                )
-                              }
+                              onClick={() => handleGoalClick(goal.id)}
                               sx={{
                                 textTransform: "none",
                                 fontFamily: "Lato",
                                 color: "var(--primary-color)",
                                 fontSize: "14px",
-                                padding: "2px",
+                                p: "2px",
                               }}
                             >
                               Enrolled
                             </Button>
                           }
-                          icon={
-                            item.icon === "castle"
-                              ? gate_cse
-                              : item.icon === "org"
-                              ? banking
-                              : placements
-                          }
-                          enrolled={item.enrolled}
                         />
                       ))
                     ) : (
@@ -139,30 +128,17 @@ export default function HomePage() {
                   </Stack>
                 </Box>
               </Stack>
-              <Stack
-                sx={{ display: { xs: "flex", md: "none" }, width: "100%" }}
-              >
-                <Stack
-                  flexDirection="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ marginBottom: "15px" }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: "Lato",
-                      fontSize: "16px",
-                      fontWeight: "700",
-                    }}
-                  >
+
+              {/* Store Section for Mobile */}
+              <Stack sx={{ display: { xs: "flex", md: "none" } }}>
+                <Stack direction="row" justifyContent="space-between" mb={2}>
+                  <Typography variant="h6" fontWeight={700}>
                     Store
                   </Typography>
                   <Button
                     variant="text"
                     endIcon={<East />}
-                    onClick={() => {
-                      router.push(`/dashboard/${goalID}/courses`);
-                    }}
+                    onClick={() => router.push(`/dashboard/${goalID}/courses`)}
                     sx={{
                       textTransform: "none",
                       color: "var(--primary-color)",
@@ -174,22 +150,16 @@ export default function HomePage() {
                 </Stack>
                 <Store />
               </Stack>
-              <Stack gap="20px" width="100%" maxWidth="1200px">
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "16px",
-                    fontWeight: "700",
-                  }}
-                >
+
+              {/* How It Works */}
+              <Stack gap="20px">
+                <Typography variant="h6" fontWeight={700}>
                   How does this work
                 </Typography>
                 <Stack
-                  flexDirection="row"
+                  direction="row"
                   flexWrap="wrap"
                   gap="20px"
-                  alignItems="center"
                   justifyContent={{ xs: "center", md: "flex-start" }}
                 >
                   <HowDoes
@@ -210,8 +180,9 @@ export default function HomePage() {
                 </Stack>
                 <InsightCard />
               </Stack>
+
+              {/* Conditional Crack Test */}
               {session?.user?.accountType !== "PRO" && <CrackTest />}
-              {/* <CrackTest /> */}
               <FAQSect />
             </>
           )}

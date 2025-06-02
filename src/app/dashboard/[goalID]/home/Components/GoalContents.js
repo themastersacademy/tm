@@ -15,6 +15,10 @@ export default function GoalContents({ blogList, onClick, selectedBlog }) {
       <Stack spacing={0}>
         {blogList.map((item, index) => {
           const isActive = selectedBlog?.blogID === item.blogID;
+          // console.log("selectedBlog.blogID:", selectedBlog?.blogID);
+          // console.log("item.blogID:", item.blogID);
+          // console.log("isActive:", selectedBlog?.blogID === item.blogID);
+
           return (
             <Box key={item.blogID}>
               <Box

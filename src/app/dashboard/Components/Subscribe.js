@@ -1,8 +1,19 @@
 import { Button, Stack, Typography } from "@mui/material";
+import { useState } from "react";
 import Image from "next/image";
 import SubscribeBanner from "@/public/images/subscribeBanner.svg";
+import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
 
 export default function Subscribe() {
+  const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+
+  const handlePlansDialogOpen = () => {
+    setPlansDialogOpen(true);
+  };
+  const handlePlansDialogClose = () => {
+    setPlansDialogOpen(false);
+  };
+
   return (
     <Stack
       flexDirection={{ xs: "column", md: "row" }}
@@ -67,6 +78,7 @@ export default function Subscribe() {
         </Stack>
         <Button
           variant="contained"
+          onClick={handlePlansDialogOpen}
           sx={{
             textTransform: "none",
             backgroundColor: "var(--primary-color)",
@@ -78,13 +90,12 @@ export default function Subscribe() {
           Subscribe
         </Button>
       </Stack>
+      <PlansDialogBox
+        plansDialogOpen={plansDialogOpen}
+        handlePlansDialogClose={handlePlansDialogClose}
+      />
       <Stack>
-        <Image
-          src={SubscribeBanner}
-          alt="subscribe"
-          width={340}
-          height={320}
-        />
+        <Image src={SubscribeBanner} alt="subscribe" width={340} height={320} />
       </Stack>
     </Stack>
   );

@@ -1,14 +1,24 @@
 "use client";
-import { Button, Skeleton, Stack, Typography } from "@mui/material";
+import { useState } from "react";
+import { Button, Stack, Typography } from "@mui/material";
 import Image from "next/image";
 import gate_cse from "@/public/icons/gate_cse.svg";
 import banking from "@/public/icons/banking.svg";
 import placements from "@/public/icons/placements.svg";
 import { ArrowBackIosRounded, East } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
 
-export default function GoalHead({ goal, goalLoading, title, icon, isPro }) {
+export default function GoalHead({ title, icon, isPro }) {
   const router = useRouter();
+  const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+
+  const handlePlansDialogOpen = () => {
+    setPlansDialogOpen(true);
+  };
+  const handlePlansDialogClose = () => {
+    setPlansDialogOpen(false);
+  };
 
   return (
     <Stack
@@ -70,23 +80,25 @@ export default function GoalHead({ goal, goalLoading, title, icon, isPro }) {
         <Button
           variant="text"
           endIcon={<East />}
-          onClick={() => {
-            router.push("/dashboard/proSubscription");
+          onClick={handlePlansDialogOpen}
+          sx={{
+            textTransform: "none",
+            width: "120px",
+            color: "var(--primary-color)",
+            fontFamily: "Lato",
+            fontSize: "14px",
+            fontWeight: "700",
+            borderRadius: "5px",
           }}
-        sx={{
-          textTransform: "none",
-          width: "120px",
-          color: "var(--primary-color)",
-          fontFamily: "Lato",
-          fontSize: "14px",
-          fontWeight: "700",
-          borderRadius: "5px",
-        }}
-        disableElevation
-      >
+          disableElevation
+        >
           Get Pro
         </Button>
       )}
+      <PlansDialogBox
+        plansDialogOpen={plansDialogOpen}
+        handlePlansDialogClose={handlePlansDialogClose}
+      />
     </Stack>
   );
 }

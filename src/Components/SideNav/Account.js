@@ -29,6 +29,7 @@ export default function Account({ isSideNavOpen }) {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const open = Boolean(anchorEl);
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+  const userImage = session?.user?.image;
 
   // Debug session state and redirect on unauthenticated
   useEffect(() => {
@@ -110,7 +111,17 @@ export default function Account({ isSideNavOpen }) {
       >
         <Stack sx={{ flexDirection: "row", alignItems: "center", gap: "12px" }}>
           <Tooltip title="Account" disableHoverListener={!isSideNavOpen}>
-            <Avatar />
+            {userImage ? (
+              <Image
+                src={userImage}
+                alt="profile"
+                width={45}
+                height={45}
+                style={{ borderRadius: "50%" }}
+              />
+            ) : (
+              <Avatar sx={{ width: 45, height: 45 }} />
+            )}
           </Tooltip>
           {!isSideNavOpen && (
             <Typography

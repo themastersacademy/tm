@@ -101,6 +101,7 @@ export default function BillingInformation({
                 variant="contained"
                 startIcon={editIndex !== null ? <Update /> : <Add />}
                 sx={{
+                  display: { xs: "none", md: "flex" },
                   width: "fit-content",
                   backgroundColor: "var(--sec-color)",
                   textTransform: "none",
@@ -116,7 +117,7 @@ export default function BillingInformation({
                 }
                 disabled={!isFormFilled()}
               >
-                {editIndex !== null ? "Update" : "Add New"}
+                {editIndex !== null ? "Update" : "Save"}
               </Button>
             )}
           </Stack>
@@ -280,6 +281,36 @@ export default function BillingInformation({
                   }}
                 />
               </Stack>
+            </Stack>
+
+            {/* Mobile button below the form */}
+            <Stack
+              display={{ xs: "flex", md: "none" }}
+              marginTop="30px"
+              alignItems="left"
+            >
+              <Button
+                variant="contained"
+                startIcon={editIndex !== null ? <Update /> : <Add />}
+                sx={{
+                  width: "110px",
+                  maxWidth: "300px",
+                  backgroundColor: "var(--sec-color)",
+                  textTransform: "none",
+                  borderRadius: "8px",
+                  height: "45px",
+                  opacity: isFormFilled() ? 1 : 0.6,
+                  fontSize: "14px",
+                }}
+                onClick={
+                  editIndex !== null
+                    ? handleUpdateBillingInfo
+                    : handleAddBillingInfo
+                }
+                disabled={!isFormFilled()}
+              >
+                {editIndex !== null ? "Update" : "Save"}
+              </Button>
             </Stack>
           </>
         )}

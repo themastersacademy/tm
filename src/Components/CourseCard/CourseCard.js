@@ -1,10 +1,11 @@
 "use client";
+import { memo } from "react";
 import { Circle } from "@mui/icons-material";
 import { Stack, Typography } from "@mui/material";
 import Image from "next/image";
 import defaultThumbnail from "@/public/images/defaultThumbnail.svg";
 
-export default function CourseCard({
+const CourseCard = memo(function CourseCard({
   title = "Untitled Course",
   thumbnail,
   Language = [],
@@ -29,13 +30,13 @@ export default function CourseCard({
       }}
     >
       <Stack flexDirection={{ xs: "row", sm: "column" }} sx={{ flexGrow: 1 }}>
-        {/* Thumbnail */}
         <Stack sx={{ display: { xs: "none", sm: "flex" } }}>
           <Image
             src={imageSrc}
             alt="Course Thumbnail"
             width="200"
             height="120"
+            loading="lazy"
             style={{
               borderTopLeftRadius: "10px",
               borderTopRightRadius: "10px",
@@ -48,11 +49,11 @@ export default function CourseCard({
             alt="Course Thumbnail"
             width="130"
             height="80"
+            loading="lazy"
             style={{ borderRadius: "10px" }}
           />
         </Stack>
 
-        {/* Course Info */}
         <Stack padding={{ xs: "10px", sm: "20px 10px" }} gap="6px">
           <Typography
             sx={{
@@ -72,7 +73,6 @@ export default function CourseCard({
                   color: "var(--sec-color)",
                   fontSize: "10px",
                   fontFamily: "Lato",
-                  minWidth: "unset",
                   height: 20,
                   px: 1,
                   borderRadius: "2px",
@@ -97,21 +97,17 @@ export default function CourseCard({
         </Stack>
       </Stack>
 
-      {/* Desktop Action Button - Fixed at bottom */}
       {actionButton && (
         <Stack
           sx={{
             display: { xs: "none", sm: "flex" },
             backgroundColor: "var(--primary-color-acc-2)",
-            color: "var(--white)",
             borderRadius: "0px 0px 10px 10px",
           }}
         >
           {actionButton}
         </Stack>
       )}
-
-      {/* Mobile Action */}
       {actionMobile && (
         <Stack sx={{ display: { xs: "flex", sm: "none" } }}>
           {actionMobile}
@@ -119,4 +115,6 @@ export default function CourseCard({
       )}
     </Stack>
   );
-}
+});
+
+export default CourseCard;

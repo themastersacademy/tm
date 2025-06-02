@@ -1,10 +1,21 @@
 import { Button, Stack, Typography } from "@mui/material";
+import { useState } from "react";
 import Image from "next/image";
 import institute from "@/public/icons/institute1.svg";
 import agrade from "@/public/icons/aGrade.svg";
 import crackExamBanner from "@/public/images/crackExamBanner.svg";
+import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
 
 export default function CrackTest() {
+  const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+
+  const handlePlansDialogOpen = () => {
+    setPlansDialogOpen(true);
+  };
+  const handlePlansDialogClose = () => {
+    setPlansDialogOpen(false);
+  };
+
   return (
     <Stack
       flexDirection={{ xs: "column", md: "row" }}
@@ -17,7 +28,7 @@ export default function CrackTest() {
         justifyContent: "space-between",
       }}
       width="100%"
-          maxWidth="1200px"
+      maxWidth="1200px"
     >
       <Stack sx={{ gap: "25px", width: { xs: "100%", md: "50%" } }}>
         <Stack
@@ -50,6 +61,7 @@ export default function CrackTest() {
             from our experienced faculties.
           </Typography>
           <Button
+            onClick={handlePlansDialogOpen}
             variant="contained"
             sx={{
               textTransform: "none",
@@ -62,6 +74,10 @@ export default function CrackTest() {
             Subscribe
           </Button>
         </Stack>
+        <PlansDialogBox
+          plansDialogOpen={plansDialogOpen}
+          handlePlansDialogClose={handlePlansDialogClose}
+        />
         <Stack flexDirection="row" gap="4px" flexWrap="wrap">
           {[
             {

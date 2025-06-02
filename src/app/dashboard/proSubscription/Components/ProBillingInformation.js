@@ -8,17 +8,12 @@ import {
   Checkbox,
 } from "@mui/material";
 import StyledTextField from "@/src/Components/StyledTextField/StyledTextField";
-import PaymentBadge from "@/public/images/paymentbadge.svg";
 import { Add, Update } from "@mui/icons-material";
 
 export default function ProBillingInformation({
   billingInfo,
   setBillingInfo,
   handlePinChange,
-  cityDisabled,
-  stateDisabled,
-  errorMessage,
-  setErrorMessage,
   addBillingInfo,
   showBillingForm,
   setShowBillingForm,
@@ -28,7 +23,6 @@ export default function ProBillingInformation({
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setBillingInfo((prev) => ({ ...prev, [name]: value }));
-    setErrorMessage("");
   };
 
   const handleAddBillingInfo = () => {
@@ -59,6 +53,7 @@ export default function ProBillingInformation({
       ) && isPinValid
     );
   };
+
   return (
     <Stack>
       <Stack
@@ -101,18 +96,19 @@ export default function ProBillingInformation({
               }
             />
 
+            {/* Desktop button (hidden on mobile) */}
             {showBillingForm && (
               <Button
                 variant="contained"
                 startIcon={editIndex !== null ? <Update /> : <Add />}
                 sx={{
-                  width: "fit-content",
+                  display: { xs: "none", md: "flex" },
                   backgroundColor: "var(--sec-color)",
                   textTransform: "none",
                   borderRadius: "8px",
                   height: "40px",
                   opacity: isFormFilled() ? 1 : 0.6,
-                  fontSize: { xs: "10px", sm: "14px", md: "16px" },
+                  fontSize: { sm: "14px", md: "16px" },
                 }}
                 onClick={
                   editIndex !== null
@@ -121,7 +117,7 @@ export default function ProBillingInformation({
                 }
                 disabled={!isFormFilled()}
               >
-                {editIndex !== null ? "Update" : "Add New"}
+                {editIndex !== null ? "Update" : "Save"}
               </Button>
             )}
           </Stack>
@@ -247,13 +243,6 @@ export default function ProBillingInformation({
                   backgroundColor: "var(--white)",
                 }}
               />
-              {errorMessage && (
-                <Stack marginTop="10px">
-                  <span style={{ color: "red", fontSize: "14px" }}>
-                    {errorMessage}
-                  </span>
-                </Stack>
-              )}
             </Stack>
 
             <Stack
@@ -269,7 +258,7 @@ export default function ProBillingInformation({
                   value={billingInfo.city || ""}
                   onChange={handleInputChange}
                   placeholder="eg. Kovilpatti"
-                  disabled={cityDisabled}
+                  disabled
                   sx={{
                     width: "100%",
                     marginTop: "10px",
@@ -284,7 +273,7 @@ export default function ProBillingInformation({
                   value={billingInfo.state || ""}
                   onChange={handleInputChange}
                   placeholder="eg. Tamil Nadu"
-                  disabled={stateDisabled}
+                  disabled
                   sx={{
                     width: "100%",
                     marginTop: "10px",
@@ -293,17 +282,39 @@ export default function ProBillingInformation({
                 />
               </Stack>
             </Stack>
+
+            {/* Mobile button below the form */}
+            <Stack
+              display={{ xs: "flex", md: "none" }}
+              marginTop="30px"
+              alignItems="left"
+            >
+              <Button
+                variant="contained"
+                startIcon={editIndex !== null ? <Update /> : <Add />}
+                sx={{
+                  width: "110px",
+                  maxWidth: "300px",
+                  backgroundColor: "var(--sec-color)",
+                  textTransform: "none",
+                  borderRadius: "8px",
+                  height: "45px",
+                  opacity: isFormFilled() ? 1 : 0.6,
+                  fontSize: "14px",
+                }}
+                onClick={
+                  editIndex !== null
+                    ? handleUpdateBillingInfo
+                    : handleAddBillingInfo
+                }
+                disabled={!isFormFilled()}
+              >
+                {editIndex !== null ? "Update" : "Save"}
+              </Button>
+            </Stack>
           </>
         )}
       </Stack>
-
-      {/* <Stack marginTop="15px">
-        <img
-          src={PaymentBadge.src}
-          alt="Payment Badge"
-          style={{ width: "150px", height: "80px" }}
-        />
-      </Stack> */}
     </Stack>
   );
 }
