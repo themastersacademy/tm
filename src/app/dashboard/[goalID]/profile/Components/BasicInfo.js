@@ -1,8 +1,10 @@
 import StyledTextField from "@/src/Components/StyledTextField/StyledTextField";
 import { Edit, Logout } from "@mui/icons-material";
-import { Avatar, Button, Divider, Stack, Typography } from "@mui/material";
+import { Avatar, Button, Stack, Typography } from "@mui/material";
+import Image from "next/image";
 
 export default function BasicInfo({ session, handleLogout }) {
+  const userImage = session?.user?.image;
   return (
     <Stack gap="20px">
       <Stack
@@ -53,7 +55,17 @@ export default function BasicInfo({ session, handleLogout }) {
         </Stack>
       </Stack>
       <Stack sx={{ alignItems: { xs: "center", md: "flex-start" } }}>
-        <Avatar sx={{ width: "100px", height: "100px" }} />
+        {userImage ? (
+          <Image
+            src={userImage}
+            alt="profile"
+            width={100}
+            height={100}
+            style={{ borderRadius: "50%" }}
+          />
+        ) : (
+          <Avatar sx={{ width: 100, height: 100 }} />
+        )}
       </Stack>
       {/* <Stack sx={{ display: { xs: "none", md: "block" } }}>
         <Divider />

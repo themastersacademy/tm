@@ -1,21 +1,22 @@
 "use client";
+import dynamic from "next/dynamic";
+import { Stack } from "@mui/material";
 import CustomTabs from "@/src/Components/CustomTabs/CustomTabs";
 import Header from "@/src/Components/Header/Header";
-import { Stack } from "@mui/material";
-import Store from "./Components/Store";
-import MyCourses from "./Components/MyCourses";
 import MobileHeader from "@/src/Components/MobileHeader/MobileHeader";
 import { useParams } from "next/navigation";
 
+const Store = dynamic(() => import("./Components/Store"), { ssr: false });
+const MyCourses = dynamic(() => import("./Components/MyCourses"), {
+  ssr: false,
+});
+
 export default function Courses() {
-  const params = useParams();
-  const { goalID } = params;
+  const { goalID } = useParams();
+
   const tabData = [
     { label: "Store", content: <Store /> },
-    {
-      label: "My Courses",
-      content: <MyCourses />,
-    },
+    { label: "My Courses", content: <MyCourses /> },
   ];
 
   return (
@@ -34,10 +35,10 @@ export default function Courses() {
           <Header />
         </Stack>
         <Stack
-        paddingX={{ xs: "0px", sm: "20px", md: "0px" }}
-         sx={{ width: "100%" }}>
-          <CustomTabs
-           tabs={tabData} />
+          paddingX={{ xs: "0px", sm: "20px", md: "0px" }}
+          sx={{ width: "100%" }}
+        >
+          <CustomTabs tabs={tabData} />
         </Stack>
       </Stack>
     </Stack>

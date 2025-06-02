@@ -17,6 +17,8 @@ import { randomUUID } from "crypto";
 import { sendOTPToMail } from "@/src/utils/mail";
 import { getValidProSubscription } from "@/src/libs/proSubscription/subscriptionController";
 
+const USER_TABLE = `${process.env.AWS_DB_NAME}users`;
+
 export async function getUserByEmail(email) {
   const params = {
     TableName: `${process.env.AWS_DB_NAME}users`,
@@ -40,14 +42,14 @@ export async function getUserByEmail(email) {
     }
 
     const isUpdated = await updateUserProSubscription(user);
-
+    console.log("isUpdated", isUpdated);
     if (!isUpdated) {
       return user;
     }
 
     const updatedResult = await dynamoDB.send(new QueryCommand(params));
     const updatedUser = updatedResult.Items[0];
-
+    console.log("updatedUser", updatedUser);
     return updatedUser;
   } catch (error) {
     console.error("Error fetching user by email:", error);
@@ -57,54 +59,69 @@ export async function getUserByEmail(email) {
 }
 
 export async function updateUserProSubscription(user) {
-  const response = await getValidProSubscription(user.id);
+  // 1. Fetch the latest valid pro‐subscription for this user.
+  const result = await getValidProSubscription(user.id);
+  console.log("result", result);
+  // 2. Determine desired fields:
+  //    - If there's a successful active subscription that hasn't expired, user should be "PRO".
+  //    - Otherwise, user should be "FREE".
+  let desiredAccountType = "FREE";
+  let desiredExpiresAt = null;
+  let desiredSource = null;
 
-  if (!response.success) {
-    return false;
+  if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+    const sub = result.data[0]; // assume sorted so [0] is most relevant
+    const now = Date.now();
+    const isActive = sub.status === "active" && sub.expiresAt > now;
+
+    if (isActive) {
+      desiredAccountType = "PRO";
+      desiredExpiresAt = sub.expiresAt;
+      desiredSource = sub.subscriptionSource || null;
+    }
   }
 
-  const proSubscription = response.data[0];
-  if (
-    proSubscription.status === "active" &&
-    user.accountType === "PRO" &&
-    proSubscription.subscriptionSource === user.subscriptionSource &&
-    proSubscription.expiresAt === user.subscriptionExpiresAt
-  ) {
-    return false;
+  // 3. If user currently is PRO but no valid subscription → revert to FREE
+  //    (Note: desiredAccountType takes care of that.)
+
+  // 4. Compare with existing user fields to see if any change is needed:
+  const currentlyPro = user.accountType === "PRO";
+  const currentExpiresAt = user.subscriptionExpiresAt || null;
+  const currentSource = user.subscriptionSource || null;
+
+  const noChange =
+    user.accountType === desiredAccountType &&
+    currentExpiresAt === desiredExpiresAt &&
+    currentSource === desiredSource;
+
+  if (noChange) {
+    return false; // nothing to update
   }
 
-  const params = {
-    TableName: `${process.env.AWS_DB_NAME}users`,
+  // 5. Build a minimal UpdateExpression that sets the three fields:
+  const nowTs = Date.now();
+  const updateParams = {
+    TableName: USER_TABLE,
     Key: { pKey: user.pKey, sKey: user.sKey },
     UpdateExpression:
-      "set accountType = :accountType, subscriptionExpiresAt = :subscriptionExpiresAt, subscriptionSource = :subscriptionSource",
+      "SET accountType = :acct, subscriptionExpiresAt = :exp, subscriptionSource = :src, updatedAt = :u",
     ExpressionAttributeValues: {
-      ":accountType":
-        proSubscription.status === "active" &&
-        proSubscription.expiresAt > Date.now()
-          ? "PRO"
-          : "FREE",
-      ":subscriptionExpiresAt":
-        proSubscription.status === "active" &&
-        proSubscription.expiresAt > Date.now()
-          ? proSubscription.expiresAt
-          : null,
-      ":subscriptionSource":
-        proSubscription.subscriptionSource && proSubscription.subscriptionSource
-          ? proSubscription.subscriptionSource
-          : null,
+      ":acct": desiredAccountType,
+      ":exp": desiredExpiresAt,
+      ":src": desiredSource,
+      ":u": nowTs,
     },
   };
 
+  // 6. Execute the update
   try {
-    await dynamoDB.send(new UpdateCommand(params));
+    await dynamoDB.send(new UpdateCommand(updateParams));
     return true;
   } catch (error) {
     console.error("Error updating user pro subscription:", error);
     throw new Error("Failed to update user pro subscription");
   }
 }
-
 export async function updateUserEmailVerified(email) {
   const user = await getUserByEmail(email);
   if (!user) {
@@ -126,7 +143,6 @@ export async function updateUserEmailVerified(email) {
 }
 
 export async function createUser({ email, name, password }) {
-  
   const existingUser = await getUserByEmail(email);
   //check if user is already verified
   if (existingUser?.emailVerified) {

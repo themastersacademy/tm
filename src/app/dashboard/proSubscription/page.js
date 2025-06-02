@@ -18,7 +18,6 @@ export default function ProSubscription() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planIndex = searchParams.get("plan");
-  console.log(planIndex);
   const [couponCode, setCouponCode] = useState("");
   const [couponDetails, setCouponDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,11 +31,7 @@ export default function ProSubscription() {
     state: "",
     zip: "",
   });
-  const [cityDisabled, setCityDisabled] = useState(true);
-  const [stateDisabled, setStateDisabled] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
   const [billingInfoList, setBillingInfoList] = useState([]);
-  const [isBillingInfoLoading, setIsBillingInfoLoading] = useState(true);
   const [showBillingForm, setShowBillingForm] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [selectedAddressIndex, setSelectedAddressIndex] = useState(null);
@@ -70,7 +65,9 @@ export default function ProSubscription() {
 
   // Handler to select an address
   const handleAddressSelect = (index) => {
-    setSelectedAddressIndex((prevIndex) => (prevIndex === index ? null : index));
+    setSelectedAddressIndex((prevIndex) =>
+      prevIndex === index ? null : index
+    );
   };
 
   const applyCoupon = async (couponCode) => {
@@ -106,7 +103,6 @@ export default function ProSubscription() {
     if (!session?.user?.id) {
       console.warn("User not authenticated, cannot fetch billing info");
       setBillingInfoList([]);
-      setIsBillingInfoLoading(false);
       return;
     }
     setIsLoading(true);
@@ -135,8 +131,6 @@ export default function ProSubscription() {
       enqueueSnackbar(error.message, {
         variant: "error",
       });
-    } finally {
-      setIsBillingInfoLoading(false);
     }
   }, [session?.user?.id]);
 
@@ -144,7 +138,6 @@ export default function ProSubscription() {
   const handlePinChange = async (e) => {
     const pin = e.target.value;
     setBillingInfo((prev) => ({ ...prev, pin }));
-    setErrorMessage("");
 
     if (pin.length === 6) {
       try {
@@ -169,8 +162,6 @@ export default function ProSubscription() {
             state,
             pin,
           }));
-          setCityDisabled(true);
-          setStateDisabled(true);
         } else {
           setBillingInfo((prev) => ({
             ...prev,
@@ -178,9 +169,6 @@ export default function ProSubscription() {
             state: "",
             pin,
           }));
-          setCityDisabled(false);
-          setStateDisabled(false);
-          setErrorMessage("Invalid PIN code. Please try again.");
         }
       } catch (error) {
         console.error("Error fetching PIN data:", error.message, error);
@@ -190,11 +178,6 @@ export default function ProSubscription() {
           state: "",
           pin,
         }));
-        setCityDisabled(false);
-        setStateDisabled(false);
-        setErrorMessage(
-          "Unable to fetch city/state. Please check your network or try again."
-        );
       }
     } else {
       setBillingInfo((prev) => ({
@@ -203,9 +186,6 @@ export default function ProSubscription() {
         state: "",
         pin,
       }));
-      setCityDisabled(true);
-      setStateDisabled(true);
-      setErrorMessage("");
     }
   };
 
@@ -343,19 +323,7 @@ export default function ProSubscription() {
 
   // Delete billing info
   const deleteBillingInfo = async (index) => {
-    if (!session?.user?.id) {
-      enqueueSnackbar("User not authenticated. Please log in.", {
-        variant: "error",
-      });
-      return;
-    }
-
     const billingInfoID = billingInfoList[index]?.id;
-    if (!billingInfoID) {
-      enqueueSnackbar("Billing info ID not found.", { variant: "error" });
-      return;
-    }
-
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/checkout/billing-info`,
@@ -491,41 +459,26 @@ export default function ProSubscription() {
                 >
                   {/* Billing Address Card */}
                   <Stack>
-                    {isBillingInfoLoading ? (
-                      <Stack gap="20px">
-                        <Skeleton
-                          variant="rectangular"
-                          width="100%"
-                          height={150}
-                          sx={{ borderRadius: "8px" }}
+                    {billingInfoList
+                      .filter((info) => info && info.firstName)
+                      .map((info, index) => (
+                        <ProAddressCard
+                          key={index}
+                          billingInfo={info}
+                          title={`Billing Address ${index + 1}`}
+                          onEdit={editBillingInfo}
+                          index={index}
+                          onDelete={deleteBillingInfo}
+                          isSelected={selectedAddressIndex === index}
+                          onSelect={() => handleAddressSelect(index)}
                         />
-                      </Stack>
-                    ) : (
-                      billingInfoList
-                        .filter((info) => info && info.firstName)
-                        .map((info, index) => (
-                          <ProAddressCard
-                            key={index}
-                            billingInfo={info}
-                            title={`Billing Address ${index + 1}`}
-                            onEdit={editBillingInfo}
-                            index={index}
-                            onDelete={deleteBillingInfo}
-                            isSelected={selectedAddressIndex === index}
-                            onSelect={() => handleAddressSelect(index)}
-                          />
-                        ))
-                    )}
+                      ))}
                   </Stack>
 
                   <ProBillingInformation
                     billingInfo={billingInfo}
                     setBillingInfo={setBillingInfo}
                     handlePinChange={handlePinChange}
-                    cityDisabled={cityDisabled}
-                    stateDisabled={stateDisabled}
-                    errorMessage={errorMessage}
-                    setErrorMessage={setErrorMessage}
                     addBillingInfo={addBillingInfo}
                     showBillingForm={showBillingForm}
                     setShowBillingForm={setShowBillingForm}

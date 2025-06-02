@@ -3,6 +3,9 @@ import { Button, Skeleton, Stack, Typography } from "@mui/material";
 import { InsertDriveFile, ShoppingBagRounded } from "@mui/icons-material";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+
+// Components
 import GoalHead from "@/src/Components/GoalHead/GoalHead";
 import SecondaryCard from "@/src/Components/SecondaryCard/SecondaryCard";
 import SecondaryCardSkeleton from "@/src/Components/SkeletonCards/SecondaryCardSkeleton";
@@ -15,51 +18,64 @@ import GoalContents from "../Components/GoalContents";
 import MobileSidebar from "../Components/MobileSidebar";
 import LinearProgressLoading from "@/src/Components/LinearProgressLoading/LinearProgressLoading";
 import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
-import { useSession } from "next-auth/react";
 
-const fetchGoalDetails = async (goalID, signal) => {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/home/goal-details`,
-    {
-      method: "POST",
-      body: JSON.stringify({ goalID }),
-      signal,
-    }
-  );
-  return res.json();
-};
+// API helpers
+const fetchGoalDetails = async (goalID, signal) =>
+  fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/home/goal-details`, {
+    method: "POST",
+    body: JSON.stringify({ goalID }),
+    signal,
+  }).then((res) => res.json());
 
-const fetchBlog = async (goalID, blogID, signal) => {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/home/get-blog`,
-    {
-      method: "POST",
-      body: JSON.stringify({ goalID, blogID }),
-      signal,
-    }
-  );
-  return res.json();
-};
+const fetchBlog = async (goalID, blogID, signal) =>
+  fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/home/get-blog`, {
+    method: "POST",
+    body: JSON.stringify({ goalID, blogID }),
+    signal,
+  }).then((res) => res.json());
 
 export default function HomeGoalID() {
-  const { homeGoalID } = useParams();
+  const { homeGoalID: goalID } = useParams();
   const router = useRouter();
-  const params = useParams();
-  const goalID = params.goalID;
   const { data: session } = useSession();
+
   const [goalDetails, setGoalDetails] = useState({});
   const [blogList, setBlogList] = useState([]);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [isGoalLoading, setIsGoalLoading] = useState(true);
   const [isBlogLoading, setIsBlogLoading] = useState(false);
+
   const pageLoading = isGoalLoading || isBlogLoading;
 
-  // Fetch full goal data with blog list
+  const getBlogData = useCallback(
+    async (blogID) => {
+      const controller = new AbortController();
+      setIsBlogLoading(true);
+      try {
+        const data = await fetchBlog(goalID, blogID, controller.signal);
+        if (data.success) {
+          // Normalize the blog object to match expected keys
+          const normalizedBlog = {
+            ...data.data,
+            blogID: data.data.id, // Add blogID for compatibility
+          };
+          setSelectedBlog(normalizedBlog);
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") console.error("Blog fetch error:", err);
+      } finally {
+        setIsBlogLoading(false);
+      }
+    },
+    [goalID]
+  );
+  
+
   const getGoalData = useCallback(async () => {
     const controller = new AbortController();
     setIsGoalLoading(true);
     try {
-      const data = await fetchGoalDetails(homeGoalID, controller.signal);
+      const data = await fetchGoalDetails(goalID, controller.signal);
       if (data.success) {
         setGoalDetails(data.data);
         const blogs = data.data.blogList || [];
@@ -73,35 +89,21 @@ export default function HomeGoalID() {
     } finally {
       setIsGoalLoading(false);
     }
-    return () => controller.abort();
-  }, [homeGoalID]);
-
-  const getBlogData = useCallback(
-    async (blogID) => {
-      const controller = new AbortController();
-      setIsBlogLoading(true);
-      try {
-        const data = await fetchBlog(homeGoalID, blogID, controller.signal);
-        if (data.success) setSelectedBlog(data.data);
-      } catch (err) {
-        if (err.name !== "AbortError") console.error("Blog fetch error:", err);
-      } finally {
-        setIsBlogLoading(false);
-      }
-      return () => controller.abort();
-    },
-    [homeGoalID]
-  );
+  }, [goalID, getBlogData]);
 
   useEffect(() => {
     getGoalData();
   }, [getGoalData]);
 
+  const handlePurchase = (courseID) => {
+    router.push(`/dashboard/${goalID}/courses/${courseID}`);
+  };
+
   return (
     <Stack
       padding={{ xs: "10px", md: "20px" }}
       gap="20px"
-      sx={{ minHeight: "100vh", marginBottom: { xs: "70px", md: "0px" } }}
+      sx={{ minHeight: "100vh", mb: { xs: "70px", md: 0 } }}
       width="100%"
       alignItems="center"
     >
@@ -111,33 +113,30 @@ export default function HomeGoalID() {
         <>
           <GoalHead
             title={
-              isGoalLoading ? (
-                <Skeleton variant="text" width="120px" />
-              ) : (
-                goalDetails.title
-              )
+              isGoalLoading ? <Skeleton width="120px" /> : goalDetails.title
             }
             icon={goalDetails.icon}
             isPro={session?.user?.accountType !== "PRO"}
           />
 
           <Stack
-            flexDirection={{ xs: "column", md: "row" }}
+            direction={{ xs: "column", md: "row" }}
             gap="15px"
             maxWidth="1200px"
             width="100%"
           >
-            <Stack gap="15px" sx={{ flex: 1 }}>
+            {/* LEFT COLUMN */}
+            <Stack flex={1} gap="15px">
+              {/* Overview */}
               <Typography fontWeight={700} fontSize="20px" fontFamily="Lato">
                 Overview
               </Typography>
               <Stack
                 sx={{
                   border: "1px solid var(--border-color)",
-                  backgroundColor: "var(--white)",
+                  bgcolor: "var(--white)",
                   borderRadius: "10px",
-                  padding: { xs: "10px", md: "20px 25px" },
-                  minWidth: "100%",
+                  p: { xs: "10px", md: "20px 25px" },
                   minHeight: { xs: "auto", md: "450px" },
                   gap: "15px",
                 }}
@@ -150,13 +149,15 @@ export default function HomeGoalID() {
                   <NoDataFound info="No Blog Content Available" />
                 )}
               </Stack>
+
+              {/* Subjects */}
               <Stack gap="15px">
                 <Typography fontWeight={700} fontSize="14px" fontFamily="Lato">
                   Subjects
                 </Typography>
                 <Stack direction="row" flexWrap="wrap" gap="10px">
                   {isGoalLoading ? (
-                    [...Array(3)].map((_, i) => (
+                    Array.from({ length: 3 }).map((_, i) => (
                       <SecondaryCardSkeleton cardWidth="300px" key={i} />
                     ))
                   ) : goalDetails.subjectList?.length ? (
@@ -175,28 +176,28 @@ export default function HomeGoalID() {
                   )}
                 </Stack>
               </Stack>
+
+              {/* Courses */}
               <Stack gap="15px">
                 <Typography fontWeight={700} fontSize="14px" fontFamily="Lato">
                   Courses
                 </Typography>
-                {!isGoalLoading && goalDetails.coursesList?.length > 0 ? (
-                  goalDetails.coursesList.map((course, i) => (
+                {!isGoalLoading && goalDetails.coursesList?.length ? (
+                  goalDetails.coursesList.map((course) => (
                     <CourseCard
-                      key={i}
+                      key={course.id}
                       title={course.title}
                       thumbnail={course.thumbnail}
                       Language={course.language}
                       lessons={`${course.lessons} Lessons`}
                       hours={`${course.duration} hours`}
+                      progress={course.progress}
                       actionButton={
                         <Button
                           variant="text"
+                          endIcon={<ShoppingBagRounded />}
                           size="small"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/${goalID}/courses/${course.id}`
-                            )
-                          }
+                          onClick={() => handlePurchase(course.id)}
                           sx={{
                             textTransform: "none",
                             color: "var(--primary-color)",
@@ -213,20 +214,15 @@ export default function HomeGoalID() {
                           endIcon={<ShoppingBagRounded />}
                           sx={{
                             textTransform: "none",
-                            color: "var(--white)",
-                            backgroundColor: "var(--primary-color)",
+                            color: "var(--primary-color)",
+                            bgcolor: "var(--primary-color-acc-2)",
                             borderRadius: "0px 0px 10px 10px",
                           }}
-                          onClick={() => {
-                            router.push(
-                              `/dashboard/${goalID}/courses/${course.id}`
-                            );
-                          }}
+                          onClick={() => handlePurchase(course.id)}
                         >
                           Purchase
                         </Button>
                       }
-                      progress={course.progress}
                     />
                   ))
                 ) : isGoalLoading ? (
@@ -239,6 +235,8 @@ export default function HomeGoalID() {
                   <NoDataFound info="No Courses Available" />
                 )}
               </Stack>
+
+              {/* Quizzes */}
               <Stack gap="15px">
                 <Typography fontWeight={700} fontSize="14px" fontFamily="Lato">
                   Weekly Quizzes
@@ -246,15 +244,17 @@ export default function HomeGoalID() {
                 <PracticeTest />
               </Stack>
             </Stack>
+
+            {/* RIGHT COLUMN (Desktop) */}
             <Stack
               display={{ xs: "none", md: "block" }}
-              sx={{ minWidth: "240px", marginTop: "30px" }}
+              sx={{ minWidth: "240px", mt: "30px" }}
             >
               <Typography
                 fontWeight={700}
                 fontSize="20px"
                 fontFamily="Lato"
-                padding="10px"
+                p="10px"
                 color="var(--sec-color)"
               >
                 Contents
@@ -262,13 +262,15 @@ export default function HomeGoalID() {
               <GoalContents
                 blogList={blogList}
                 selectedBlog={selectedBlog}
-                onClick={(blogID) => getBlogData(blogID)}
+                onClick={getBlogData}
               />
             </Stack>
+
+            {/* MOBILE SIDEBAR */}
             <MobileSidebar
               blogList={blogList}
               selectedBlog={selectedBlog}
-              onClick={(blogID) => getBlogData(blogID)}
+              onClick={getBlogData}
             />
           </Stack>
         </>

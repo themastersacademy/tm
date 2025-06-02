@@ -365,9 +365,13 @@ export async function getUserTransactions({ userID }) {
         console.warn("Transaction missing status:", item);
         return false;
       }
-      return ["pending", "completed", "failed", "cancelled"].includes(
-        item.status
-      );
+      return [
+        "pending",
+        "completed",
+        "failed",
+        "cancelled",
+        "refunded",
+      ].includes(item.status);
     });
 
     return {

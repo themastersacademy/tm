@@ -1,27 +1,23 @@
 "use client";
-import { Button, Stack, Select } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import CourseCard from "@/src/Components/CourseCard/CourseCard";
-import { East, ShoppingBagRounded } from "@mui/icons-material";
-import { useEffect, useState, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { East } from "@mui/icons-material";
+import { useParams, useRouter } from "next/navigation";
 import CourseCardSkeleton from "@/src/Components/SkeletonCards/CourseCardSkeleton";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import { useCourses } from "@/src/app/context/CourseProvider";
 
 export default function MyCourses() {
+  const { goalID } = useParams();
   const router = useRouter();
-  const params = useParams();
-  const [isLoading, setIsLoading] = useState(true);
-  const [courseList, setCourseList] = useState([]);
-  const { goalID } = params;
   const { enrolledCourses, loading } = useCourses();
 
   return (
     <Stack
       flexDirection="row"
       flexWrap="wrap"
-      justifyContent={{ xs: "center", sm: "flex-start", md: "flex-start" }}
-      alignItems={{ xs: "center", sm: "flex-start", md: "flex-start" }}
+      justifyContent={{ xs: "center", sm: "flex-start" }}
+      alignItems="flex-start"
       sx={{ columnGap: { xs: "4px", md: "20px" }, rowGap: "10px" }}
     >
       {!loading ? (
@@ -38,13 +34,13 @@ export default function MyCourses() {
                 <Button
                   variant="text"
                   endIcon={<East />}
+                  onClick={() =>
+                    router.push(`/dashboard/${goalID}/courses/${item.id}`)
+                  }
                   sx={{
                     color: "var(--primary-color)",
                     textTransform: "none",
                     fontSize: "14px",
-                  }}
-                  onClick={() => {
-                    router.push(`/dashboard/${goalID}/courses/${item.id}`);
                   }}
                 >
                   View
@@ -54,14 +50,14 @@ export default function MyCourses() {
                 <Button
                   variant="contained"
                   endIcon={<East />}
+                  onClick={() =>
+                    router.push(`/dashboard/${goalID}/courses/${item.id}`)
+                  }
                   sx={{
                     textTransform: "none",
                     color: "var(--primary-color)",
                     backgroundColor: "var(--primary-color-acc-2)",
                     borderRadius: "0px 0px 10px 10px",
-                  }}
-                  onClick={() => {
-                    router.push(`/dashboard/${goalID}/courses/${item.id}`);
                   }}
                 >
                   View

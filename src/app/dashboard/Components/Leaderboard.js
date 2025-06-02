@@ -1,9 +1,7 @@
 import LeaderboardCard from "@/src/Components/LeaderboardCard/LeaderboardCard";
 import { Stack, Typography } from "@mui/material";
-import { useState } from "react";
 
 export default function Leaderboard() {
-  const [isLoading, setIsLoading] = useState(false);
   const leaderboardList = [
     { sNo: 1, name: "Mira", points: "200 points" },
     { sNo: 2, name: "Priya", points: "180 points" },
