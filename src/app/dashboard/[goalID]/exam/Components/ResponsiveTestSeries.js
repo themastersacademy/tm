@@ -19,12 +19,15 @@ import MyClassroom from "../../myClassroom/page";
 import ExamHistoryResponsive from "@/src/Components/ExamHistoryResponsive/ExamHistoryResponsive";
 import PrimaryCard from "@/src/Components/PrimaryCard/PrimaryCard";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function ResponsiveTestSeries({
   testSeries,
   groupExams,
   subjectOptions,
 }) {
+  const { data: session } = useSession();
+  const isPro = session?.user?.accountType === "PRO";
   const [expanded, setExpanded] = useState(false);
   const handleChange = (panel) => (event, isExpanded) => {
     setExpanded(isExpanded ? panel : false);
@@ -197,7 +200,7 @@ export default function ResponsiveTestSeries({
               </Stack>
             </AccordionSummary>
             <AccordionDetails>
-              <TestSeries subjectOptions={subjectOptions} />
+              <TestSeries subjectOptions={subjectOptions} isPro={isPro} />
             </AccordionDetails>
           </Accordion>
           {groupExams.length > 0 &&

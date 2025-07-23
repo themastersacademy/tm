@@ -18,52 +18,44 @@ import Subscribe from "../Components/Subscribe";
 import DailyProgress from "../Components/DailyProgress";
 import Leaderboard from "../Components/Leaderboard";
 import { useSession } from "next-auth/react";
+import { useExams } from "../../context/ExamProvider";
+import Image from "next/image";
+import { useParams, useRouter } from "next/navigation";
+import CourseCard from "@/src/Components/CourseCard/CourseCard";
+import SchoolIcon from "@mui/icons-material/School";
+import { useCourses } from "../../context/CourseProvider";
+import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
+import CourseCardSkeleton from "@/src/Components/SkeletonCards/CourseCardSkeleton";
 
 export default function Home() {
   const { data: session } = useSession();
-  const [quiz, setQuiz] = useState([
-    {
-      title: "Week 1",
-      icon: week1.src,
-      button: (
-        <Button
-          variant="text"
-          endIcon={<East />}
-          sx={{
-            textTransform: "none",
-            color: "var(--primary-color)",
-            fontSize: "12px",
-          }}
-        >
-          Start Test
-        </Button>
-      ),
-    },
-    {
-      title: "Week 2",
-      icon: week2.src,
-      button: (
-        <Button
-          variant="text"
-          endIcon={<Lock />}
-          sx={{
-            textTransform: "none",
-            color: "var(--primary-color)",
-            fontSize: "12px",
-          }}
-          disabled
-        >
-          Start Test
-        </Button>
-      ),
-    },
-  ]);
-
+  const { mock, loading } = useExams();
   const [isLoading, setIsLoading] = useState(false);
+  const [totalClassroomJoins, setTotalClassroomJoins] = useState(0);
+  const router = useRouter();
+  const { goalID } = useParams();
 
   useEffect(() => {
-    setQuiz(quiz);
+    setIsLoading(loading);
   }, []);
+
+  useEffect(() => {
+    const fetchTotalClassroomJoins = async () => {
+      const response = await fetch("/api/my-classroom/total-count");
+      const data = await response.json();
+      if (data.success) {
+        setTotalClassroomJoins(data.data.count);
+      }
+    };
+    fetchTotalClassroomJoins();
+  }, []);
+
+  const { enrolledCourses, load } = useCourses();
+
+  const getCourseRoute = (courseId) =>
+    `/dashboard/${goalID}/courses/${courseId}`;
+  const hasCourses =
+    Array.isArray(enrolledCourses) && enrolledCourses.length > 0;
 
   return (
     <>
@@ -120,6 +112,11 @@ export default function Home() {
                 <StatisticCard title="Total Mocks" count="3" icon={mocks} />
                 <StatisticCard title="Total Hours" count="10" icon={hours} />
                 <StatisticCard title="Courses" count="2" icon={courses} />
+                <StatisticCard
+                  title="Total Classroom "
+                  count={totalClassroomJoins}
+                  icon={courses}
+                />
               </Stack>
 
               {/* My Courses - only on mobile */}
@@ -134,7 +131,7 @@ export default function Home() {
                 >
                   My Courses
                 </Typography>
-                <MyCourses/>
+                <MyCourses />
               </Stack>
 
               {/* Subscribe */}
@@ -148,17 +145,30 @@ export default function Home() {
                   fontWeight: "700",
                 }}
               >
-                Weekly Quiz
+                Available Exams
               </Typography>
               <Stack direction="row" flexWrap="wrap" gap="15px">
-                {!isLoading
-                  ? quiz.length > 0
-                    ? quiz.map((item, index) => (
+                {!loading
+                  ? mock.length > 0
+                    ? mock.map((item, index) => (
                         <PrimaryCard
                           key={index}
                           title={item.title}
-                          actionButton={item.button}
-                          icon={item.icon}
+                          actionButton={
+                            <Button
+                              variant="text"
+                              endIcon={<East />}
+                              onClick={() => router.push(`/exam/${item.id}`)}
+                              sx={{
+                                textTransform: "none",
+                                color: "var(--primary-color)",
+                                fontSize: "12px",
+                              }}
+                            >
+                              Take Test
+                            </Button>
+                          }
+                          icon={week1.src}
                         />
                       ))
                     : "No data found"
@@ -166,10 +176,82 @@ export default function Home() {
                       <PrimaryCardSkeleton key={index} />
                     ))}
               </Stack>
+              <Typography
+                sx={{
+                  fontFamily: "Lato",
+                  fontSize: "20px",
+                  fontWeight: "700",
+                }}
+              >
+                My Courses
+              </Typography>
+              <Stack direction="row" flexWrap="wrap" gap="15px">
+                {!loading ? (
+                  hasCourses ? (
+                    enrolledCourses.map((item) => {
+                      const courseUrl = getCourseRoute(item.id);
+
+                      return (
+                        <CourseCard
+                          key={item.id}
+                          title={item.title || "Untitled Course"}
+                          thumbnail={item.thumbnail}
+                          lessons={`${item.lessons || 0} Lessons`}
+                          hours={`${item.duration || 0} min`}
+                          Language={item.language || "N/A"}
+                          actionButton={
+                            <Button
+                              variant="text"
+                              endIcon={<East sx={{ width: 16, height: 16 }} />}
+                              onClick={() => router.push(courseUrl)}
+                              sx={{
+                                color: "white",
+                                textTransform: "none",
+                                fontSize: "13px",
+                                height: "24px",
+                                width: "80px",
+                              }}
+                            >
+                              View
+                            </Button>
+                          }
+                          actionMobile={
+                            <Button
+                              variant="contained"
+                              endIcon={<East sx={{ width: 16, height: 16 }} />}
+                              onClick={() => router.push(courseUrl)}
+                              sx={{
+                                textTransform: "none",
+                                color: "white",
+                                backgroundColor: "var(--primary-color)",
+                                borderRadius: "0px 0px 10px 10px",
+                              }}
+                            >
+                              View
+                            </Button>
+                          }
+                        />
+                      );
+                    })
+                  ) : (
+                    <Stack
+                      width="100%"
+                      height="100%"
+                      minHeight="60vh"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <NoDataFound info="No Courses are enrolled" />
+                    </Stack>
+                  )
+                ) : (
+                  <CourseCardSkeleton />
+                )}
+              </Stack>
             </Stack>
 
             {/* Right Side */}
-            <Stack
+            {/* <Stack
               width={{ xs: "100%", md: "350px" }}
               flexShrink={0}
               gap="20px"
@@ -196,7 +278,7 @@ export default function Home() {
                 <DailyProgress />
               </Stack>
               <Leaderboard />
-            </Stack>
+            </Stack> */}
           </Stack>
         </Stack>
       </Stack>

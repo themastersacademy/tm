@@ -23,6 +23,8 @@ export function CourseProvider({ children }) {
     ? ["/api/courses/get-enrolled-course", { goalID }]
     : null;
   const storeKey = goalID ? ["/api/home/goal-details", { goalID }] : null;
+  // const courseListKey = goalID ? ["/api/courses/get-course-list", { goalID }] : null;
+  const liveCoursesKey = goalID ? ["/api/courses/liveCourses", { goalID }] : null;
 
   const {
     data: enrolledRes,
@@ -42,6 +44,24 @@ export function CourseProvider({ children }) {
     revalidateOnFocus: false,
   });
 
+  // const {
+  //   data: courseListRes,
+  //   error: courseListErr,
+  //   isLoading: loadingCourseList,
+  //   mutate: mutateCourseList,
+  // } = useSWR(courseListKey, ([url, body]) => postFetcher(url, body), {
+  //   revalidateOnFocus: false,
+  // });
+
+  const {
+    data: liveCoursesRes,
+    error: liveCoursesErr,
+    isLoading: loadingLiveCourses,
+    mutate: mutateLiveCourses,
+  } = useSWR(liveCoursesKey, ([url, body]) => postFetcher(url, body), {
+    revalidateOnFocus: false,
+  });
+
   // Derive data values
   const enrolledCourses = useMemo(() => {
     if (!goalID || enrolledErr) return [];
@@ -58,16 +78,28 @@ export function CourseProvider({ children }) {
     return storeRes?.data || {};
   }, [goalID, storeRes, storeErr]);
 
-  const loading = loadingEnrolled || loadingStore;
+  // const courseList = useMemo(() => {
+  //   if (!goalID || courseListErr) return [];
+  //   return courseListRes?.data || [];
+  // }, [goalID, courseListRes, courseListErr]);
+
+  const liveCourses = useMemo(() => {
+    if (!goalID || liveCoursesErr) return [];
+    return liveCoursesRes?.data || [];
+  }, [goalID, liveCoursesRes, liveCoursesErr]);
+
+  const loading = loadingEnrolled || loadingStore  || loadingLiveCourses;
 
   const refetch = useCallback(() => {
     mutateEnrolled();
     mutateStore();
-  }, [mutateEnrolled, mutateStore]);
+    mutateCourseList();
+    mutateLiveCourses();
+  }, [mutateEnrolled, mutateStore, mutateLiveCourses]);
 
   const contextValue = useMemo(
-    () => ({ enrolledCourses, storeCourses, loading, refetch }),
-    [enrolledCourses, storeCourses, loading, refetch]
+    () => ({ enrolledCourses, storeCourses, goalDetails, liveCourses, loading, refetch }),
+    [enrolledCourses, storeCourses, goalDetails, liveCourses, loading, refetch]
   );
 
   return (
@@ -77,7 +109,7 @@ export function CourseProvider({ children }) {
   );
 }
 
-export function useCourses() {
+export function useCourses() {  
   const context = useContext(CourseContext);
   if (!context)
     throw new Error("useCourses must be used within a CourseProvider");

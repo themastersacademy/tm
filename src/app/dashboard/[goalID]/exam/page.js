@@ -8,7 +8,7 @@ import {
   IconButton,
   DialogContent,
 } from "@mui/material";
-import { Close } from "@mui/icons-material";
+import { Close, Lock } from "@mui/icons-material";
 import PrimaryCard from "@/src/Components/PrimaryCard/PrimaryCard";
 import mocks from "@/public/icons/mocks.svg";
 import { East } from "@mui/icons-material";
@@ -19,12 +19,16 @@ import { useRouter, useParams } from "next/navigation";
 import PrimaryCardSkeleton from "@/src/Components/SkeletonCards/PrimaryCardSkeleton";
 import ResponsiveTestSeries from "./Components/ResponsiveTestSeries";
 import LinearProgressLoading from "@/src/Components/LinearProgressLoading/LinearProgressLoading";
-import { useSnackbar } from "notistack";
+import { enqueueSnackbar } from "notistack";
 import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
 import ExamGroups from "./Components/ExamGroups";
 import { useExams } from "@/src/app/context/ExamProvider";
+import { useSession } from "next-auth/react";
+import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
 
 export default function Exams() {
+  const { data: session } = useSession();
+  const isPro = session?.user?.accountType === "PRO";
   const { group, mock, loading, subjects, error } = useExams();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -32,11 +36,17 @@ export default function Exams() {
   const handleClose = () => setOpen(false);
   const params = useParams();
   const goalID = params.goalID;
-  const { enqueueSnackbar } = useSnackbar();
   const [loacalLoading, setLoacalLoading] = useState(false);
   const [difficultyLevel, setDifficultyLevel] = useState("all");
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [subjectOptions, setSubjectOptions] = useState([]);
+  const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+  const handlePlansDialogClose = () => {
+    setPlansDialogOpen(false);
+  };
+  const handlePlansDialogOpen = () => {
+    setPlansDialogOpen(true);
+  };
 
   useEffect(() => {
     if (subjects) {
@@ -206,6 +216,10 @@ export default function Exams() {
           />
         </Stack>
       )}
+      <PlansDialogBox
+        plansDialogOpen={plansDialogOpen}
+        handlePlansDialogClose={handlePlansDialogClose}
+      />
 
       {subjectOptions.length > 0 && (
         <DialogBox
@@ -223,8 +237,8 @@ export default function Exams() {
           actionButton={
             <Button
               variant="text"
-              onClick={handleStartTest}
-              endIcon={<East />}
+              onClick={isPro ? handleStartTest : handlePlansDialogOpen}
+              endIcon={isPro ? <East /> : <Lock />}
               sx={{
                 textTransform: "none",
                 color: "var(--primary-color)",
@@ -232,7 +246,7 @@ export default function Exams() {
                 fontSize: "16px",
               }}
             >
-              Start Test
+              {isPro ? "Start Test" : "Upgrade to PRO"}
             </Button>
           }
         >

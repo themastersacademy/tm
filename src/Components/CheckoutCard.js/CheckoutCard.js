@@ -6,26 +6,29 @@ import { useState, useEffect } from "react";
 import defaultThumbnail from "@/public/images/defaultThumbnail.svg";
 import { useRouter, useParams } from "next/navigation";
 import FloatingCheckoutCard from "./Components/FloatingCheckoutCard";
+import { useSession } from "next-auth/react";
 
-export default function CheckoutCard({ courseDetails }) {
-  const [loading, setLoading] = useState(false);
+export default function CheckoutCard({ courseDetails, isPaidCourseForUser }) {
   const plans = courseDetails?.subscription?.plans || [];
+  const isFree = courseDetails?.subscription?.isFree || false; // Check if the course is free
   const [selectedPlan, setSelectedPlan] = useState(null);
   const router = useRouter();
   const params = useParams();
   const { goalID, courseID } = params;
+  const { data: session, status } = useSession();
+  console.log(session);
+
   // Set default plan when plans are available
   useEffect(() => {
-    if (plans.length > 0 && !selectedPlan) {
+    if (!isFree && plans.length > 0 && !selectedPlan) {
       setSelectedPlan(plans[0]);
     }
-  }, [plans, selectedPlan]);
+  }, [plans, selectedPlan, isFree]);
 
   // Handle plan selection
   const handlePlanChange = (event) => {
     const selectedDuration = event.target.value;
     const selected = plans.find((plan) => plan.duration === selectedDuration);
-    // console.log("Selected Duration:", selectedDuration, "Found Plan:", selected); // Debug
     if (selected) {
       setSelectedPlan(selected);
     }
@@ -52,6 +55,22 @@ export default function CheckoutCard({ courseDetails }) {
     return `${duration} Month${plural}`;
   };
 
+  const handleCheckout = () => {
+    if (isFree) {
+      // For free courses, navigate to checkout without a plan
+      router.push(`/dashboard/${goalID}/courses/${courseID}/checkout`);
+    } else {
+      const selectedIndex = plans.findIndex(
+        (plan) => plan.duration === selectedPlan?.duration
+      );
+      if (selectedIndex !== -1) {
+        router.push(
+          `/dashboard/${goalID}/courses/${courseID}/checkout?plan=${selectedIndex}`
+        );
+      }
+    }
+  };
+
   return (
     <Stack
       sx={{
@@ -74,7 +93,7 @@ export default function CheckoutCard({ courseDetails }) {
       >
         <Stack
           flexDirection={{ xs: "column", sm: "column", md: "row", lg: "row" }}
-          justifyContent="space-evenly"
+          // justifyContent="space-evenly"
           gap="10px"
         >
           <Stack display={{ xs: "none", sm: "none", md: "block", lg: "block" }}>
@@ -108,104 +127,110 @@ export default function CheckoutCard({ courseDetails }) {
             >
               {courseDetails?.title || ""}
             </Typography>
-            <Stack marginTop={{ xs: "10px", sm: "10px", md: "0px", lg: "0px" }}>
-              <Select
-                variant="outlined"
-                value={selectedPlan?.duration || ""}
-                onChange={handlePlanChange}
-                displayEmpty
-                renderValue={(selected) => {
-                  const plan = selected
-                    ? plans.find((p) => p.duration === selected)
-                    : plans[0];
-                  return plan ? formatPlanLabel(plan) : "Loading...";
-                }}
-                MenuProps={{
-                  disableScrollLock: true,
-                  PaperProps: {
-                    sx: {
-                      padding: "8px",
-                      "& .MuiList-root": {
-                        paddingBottom: 0,
-                        borderColor: "var(--border-color)",
+            {isPaidCourseForUser ? (
+              <Stack
+                marginTop={{ xs: "10px", sm: "10px", md: "0px", lg: "0px" }}
+              >
+                <Select
+                  variant="outlined"
+                  value={selectedPlan?.duration || ""}
+                  onChange={handlePlanChange}
+                  displayEmpty
+                  renderValue={(selected) => {
+                    const plan = selected
+                      ? plans.find((p) => p.duration === selected)
+                      : plans[0];
+                    return plan ? formatPlanLabel(plan) : "Loading...";
+                  }}
+                  MenuProps={{
+                    disableScrollLock: true,
+                    PaperProps: {
+                      sx: {
+                        padding: "8px",
+                        "& .MuiList-root": {
+                          paddingBottom: 0,
+                          borderColor: "var(--border-color)",
+                        },
                       },
                     },
-                  },
-                }}
-                sx={{
-                  minWidth: "170px",
-                  height: "35px",
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "var(--sec-color)",
-                  },
-                  "&:hover": {
-                    "& .MuiOutlinedInput-notchedOutline": {
+                  }}
+                  sx={{
+                    minWidth: "170px",
+                    height: "35px",
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                       borderColor: "var(--sec-color)",
                     },
-                  },
-                }}
-              >
-                {plans.map((plan, index) => (
-                  <MenuItem key={index} value={plan.duration}>
-                    {formatPlanLabel(plan)}
-                  </MenuItem>
-                ))}
-              </Select>
-              {selectedPlan ? (
-                <Stack
-                  flexDirection="row"
-                  gap="5px"
-                  marginTop={{ xs: "10px", sm: "10px", md: "0px", lg: "0px" }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: "Lato",
-                      fontSize: {
-                        xs: "14px",
-                        sm: "16px",
-                        md: "14px",
-                        lg: "16px",
+                    "&:hover": {
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "var(--sec-color)",
                       },
-                      color: "var(--sec-color)",
-                      paddingTop: "5px",
-                    }}
-                  >
-                    ₹
-                    {calculateDiscountedPrice(
-                      selectedPlan.priceWithTax,
-                      selectedPlan.discountInPercent
-                    )}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: "Lato",
-                      fontSize: {
-                        xs: "14px",
-                        sm: "16px",
-                        md: "14px",
-                        lg: "16px",
-                      },
-                      paddingTop: "5px",
-                    }}
-                  >
-                    <span style={{ textDecoration: "line-through" }}>
-                      ₹{selectedPlan.priceWithTax}
-                    </span>{" "}
-                    ({selectedPlan.discountInPercent}% off)
-                  </Typography>
-                </Stack>
-              ) : (
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "12px",
-                    color: "var(--sec-color)",
+                    },
                   }}
                 >
-                  Loading...
-                </Typography>
-              )}
-            </Stack>
+                  {plans.map((plan, index) => (
+                    <MenuItem key={index} value={plan.duration}>
+                      {formatPlanLabel(plan)}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {selectedPlan && selectedPlan.priceWithTax != null ? (
+                  <Stack
+                    flexDirection="row"
+                    gap="5px"
+                    marginTop={{ xs: "10px", sm: "10px", md: "0px", lg: "0px" }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: "Lato",
+                        fontSize: {
+                          xs: "14px",
+                          sm: "16px",
+                          md: "14px",
+                          lg: "16px",
+                        },
+                        color: "var(--sec-color)",
+                        paddingTop: "5px",
+                      }}
+                    >
+                      ₹
+                      {calculateDiscountedPrice(
+                        selectedPlan.priceWithTax,
+                        selectedPlan.discountInPercent
+                      )}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: "Lato",
+                        fontSize: {
+                          xs: "14px",
+                          sm: "16px",
+                          md: "14px",
+                          lg: "16px",
+                        },
+                        paddingTop: "5px",
+                      }}
+                    >
+                      <span style={{ textDecoration: "line-through" }}>
+                        ₹{selectedPlan.priceWithTax}
+                      </span>{" "}
+                      ({selectedPlan.discountInPercent}% off)
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Typography
+                    sx={{
+                      fontFamily: "Lato",
+                      fontSize: "12px",
+                      color: "var(--sec-color)",
+                    }}
+                  >
+                    Loading...
+                  </Typography>
+                )}
+              </Stack>
+            ) : (
+              "Free Course"
+            )}
           </Stack>
         </Stack>
         <Stack marginTop={{ xs: "10px", sm: "10px", md: "0px", lg: "3px" }}>
@@ -224,15 +249,7 @@ export default function CheckoutCard({ courseDetails }) {
 
       <Stack display={{ xs: "none", sm: "none", md: "block", lg: "block" }}>
         <Button
-          onClick={() => {
-            const selectedIndex = plans.findIndex(
-              (plan) => plan.duration === selectedPlan?.duration
-            );
-            console.log(selectedIndex);
-            router.push(
-              `/dashboard/${goalID}/courses/${courseID}/checkout?plan=${selectedIndex}`
-            );
-          }}
+          onClick={handleCheckout}
           variant="text"
           endIcon={<East />}
           sx={{
@@ -245,9 +262,9 @@ export default function CheckoutCard({ courseDetails }) {
             borderRadius: "0px 0px 10px 10px",
             backgroundColor: "var(--sec-color-acc-1)",
           }}
-          disabled={!selectedPlan}
+          disabled={!isFree && !selectedPlan} // Disable button if not free and no plan is selected
         >
-          Proceed to checkout
+          {isPaidCourseForUser ? "Proceed to checkout" : "Enroll"}
         </Button>
       </Stack>
       <Stack
@@ -267,6 +284,9 @@ export default function CheckoutCard({ courseDetails }) {
           plans={plans}
           calculateDiscountedPrice={calculateDiscountedPrice}
           formatPlanLabel={formatPlanLabel}
+          handleCheckout={handleCheckout}
+          isFree={isFree}
+          isPaidCourseForUser={isPaidCourseForUser}
         />
       </Stack>
     </Stack>

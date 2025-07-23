@@ -1,5 +1,5 @@
 import { dynamoDB } from "@/src/utils/awsAgent";
-import { QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand } from "@aws-sdk/lib-dynamodb";
 
 const TableName = `${process.env.AWS_DB_NAME}master`;
 
@@ -10,6 +10,10 @@ export async function getCourse({ goalID, courseID }) {
     Key: {
       pKey: `COURSE#${courseID}`,
       sKey: `COURSES@${goalID}`,
+    },
+    FilterExpression: "isLive = :isLive",
+    ExpressionAttributeValues: {
+      ":isLive": true,
     },
     ProjectionExpression:
       "pKey, title, description, #duration, lessons, thumbnail, #language, lessonIDs, subscription, createdAt, updatedAt",

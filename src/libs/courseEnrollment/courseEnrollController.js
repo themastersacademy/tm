@@ -11,6 +11,7 @@ import { calculatePriceBreakdownWithCoupon } from "@/src/utils/pricing";
 import { createTransaction } from "@/src/libs/transaction/transactionController";
 import { randomUUID } from "crypto";
 import { getFullUserByID } from "@/src/libs/user/userProfile";
+import { getValidProSubscription } from "@/src/libs/proSubscription/subscriptionController";
 
 const USER_TABLE = `${process.env.AWS_DB_NAME}users`;
 const USER_TABLE_INDEX = "GSI1-index";
@@ -105,6 +106,7 @@ export async function enrollInCourse({
       expiresAt: null,
       createdAt: now,
       updatedAt: now,
+      videoProgress: {},
     },
     // optionally guard against accidental overwrite:
     ConditionExpression: "attribute_not_exists(pKey)",
@@ -165,6 +167,7 @@ export async function getValidCourseEnrollment(userID, courseID) {
       expiresAt: item.expiresAt,
       courseID: item.courseID,
       goalID: item.goalID,
+      videoProgress: item.videoProgress || {},
     })),
   };
 }
@@ -227,7 +230,9 @@ export async function getAllEnrolledCourses(userID, goalID) {
   const result = await dynamoDB.send(new QueryCommand(courseEnrollParams));
   const courseEnrollments = result.Items;
   const courseIDs = courseEnrollments.map((item) => item.courseID);
-  const courses = await getCourseInBatch(courseIDs, goalID);
+  //filter out duplicate courseIDs
+  const uniqueCourseIDs = [...new Set(courseIDs)];
+  const courses = await getCourseInBatch(uniqueCourseIDs, goalID);
 
   return {
     success: true,
@@ -252,7 +257,7 @@ async function getCourseInBatch(courseIDs, goalID) {
       },
       ProjectionExpression: `
         pKey, title, #duration,
-        lessons, thumbnail, #language`
+        lessons, thumbnail, #language, subscription`
         .trim()
         .replace(/\s+/g, " "),
     },
@@ -271,4 +276,117 @@ async function getCourseInBatch(courseIDs, goalID) {
     thumbnail: item.thumbnail,
     language: item.language,
   }));
+}
+
+export async function verifyAndEnrollFreeCourse({ userID, courseID, goalID }) {
+  if (!userID || !courseID || !goalID) {
+    throw new Error("User ID, course ID, and goal ID are required");
+  }
+
+  const now = Date.now();
+  const courseEnrollID = randomUUID();
+  const oneYearFromNow = now + 365 * 24 * 60 * 60 * 1000;
+
+  const user = await getFullUserByID(userID);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const courseResult = await getCourse({ courseID, goalID });
+  if (!courseResult.success) {
+    throw new Error(courseResult.message || "Course not found");
+  }
+
+  const courseDetails = courseResult.data;
+  if (!courseDetails.subscription.isFree && !courseDetails.subscription.isPro) {
+    throw new Error("Course is not accessible for free or pro users");
+  }
+
+  // Check if course requires pro subscription
+  let proSubscriptionResult = null;
+  if (courseDetails.subscription.isPro) {
+    proSubscriptionResult = await getValidProSubscription(userID);
+    if (
+      !proSubscriptionResult.success ||
+      proSubscriptionResult.data.length === 0
+    ) {
+      console.error(
+        `User ${userID} does not have an active pro subscription for pro course ${courseID}`
+      );
+      throw new Error("Active pro subscription required for this course");
+    }
+  }
+
+  const existingEnrollment = await getValidCourseEnrollment(userID, courseID);
+  if (existingEnrollment.success && existingEnrollment.data.length > 0) {
+    throw new Error("Course already enrolled");
+  }
+
+  // Determine expiration based on pro subscription
+  let expiresAt = oneYearFromNow;
+  if (courseDetails.subscription.isPro) {
+    proSubscriptionResult =
+      proSubscriptionResult || (await getValidProSubscription(userID));
+    if (
+      proSubscriptionResult.success &&
+      proSubscriptionResult.data.length > 0
+    ) {
+      expiresAt = Math.min(
+        ...proSubscriptionResult.data.map((sub) => sub.expiresAt)
+      );
+    }
+  }
+
+  const pKey = `COURSE_ENROLLMENT#${courseEnrollID}`;
+  const sKey = `COURSE_ENROLLMENTS`;
+  const gsi1pKey = `COURSE_ENROLLMENT#${userID}`;
+  const gsi1sKey = "COURSE_ENROLLMENTS";
+
+  const courseEnrollParams = {
+    TableName: USER_TABLE,
+    Item: {
+      pKey,
+      sKey,
+      "GSI1-pKey": gsi1pKey,
+      "GSI1-sKey": gsi1sKey,
+      courseID,
+      goalID,
+      userID,
+      status: "active",
+      transactionID: null,
+      priceBreakdown: {
+        totalPrice: 0,
+      },
+      plan: null,
+      couponDetails: null,
+      billingInfo: null,
+      expiresAt: expiresAt,
+      createdAt: now,
+      updatedAt: now,
+      videoProgress: {},
+    },
+    ConditionExpression: "attribute_not_exists(pKey)",
+  };
+  console.log("Enrolling free course with params:", courseEnrollParams);
+
+  try {
+    await dynamoDB.send(new PutCommand(courseEnrollParams));
+    console.log(
+      `Free course enrollment successful for courseID: ${courseID}, userID: ${userID}`
+    );
+  } catch (error) {
+    console.error("Error enrolling free course:", error);
+    throw new Error("Failed to enroll free course");
+  }
+
+  return {
+    success: true,
+    data: {
+      courseEnrollID,
+      transactionID: null,
+      priceDetails: { totalPrice: 0 },
+      order: null,
+    },
+    message: "Free course enrolled successfully",
+  };
 }

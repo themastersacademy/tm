@@ -69,7 +69,6 @@ export default function HomeGoalID() {
     },
     [goalID]
   );
-  
 
   const getGoalData = useCallback(async () => {
     const controller = new AbortController();
@@ -182,54 +181,66 @@ export default function HomeGoalID() {
                 <Typography fontWeight={700} fontSize="14px" fontFamily="Lato">
                   Courses
                 </Typography>
-                {!isGoalLoading && goalDetails.coursesList?.length ? (
-                  goalDetails.coursesList.map((course) => (
-                    <CourseCard
-                      key={course.id}
-                      title={course.title}
-                      thumbnail={course.thumbnail}
-                      Language={course.language}
-                      lessons={`${course.lessons} Lessons`}
-                      hours={`${course.duration} hours`}
-                      progress={course.progress}
-                      actionButton={
-                        <Button
-                          variant="text"
-                          endIcon={<ShoppingBagRounded />}
-                          size="small"
-                          onClick={() => handlePurchase(course.id)}
-                          sx={{
-                            textTransform: "none",
-                            color: "var(--primary-color)",
-                            fontFamily: "Lato",
-                            fontSize: "12px",
-                          }}
-                        >
-                          Purchase
-                        </Button>
-                      }
-                      actionMobile={
-                        <Button
-                          variant="contained"
-                          endIcon={<ShoppingBagRounded />}
-                          sx={{
-                            textTransform: "none",
-                            color: "var(--primary-color)",
-                            bgcolor: "var(--primary-color-acc-2)",
-                            borderRadius: "0px 0px 10px 10px",
-                          }}
-                          onClick={() => handlePurchase(course.id)}
-                        >
-                          Purchase
-                        </Button>
-                      }
-                    />
-                  ))
-                ) : isGoalLoading ? (
-                  <Stack direction="row" gap="15px">
+
+                {isGoalLoading ? (
+                  <Stack direction="row" gap="15px" flexWrap="wrap">
                     <CourseCardSkeleton />
                     <CourseCardSkeleton />
                     <CourseCardSkeleton />
+                  </Stack>
+                ) : goalDetails.coursesList?.length ? (
+                  <Stack direction="row" flexWrap="wrap" gap="15px">
+                    {goalDetails.coursesList.map((course) => (
+                      <CourseCard
+                        key={course.id}
+                        title={course.title}
+                        thumbnail={course.thumbnail}
+                        Language={course.language}
+                        lessons={`${course.lessons} Lessons`}
+                        hours={`${course.duration} min`}
+                        progress={course.progress}
+                        actionButton={
+                          <Button
+                            variant="text"
+                            endIcon={
+                              <ShoppingBagRounded
+                                sx={{ width: 16, height: 16 }}
+                              />
+                            }
+                            size="small"
+                            onClick={() => handlePurchase(course.id)}
+                            sx={{
+                              textTransform: "none",
+                              color: "white",
+                              bgcolor: "var(--primary-color)",
+                              fontFamily: "Lato",
+                              fontSize: "12px",
+                            }}
+                          >
+                            Purchase
+                          </Button>
+                        }
+                        actionMobile={
+                          <Button
+                            variant="contained"
+                            endIcon={
+                              <ShoppingBagRounded
+                                sx={{ width: 16, height: 16 }}
+                              />
+                            }
+                            sx={{
+                              textTransform: "none",
+                              color: "white",
+                              bgcolor: "var(--primary-color)",
+                              borderRadius: "0px 0px 10px 10px",
+                            }}
+                            onClick={() => handlePurchase(course.id)}
+                          >
+                            Purchase
+                          </Button>
+                        }
+                      />
+                    ))}
                   </Stack>
                 ) : (
                   <NoDataFound info="No Courses Available" />

@@ -44,7 +44,7 @@ export default function ExamGroups({ handleOpen }) {
               }}
               onClick={handleOpen}
             >
-              Attempt(1/10)
+              Attempt
             </Button>
           </Stack>
         </Stack>

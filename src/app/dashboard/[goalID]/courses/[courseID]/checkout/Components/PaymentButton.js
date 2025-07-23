@@ -1,6 +1,11 @@
 import { Stack, Button, CircularProgress } from "@mui/material";
 
-export default function PaymentButton({ isDisabled, onPaymentClick, loading }) {
+export default function PaymentButton({
+  isDisabled,
+  onPaymentClick,
+  loading,
+  isFree,
+}) {
   return (
     <Stack>
       <Button
@@ -25,6 +30,8 @@ export default function PaymentButton({ isDisabled, onPaymentClick, loading }) {
       >
         {loading ? (
           <CircularProgress sx={{ color: "var(--primary-color)" }} size={24} />
+        ) : isFree ? (
+          "Enroll"
         ) : (
           "Proceed to Payment"
         )}

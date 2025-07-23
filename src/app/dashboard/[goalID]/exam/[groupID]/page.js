@@ -2,12 +2,16 @@
 import PrimaryCard from "@/src/Components/PrimaryCard/PrimaryCard";
 import { Stack, Button, Typography, Skeleton } from "@mui/material";
 import troffy from "@/public/icons/troffy.svg";
-import { ArrowBackIos, East } from "@mui/icons-material";
+import { ArrowBackIos, East, Lock } from "@mui/icons-material";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import PrimaryCardSkeleton from "@/src/Components/SkeletonCards/PrimaryCardSkeleton";
+import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
+import { useSession } from "next-auth/react";
 
 export default function GroupID() {
+  const { data: session } = useSession();
+  const isPro = session?.user?.accountType === "PRO";
   const router = useRouter();
   const { groupID } = useParams();
   const params = useParams();
@@ -25,15 +29,15 @@ export default function GroupID() {
     if (data.success) {
       setGroupExam(data.data);
       console.log(data.data);
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
     fetchGroupExam();
   }, []);
 
-  const fetchGroupExamData = async () => {
+  const fetchGroupExamData = useCallback(async () => {
     setLoading(true);
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/type/${goalID}/group/get-group`,
@@ -49,11 +53,11 @@ export default function GroupID() {
       setGroupExamData(data.data);
     }
     setLoading(false);
-  };
+  }, [groupID, goalID]);
 
   useEffect(() => {
     fetchGroupExamData();
-  }, [goalID]);
+  }, [fetchGroupExamData, goalID]);
 
   return (
     <Stack
@@ -86,7 +90,19 @@ export default function GroupID() {
         </Typography>
       </Stack>
 
-      <Stack flexDirection="row" flexWrap="wrap" gap="20px">
+      <Stack
+        flexDirection="row"
+        alignItems="flex-start"
+        justifyContent="flex-start"
+        flexWrap="wrap"
+        gap="20px"
+        width="100%"
+        minHeight="80vh"
+        bgcolor="white"
+        borderRadius="10px"
+        padding="20px"
+        border="1px solid var(--border-color)"
+      >
         {!loading ? (
           groupExam.length > 0 ? (
             groupExam.map((group, index) => (
@@ -97,7 +113,9 @@ export default function GroupID() {
                 actionButton={
                   <Button
                     variant="text"
-                    endIcon={<East />}
+                    endIcon={
+                      isPro && group.settings.isProTest ? <East /> : <Lock />
+                    }
                     onClick={() => router.push(`/exam/${group.id}`)}
                     sx={{
                       textTransform: "none",
@@ -106,13 +124,22 @@ export default function GroupID() {
                       fontSize: "12px",
                     }}
                   >
-                    Take Test
+                    {isPro && group.settings.isProTest
+                      ? "Take Test"
+                      : "PRO only"}
                   </Button>
                 }
               />
             ))
           ) : (
-            <Typography>No Group Exams found</Typography>
+            <Stack
+              width="100%"
+              minHeight="60vh"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <NoDataFound info="No Group Exams found" />
+            </Stack>
           )
         ) : (
           <PrimaryCardSkeleton />
