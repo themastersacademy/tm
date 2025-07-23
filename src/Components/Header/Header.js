@@ -238,7 +238,7 @@ export default function Header({ button = [], back }) {
                 gap: "8px",
               }}
             >
-              <Stack
+              {/* <Stack
                 flexDirection="row"
                 alignItems="center"
                 gap="8px"
@@ -249,7 +249,7 @@ export default function Header({ button = [], back }) {
                 </IconButton>
                 <Image src={mCoins} alt="mCoins" />
                 <Typography>100</Typography>
-              </Stack>
+              </Stack> */}
               <Button
                 variant="contained"
                 onClick={handlePlansDialogOpen}

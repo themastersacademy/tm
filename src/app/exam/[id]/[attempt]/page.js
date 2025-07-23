@@ -11,6 +11,7 @@ import NavigationGuard from "../../Components/NavigationGuard";
 import { Bookmark, Fullscreen } from "@mui/icons-material";
 import LoadingComp from "../../Components/LoadingComp";
 import { enqueueSnackbar } from "notistack";
+import { seededShuffle } from "@/src/utils/seededShuffle";
 
 export default function Exam() {
   const router = useRouter();
@@ -86,28 +87,34 @@ export default function Exam() {
           setUserAnswers(attemptInfo.userAnswers);
           setServerTimestamp(attemptInfo.serverTimestamp);
           setClientPerfAtFetch(performance.now());
-          await fetch(`${attemptInfo.blobSignedUrl}`).then((res) =>
-            res
-              .json()
-              .then((data) => {
-                setLoading(false);
-                setQuestions(data);
-              })
-              .catch(() => {
-                handleEndTest("AUTO");
-              })
-          );
-        } else if (attemptInfo.status === "COMPLETED") {
-          enqueueSnackbar("Exam already ended", {
-            variant: "error",
-          });
-          router.push(`/exam/${examID}/${attemptID}/result`);
+          // await fetch(`${attemptInfo.blobSignedUrl}`).then((res) =>
+          //   res
+          //     .json()
+          //     .then((data) => {
+          //       setLoading(false);
+          //       setQuestions(data);
+          //     })
+          //     .catch(() => {
+          //       handleEndTest("AUTO");
+          //     })
+          // );
+          await fetch(`${attemptInfo.blobSignedUrl}`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (attemptInfo.seed != null) {
+                const seed = attemptInfo.seed.toString();
+                data.sections = data.sections.map((section, index) => ({
+                  ...section,
+                  questions: seededShuffle(section.questions, `${seed}`),
+                }));
+              }
+              setQuestions(data);
+              setLoading(false);
+            })
+            .catch(() => {
+              handleEndTest("AUTO");
+            });
         }
-      } else {
-        enqueueSnackbar("Exam not found", {
-          variant: "error",
-        });
-        router.push(`/dashboard`);
       }
     } catch (err) {
       console.error("Error fetching exam or blob data:", err);
@@ -339,7 +346,6 @@ export default function Exam() {
       }
     }
   }
-
 
   if (loading) {
     return <LoadingComp />;

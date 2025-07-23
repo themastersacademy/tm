@@ -1,6 +1,5 @@
 "use client";
-
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Skeleton, Stack, Typography, CircularProgress } from "@mui/material";
 import {
@@ -13,18 +12,20 @@ import {
   PlayLesson,
   AccessTimeFilled,
   SaveAlt,
+  CheckCircle,
 } from "@mui/icons-material";
 import LessonCard from "@/src/Components/LessonCard.js/LessonCard";
 import CheckoutCard from "@/src/Components/CheckoutCard.js/CheckoutCard";
 import MDPreview from "@/src/Components/MarkdownPreview/MarkdownPreview";
 import LessoncardSkeleton from "@/src/Components/SkeletonCards/LessoncardSkeleton";
-import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
+import Script from "next/script";
+import { useSession } from "next-auth/react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const MyCourse = () => {
-  const { goalID, courseID } = useParams();
   const router = useRouter();
+  const { goalID, courseID } = useParams();
   const [courseDetails, setCourseDetails] = useState({});
   const [lessonList, setLessonList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,103 +35,221 @@ const MyCourse = () => {
   const [enrollment, setEnrollment] = useState(null);
   const [selectedLessonId, setSelectedLessonId] = useState(null);
   const [selectedLessonIndex, setSelectedLessonIndex] = useState(0);
-  const [error, setError] = useState(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(Date.now());
+  const [error, setError] = useState("");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const playerRef = useRef(null);
+  const iframeRef = useRef(null);
+  const [lessonProgress, setLessonProgress] = useState({});
+  const { data: session } = useSession();
 
-  // Memoized API headers
+  const progressRef = useRef({});
+  const [renderTick, setRenderTick] = useState(0);
+  const lastTickRef = useRef(0); // Persist last tick timestamp
+
   const apiHeaders = useMemo(
-    () => ({
-      "Content-Type": "application/json",
-    }),
+    () => ({ "Content-Type": "application/json" }),
     []
   );
 
-  // Fetch all course-related data
-  const fetchCourseData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
+  const saveProgressToDB = useCallback(async () => {
     try {
-      // Fetch enrollment status
-      const enrollmentResponse = await fetch(
-        `${API_BASE_URL}/api/courses/get-enroll`,
+      const response = await fetch(
+        `${API_BASE_URL}/api/courses/analytics/save-progress`,
         {
           method: "POST",
           headers: apiHeaders,
-          body: JSON.stringify({ courseID }),
-        }
-      );
-      const enrollmentData = await enrollmentResponse.json();
-      if (enrollmentData.success && enrollmentData.data?.length > 0) {
-        const enrollmentInfo = enrollmentData.data[0];
-        setIsEnrolled(enrollmentInfo.status === "active");
-        setEnrollment(enrollmentInfo);
-      } else {
-        setIsEnrolled(false);
-      }
-
-      // Fetch course details
-      const courseResponse = await fetch(`${API_BASE_URL}/api/courses`, {
-        method: "POST",
-        headers: apiHeaders,
-        body: JSON.stringify({ courseID, goalID }),
-      });
-      const courseData = await courseResponse.json();
-      if (courseData.success) {
-        setCourseDetails(courseData.data);
-      } else {
-        throw new Error(courseData.message || "Failed to fetch course details");
-      }
-
-      // Fetch lessons
-      const lessonsResponse = await fetch(
-        `${API_BASE_URL}/api/courses/lessons`,
-        {
-          method: "POST",
-          headers: apiHeaders,
-          body: JSON.stringify({ courseID }),
-        }
-      );
-      const lessonsData = await lessonsResponse.json();
-      if (lessonsData.success) {
-        setLessonList(lessonsData.data);
-        // Play the first preview video if available
-        const firstPreviewVideoIndex = lessonsData.data.findIndex(
-          (lesson) => lesson.type === "VIDEO" && lesson.isPreview
-        );
-        if (firstPreviewVideoIndex !== -1) {
-          const firstPreviewVideo = lessonsData.data[firstPreviewVideoIndex];
-          setSelectedLessonId(firstPreviewVideo.id);
-          setSelectedLessonIndex(firstPreviewVideoIndex + 1);
-          await playVideo({
-            lessonID: firstPreviewVideo.id,
+          body: JSON.stringify({
             courseID,
-            setVideoLoading,
-            setVideoPreview,
-          });
+            lessonProgress: progressRef.current,
+          }),
+          credentials: "include",
         }
+      );
+      const data = await response.json();
+      if (data.success) {
+        console.log("Progress saved successfully");
       } else {
-        throw new Error(lessonsData.message || "Failed to fetch lessons");
+        console.error("Failed to save progress:", data.message);
       }
     } catch (err) {
-      console.error("Error fetching course data:", err);
+      console.error("Error saving progress to DB:", err);
+    }
+  }, [courseID, apiHeaders]);
+
+  const initializePlayer = useCallback(() => {
+    if (iframeRef.current && window.playerjs) {
+      const player = new window.playerjs.Player(iframeRef.current);
+      playerRef.current = player;
+
+      player.on("ready", () => {
+        const currentTime =
+          progressRef.current[selectedLessonId]?.currentTime || 0;
+        player.setCurrentTime(currentTime);
+      });
+
+      player.on("play", () => setIsPlaying(true));
+      player.on("pause", () => {
+        setIsPlaying(false);
+      });
+
+      player.on("timeupdate", ({ seconds, duration }) => {
+        const progress = (seconds / duration) * 100;
+
+        progressRef.current[selectedLessonId] = {
+          progress,
+          currentTime: seconds,
+          isCompleted:
+            progressRef.current[selectedLessonId]?.isCompleted ||
+            progress >= 100,
+        };
+
+        // Re-render throttled to once every second
+        // const now = Date.now();
+        // if (now - lastTickRef.current > 1000) {
+        setRenderTick((t) => t + 1); // force re-render
+        //   lastTickRef.current = now;
+        // }
+      });
+
+      player.on("ended", () => {
+        const progressData = {
+          progress: 100,
+          currentTime: 0,
+          isCompleted: true,
+        };
+        progressRef.current[selectedLessonId] = progressData;
+
+        // if (lessonList.find((l) => l.id === selectedLessonId)?.isPreview) {
+        saveProgressToDB(selectedLessonId, progressData);
+        // }
+
+        setIsPlaying(false);
+        setRenderTick((t) => t + 1);
+      });
+
+      player.on("error", () => {
+        setError("Failed to control video playback. Please try again.");
+      });
+    }
+  }, [selectedLessonId, saveProgressToDB]);
+
+  useEffect(() => {
+    setLessonProgress((prev) => ({
+      ...prev,
+      [selectedLessonId]: progressRef.current,
+    }));
+  }, [selectedLessonId]);
+
+  useEffect(() => {
+    const now = Date.now();
+    if (now - lastUpdatedAt > 30000) {
+      saveProgressToDB();
+      setLastUpdatedAt(now);
+    }
+  }, [lastUpdatedAt, renderTick, saveProgressToDB]);
+
+  const fetchCourseData = useCallback(async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const [enrollRes, courseRes, lessonsRes, progressRes] = await Promise.all(
+        [
+          fetch(`${API_BASE_URL}/api/courses/get-enroll`, {
+            method: "POST",
+            headers: apiHeaders,
+            body: JSON.stringify({ courseID }),
+            credentials: "include",
+          }),
+          fetch(`${API_BASE_URL}/api/courses`, {
+            method: "POST",
+            headers: apiHeaders,
+            body: JSON.stringify({ courseID, goalID }),
+            credentials: "include",
+          }),
+          fetch(`${API_BASE_URL}/api/courses/lessons`, {
+            method: "POST",
+            headers: apiHeaders,
+            body: JSON.stringify({ courseID }),
+            credentials: "include",
+          }),
+          fetch(`${API_BASE_URL}/api/courses/get-progress`, {
+            method: "POST",
+            headers: apiHeaders,
+            body: JSON.stringify({ courseID }),
+            credentials: "include",
+          }),
+        ]
+      );
+
+      const [enrollData, courseData, lessonsData, progressData] =
+        await Promise.all([
+          enrollRes.json(),
+          courseRes.json(),
+          lessonsRes.json(),
+          progressRes.json(),
+        ]);
+
+      if (enrollData.success && enrollData.data?.length > 0) {
+        const enrollmentInfo = enrollData.data[0];
+        setIsEnrolled(enrollmentInfo.status === "active");
+        setEnrollment(enrollmentInfo);
+      }
+
+      if (!courseData.success) throw new Error(courseData.message);
+      setCourseDetails(courseData.data);
+
+      if (!lessonsData.success) throw new Error(lessonsData.message);
+      setLessonList(lessonsData.data);
+
+      if (progressData.success) {
+        progressRef.current = { ...progressData.data };
+        setRenderTick((t) => t + 1); // re-render to show existing progress
+      }
+
+      const firstPreview = lessonsData.data.find(
+        (lesson) => lesson.type === "VIDEO" && lesson.isPreview
+      );
+      if (firstPreview) {
+        setSelectedLessonId(firstPreview.id);
+        setSelectedLessonIndex(lessonsData.data.indexOf(firstPreview) + 1);
+        await playVideo({
+          lessonID: firstPreview.id,
+          courseID,
+          setVideoLoading,
+          setVideoPreview,
+        });
+      }
+    } catch (err) {
+      console.error(err);
       setError("Failed to load course data. Please try again later.");
     } finally {
       setIsLoading(false);
     }
   }, [courseID, goalID, apiHeaders]);
 
-  // Fetch course data on mount
   useEffect(() => {
     fetchCourseData();
   }, [fetchCourseData]);
 
-  // Handle lesson click
+  useEffect(() => {
+    if (videoPreview && iframeRef.current) {
+      initializePlayer();
+    }
+  }, [videoPreview, initializePlayer]);
+
   const handleLessonClick = useCallback(
     (item, index) => {
-      if (selectedLessonId === item.id || item.type !== "VIDEO") return; // Block selection for files
-      if (item.isPreview || isEnrolled) {
+      if (item.type !== "VIDEO" || (!item.isPreview && !isEnrolled)) return;
+
+      const isSame = selectedLessonId === item.id;
+
+      if (isSame && playerRef.current) {
+        isPlaying ? playerRef.current.pause() : playerRef.current.play();
+      } else {
         setSelectedLessonId(item.id);
         setSelectedLessonIndex(index + 1);
+        setIsPlaying(true);
         playVideo({
           lessonID: item.id,
           courseID,
@@ -140,14 +259,22 @@ const MyCourse = () => {
         });
       }
     },
-    [selectedLessonId, isEnrolled, enrollment, courseID]
+    [selectedLessonId, isEnrolled, enrollment, courseID, isPlaying]
   );
 
-  // Handle file download
+  const handlePlayPauseClick = (e, shouldPlay) => {
+    e.stopPropagation();
+    if (!playerRef.current) {
+      setError("Video player is not ready.");
+      return;
+    }
+    shouldPlay ? playerRef.current.play() : playerRef.current.pause();
+  };
+
   const handleFileDownload = useCallback(
     async (lessonID) => {
       try {
-        const response = await fetch(
+        const res = await fetch(
           `${API_BASE_URL}/api/courses/lessons/get-file-url`,
           {
             method: "POST",
@@ -157,98 +284,109 @@ const MyCourse = () => {
               courseID,
               enrollmentID: enrollment?.id,
             }),
+            credentials: "include",
           }
         );
-        const data = await response.json();
+        const data = await res.json();
         if (data.success) {
-          triggerDownload(data.data);
+          const link = document.createElement("a");
+          link.href = data.data;
+          link.download = "resource";
+          link.click();
         } else {
-          throw new Error(data.message || "Failed to download file");
+          throw new Error(data.message);
         }
       } catch (err) {
-        console.error("File download error:", err);
-        setError("Failed to download file. Please try again.");
+        setError("Failed to download file.");
       }
     },
     [courseID, enrollment, apiHeaders]
   );
 
-  // Memoized course info tags
   const courseInfoTags = useMemo(
     () => [
       {
-        icon: <Translate sx={{ fontSize: "16px" }} />,
-        text: courseDetails?.language?.join(", ") || "No languages available",
+        icon: <Translate sx={{ fontSize: 16 }} />,
+        text: courseDetails?.language?.join(", ") || "N/A",
       },
       {
-        icon: <PlayLesson sx={{ fontSize: "16px" }} />,
+        icon: <PlayLesson sx={{ fontSize: 16 }} />,
         text: `${courseDetails?.lessons || 0} Lessons`,
       },
       {
-        icon: <AccessTimeFilled sx={{ fontSize: "16px" }} />,
+        icon: <AccessTimeFilled sx={{ fontSize: 16 }} />,
         text: `${courseDetails?.duration || 0} Hours`,
       },
     ],
     [courseDetails]
   );
 
-  if (isLoading) return <PageSkeleton />;
-
-  if (error) {
+  if (isLoading) {
     return (
       <Stack alignItems="center" justifyContent="center" height="100vh">
-        <Typography color="error">{error}</Typography>
+        <CircularProgress sx={{ color: "var(--primary-color)" }} />
       </Stack>
     );
   }
+  const userType = session?.user?.accountType;
+
+  const isPaidCourseForUser =
+    (userType === "FREE" && !courseDetails?.subscription.isFree) ||
+    (userType === "PRO" &&
+      !courseDetails?.subscription.isFree &&
+      !courseDetails?.subscription.isPro);
 
   return (
     <Stack
       sx={{
-        padding: { xs: "10px", sm: "20px" },
+        p: { xs: 1, sm: 2 },
         alignItems: "center",
-        marginBottom: isEnrolled ? 0 : { xs: "40%", sm: "20%", md: 0 },
+        mb: isEnrolled ? 0 : { xs: "40%", sm: "20%", md: 0 },
       }}
     >
-      <Stack gap="20px" width="100%" maxWidth="1200px">
+      <Script
+        src="https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js"
+        onLoad={initializePlayer}
+      />
+
+      <Stack gap={2.5} width="100%" maxWidth="1200px">
         {/* Header */}
         <Stack
           direction="row"
           alignItems="center"
-          gap="5px"
+          gap={1}
           sx={{
             border: "1px solid var(--border-color)",
             bgcolor: "var(--white)",
-            borderRadius: "10px",
-            p: "10px 20px",
-            height: "50px",
+            borderRadius: 2,
+            px: 2.5,
+            height: 50,
           }}
         >
           <ArrowBackIosNew
             onClick={() => router.back()}
-            sx={{ cursor: "pointer", fontSize: "18px" }}
+            sx={{ cursor: "pointer", fontSize: 18 }}
           />
-          <Typography
-            sx={{ fontSize: { xs: "12px", sm: "16px" }, fontFamily: "Lato" }}
-          >
-            {courseDetails?.title || <Skeleton variant="text" width="120px" />}
+          <Typography sx={{ fontSize: { xs: 12, sm: 16 }, fontFamily: "Lato" }}>
+            {courseDetails?.title || <Skeleton variant="text" width={120} />}
           </Typography>
         </Stack>
 
         {/* Main Content */}
         <Stack
           direction={{ xs: "column", md: "row" }}
-          gap={{ xs: "20px", lg: "30px" }}
+          gap={{ xs: 2.5, lg: 3.75 }}
           justifyContent="space-between"
         >
-          {/* Video and Course Info */}
-          <Stack gap="15px" flex={1}>
+          {/* Video & Info */}
+          <Stack gap={1.875} flex={1}>
+            {/* Video Area */}
             {videoLoading ? (
               <Stack
-                width="100%"
-                height="500px"
+                height={500}
                 justifyContent="center"
                 alignItems="center"
+                width="100%"
               >
                 <CircularProgress
                   sx={{ color: "var(--primary-color)" }}
@@ -260,12 +398,14 @@ const MyCourse = () => {
                 sx={{
                   width: "100%",
                   aspectRatio: "16/9",
-                  borderRadius: "15px",
+                  borderRadius: 2,
                   overflow: "hidden",
                   bgcolor: "black",
                 }}
               >
                 <iframe
+                  ref={iframeRef}
+                  id="bunny-stream-embed"
                   src={videoPreview}
                   style={{ width: "100%", height: "100%", border: "none" }}
                   allow="autoplay; fullscreen"
@@ -276,16 +416,23 @@ const MyCourse = () => {
               <Skeleton
                 variant="rectangular"
                 width="100%"
-                height="400px"
-                sx={{ borderRadius: "15px", bgcolor: "var(--sec-color-acc-1)" }}
+                height={400}
+                sx={{ borderRadius: 2, bgcolor: "var(--sec-color-acc-1)" }}
               />
             )}
 
-            {/* Course Info Tags */}
+            {/* Error Message */}
+            {error && videoPreview && (
+              <Typography color="error" sx={{ mt: 1, textAlign: "center" }}>
+                {error}
+              </Typography>
+            )}
+
+            {/* Tags */}
             <Stack
               direction="row"
               flexWrap="wrap"
-              gap="5px"
+              gap={0.625}
               justifyContent={{ xs: "center", sm: "flex-start" }}
             >
               {courseInfoTags.map(({ icon, text }, index) => (
@@ -293,15 +440,16 @@ const MyCourse = () => {
                   key={index}
                   sx={{
                     fontFamily: "Lato",
-                    fontSize: { xs: "12px", sm: "14px" },
+                    fontSize: { xs: 12, sm: 14 },
                     fontWeight: 400,
                     bgcolor: "var(--sec-color-acc-1)",
-                    p: "5px 10px",
-                    borderRadius: "2px",
+                    px: 1.25,
+                    py: 0.625,
+                    borderRadius: 0.5,
                     color: "var(--sec-color)",
                     display: "flex",
                     alignItems: "center",
-                    gap: "5px",
+                    gap: 0.625,
                   }}
                 >
                   {icon}
@@ -310,43 +458,44 @@ const MyCourse = () => {
               ))}
             </Stack>
 
-            {/* Course Description (Desktop) */}
-            <Stack sx={{ display: { xs: "none", md: "block" } }}>
-              {courseDetails?.description && (
+            {/* Description (Desktop) */}
+            {courseDetails?.description && (
+              <Stack sx={{ display: { xs: "none", md: "block" } }}>
                 <Stack
                   sx={{
                     bgcolor: "var(--white)",
-                    p: "20px 25px",
-                    borderRadius: "10px",
+                    p: 2.5,
+                    borderRadius: 2,
                     overflow: "auto",
                   }}
                 >
                   <MDPreview value={courseDetails.description} />
                 </Stack>
-              )}
-            </Stack>
+              </Stack>
+            )}
           </Stack>
 
-          {/* Checkout and Lessons */}
+          {/* Checkout + Lessons */}
           <Stack
-            gap="20px"
+            gap={2.5}
             alignItems={{ xs: "center", md: "flex-end" }}
             flex={{ xs: "auto", md: 0.6 }}
-            sx={{ mb: { xs: "60px", md: 0 } }}
+            sx={{ mb: { xs: 7.5, md: 0 } }}
           >
             {!isEnrolled && (
-              <Stack width={{ xs: "100%", sm: "350px" }} maxWidth="350px">
+              <Stack width={{ xs: "100%", sm: 350 }} maxWidth={350}>
                 <CheckoutCard
                   courseDetails={courseDetails}
                   lessonList={lessonList}
+                  isPaidCourseForUser={isPaidCourseForUser}
                 />
               </Stack>
             )}
 
-            {/* Lessons List */}
+            {/* Lessons */}
             <Stack
-              width={{ xs: "100%", md: "350px", lg: "auto" }}
-              gap="15px"
+              width={{ xs: "100%", md: 350, lg: "auto" }}
+              gap={1.875}
               alignItems="center"
             >
               <Stack
@@ -357,22 +506,36 @@ const MyCourse = () => {
               >
                 <Typography
                   sx={{
-                    fontSize: { xs: "18px", sm: "20px" },
+                    fontSize: { xs: 18, sm: 20 },
                     fontWeight: 700,
                     fontFamily: "Lato",
                   }}
                 >
                   Lectures
                 </Typography>
-                <Typography sx={{ fontSize: "16px", color: "var(--text3)" }}>
+                <Typography sx={{ fontSize: 16, color: "var(--text3)" }}>
                   {selectedLessonIndex}/{lessonList.length}
                 </Typography>
               </Stack>
 
+              {/* Lessons Render */}
               {lessonList.length > 0
                 ? lessonList.map((item, index) => {
                     const isAccessible = isEnrolled || item.isPreview;
                     const isSelected = selectedLessonId === item.id;
+                    const progress =
+                      progressRef.current[item.id]?.progress || 0;
+                    const isCompleted =
+                      progressRef.current[item.id]?.isCompleted || false;
+
+                    const commonIconProps = {
+                      sx: {
+                        color: isAccessible
+                          ? "var(--sec-color)"
+                          : "var(--primary-color)",
+                        cursor: isAccessible ? "pointer" : "default",
+                      },
+                    };
 
                     return (
                       <LessonCard
@@ -393,41 +556,26 @@ const MyCourse = () => {
                         duration={item.duration}
                         iconStart={
                           item.type === "VIDEO" ? (
-                            isSelected ? (
+                            isSelected && isPlaying ? (
                               <PauseCircle
-                                sx={{
-                                  color: isAccessible
-                                    ? "var(--sec-color)"
-                                    : "var(--primary-color)",
-                                }}
+                                onClick={(e) => handlePlayPauseClick(e, false)}
+                                {...commonIconProps}
                               />
                             ) : (
                               <PlayCircle
-                                sx={{
-                                  color: isAccessible
-                                    ? "var(--sec-color)"
-                                    : "var(--primary-color)",
-                                }}
+                                onClick={(e) => handlePlayPauseClick(e, true)}
+                                {...commonIconProps}
                               />
                             )
                           ) : (
-                            <InsertDriveFile
-                              sx={{
-                                color: isAccessible
-                                  ? "var(--sec-color)"
-                                  : "var(--primary-color)",
-                              }}
-                            />
+                            <InsertDriveFile sx={commonIconProps.sx} />
                           )
                         }
                         iconEnd={
                           item.type === "FILE" ? (
                             isAccessible ? (
                               <SaveAlt
-                                sx={{
-                                  color: "var(--sec-color)",
-                                  cursor: "pointer",
-                                }}
+                                sx={{ ...commonIconProps.sx }}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleFileDownload(item.id);
@@ -436,9 +584,22 @@ const MyCourse = () => {
                             ) : (
                               <Lock sx={{ color: "var(--primary-color)" }} />
                             )
-                          ) : item.type === "VIDEO" && !isAccessible ? (
+                          ) : !isAccessible ? (
                             <Lock sx={{ color: "var(--primary-color)" }} />
-                          ) : null
+                          ) : isCompleted ? (
+                            <CheckCircle
+                              sx={{
+                                color: "var(--primary-color)",
+                              }}
+                            />
+                          ) : (
+                            <CircularProgress
+                              variant="determinate"
+                              value={progress}
+                              size={24}
+                              sx={{ color: "var(--sec-color)" }}
+                            />
+                          )
                         }
                         isPreview={item.isPreview}
                         isEnrolled={isEnrolled}
@@ -446,27 +607,27 @@ const MyCourse = () => {
                       />
                     );
                   })
-                : Array.from({ length: 4 }).map((_, index) => (
-                    <LessoncardSkeleton key={index} />
+                : Array.from({ length: 4 }).map((_, i) => (
+                    <LessoncardSkeleton key={i} />
                   ))}
             </Stack>
 
-            {/* Course Description (Mobile) */}
-            <Stack sx={{ display: { xs: "block", md: "none" }, width: "100%" }}>
-              {courseDetails?.description && (
-                <Stack
-                  sx={{
-                    bgcolor: "var(--white)",
-                    p: "20px 25px",
-                    borderRadius: "10px",
-                    overflow: "auto",
-                    mt: "20px",
-                  }}
-                >
-                  <MDPreview value={courseDetails.description} />
-                </Stack>
-              )}
-            </Stack>
+            {/* Description (Mobile) */}
+            {courseDetails?.description && (
+              <Stack
+                sx={{
+                  display: { xs: "block", md: "none" },
+                  width: "100%",
+                  mt: 2.5,
+                  bgcolor: "var(--white)",
+                  p: 2.5,
+                  borderRadius: 2,
+                  overflow: "auto",
+                }}
+              >
+                <MDPreview value={courseDetails.description} />
+              </Stack>
+            )}
           </Stack>
         </Stack>
       </Stack>
@@ -474,7 +635,6 @@ const MyCourse = () => {
   );
 };
 
-// Helper function to play video
 const playVideo = async ({
   lessonID,
   courseID,
@@ -490,6 +650,7 @@ const playVideo = async ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lessonID, courseID, enrollmentID }),
+        credentials: "include",
       }
     );
     const data = await response.json();
@@ -504,16 +665,6 @@ const playVideo = async ({
   } finally {
     setVideoLoading(false);
   }
-};
-
-// Helper function to trigger file download
-const triggerDownload = (fileUrl) => {
-  const a = document.createElement("a");
-  a.href = fileUrl;
-  a.download = "";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
 };
 
 export default MyCourse;

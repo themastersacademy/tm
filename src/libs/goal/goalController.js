@@ -1,19 +1,13 @@
 import { dynamoDB } from "@/src/utils/awsAgent";
-import {
-  PutCommand,
-  GetCommand,
-  QueryCommand,
-  DeleteCommand,
-  UpdateCommand,
-  ScanCommand,
-} from "@aws-sdk/lib-dynamodb";
+import { GetCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 
 export async function getGoalList() {
   const params = {
     TableName: `${process.env.AWS_DB_NAME}master`,
-    FilterExpression: "sKey = :sKey",
+    FilterExpression: "sKey = :sKey AND isLive = :isLive",
     ExpressionAttributeValues: {
       ":sKey": "GOALS",
+      ":isLive": true,
     },
   };
   const command = new ScanCommand(params);

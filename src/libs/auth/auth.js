@@ -42,7 +42,6 @@ export async function getUserByEmail(email) {
     }
 
     const isUpdated = await updateUserProSubscription(user);
-    console.log("isUpdated", isUpdated);
     if (!isUpdated) {
       return user;
     }
@@ -61,7 +60,6 @@ export async function getUserByEmail(email) {
 export async function updateUserProSubscription(user) {
   // 1. Fetch the latest valid pro‐subscription for this user.
   const result = await getValidProSubscription(user.id);
-  console.log("result", result);
   // 2. Determine desired fields:
   //    - If there's a successful active subscription that hasn't expired, user should be "PRO".
   //    - Otherwise, user should be "FREE".

@@ -98,3 +98,45 @@ export async function getFullUserByID(userID) {
   );
   return user;
 }
+
+  export async function updateUserProfile(userID, data) {
+  const TableName = `${process.env.AWS_DB_NAME}users`;
+  const Key = {
+    pKey: `USER#${userID}`,
+    sKey: `USER#${userID}`,
+  };
+  const { Item: user } = await dynamoDB.send(
+    new GetCommand({ TableName, Key })
+  );
+  if (!user) {
+    return {
+      success: false,
+      message: "User not found",
+    };
+  }
+  const { name, email, phoneNumber, gender } = data;
+  await dynamoDB.send(
+    new UpdateCommand({
+      TableName,
+      Key,
+      UpdateExpression:
+        "set #name = :name, #email = :email, #phoneNumber = :phoneNumber, #gender = :gender",
+      ExpressionAttributeNames: {
+        "#name": "name",
+        "#email": "email",
+        "#phoneNumber": "phoneNumber",
+        "#gender": "gender",
+      },
+      ExpressionAttributeValues: {
+        ":name": name,
+        ":email": email,
+        ":phoneNumber": phoneNumber,
+        ":gender": gender,
+      },
+    })
+  );
+  return {
+    success: true,
+    message: "User profile updated successfully",
+  };
+}

@@ -1,16 +1,23 @@
 "use client";
 import { useState } from "react";
 import { Button, Stack } from "@mui/material";
-import { East } from "@mui/icons-material";
+import { East, Lock } from "@mui/icons-material";
 import { useRouter, useParams } from "next/navigation";
 import StyledSelect from "@/src/Components/StyledSelect/StyledSelect";
+import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
 
-export default function TestSeries({ subjectOptions }) {
+export default function TestSeries({ subjectOptions, isPro }) {
   const router = useRouter();
   const { goalID } = useParams();
   const [selectedSubject, setSelectedSubject] = useState("");
   const [difficultyLevel, setDifficultyLevel] = useState("all");
-
+  const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+  const handlePlansDialogClose = () => {
+    setPlansDialogOpen(false);
+  };
+  const handlePlansDialogOpen = () => {
+    setPlansDialogOpen(true);
+  };
   const handleStartTest = async () => {
     // if (!selectedSubject) {
     //   enqueueSnackbar("Please select a subject", {
@@ -67,18 +74,22 @@ export default function TestSeries({ subjectOptions }) {
       />
       <Button
         variant="text"
-        endIcon={<East />}
-        onClick={handleStartTest}
+        width="100%"
+        endIcon={isPro ? <East /> : <Lock />}
+        onClick={isPro ? handleStartTest : handlePlansDialogOpen}
         sx={{
           textTransform: "none",
           color: "var(--primary-color)",
           fontFamily: "Lato",
-          width: "120px",
           alignSelf: "center",
         }}
       >
-        Start Test
+        {isPro ? "Start Test" : "Upgrade to PRO"}
       </Button>
+      <PlansDialogBox
+        plansDialogOpen={plansDialogOpen}
+        handlePlansDialogClose={handlePlansDialogClose}
+      />
     </Stack>
   );
 }

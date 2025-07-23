@@ -24,7 +24,7 @@ export default async function Dashboard({ searchParams }) {
     return redirect("/profile-setup?goal=true");
   }
 
-  const selectedGoalID = await cookies().get("selectedGoalID")?.value;
+  const selectedGoalID = await cookies()?.get("selectedGoalID")?.value;
 
   if (
     selectedGoalID &&

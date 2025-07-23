@@ -190,12 +190,12 @@ export async function startExam({ examID, userID }) {
     id: userID,
     name: user.name,
     email: user.email,
-    image: user.image,
+    image: user?.image || null,
   };
 
   const seed = exam.settings.isRandomQuestion
     ? Math.floor(Math.random() * 2 ** 31) // 32-bit integer
-    : undefined;
+    : null;
 
   const blobSignedUrl = await getFileURL({
     path: exam.blobBucketKey,
@@ -222,8 +222,8 @@ export async function startExam({ examID, userID }) {
         exam.type === "group" ||
         exam.type === "practice"
           ? exam.goalID
-          : undefined,
-      batchID: exam.type === "scheduled" ? batchID : undefined,
+          : null,
+      batchID: exam.type === "scheduled" ? batchID : null,
       type: exam.type,
       startTimeStamp: now,
       duration: exam.duration,
@@ -247,6 +247,7 @@ export async function startExam({ examID, userID }) {
       updatedAt: now,
     },
   };
+  console.log("examAttemptParams", examAttemptParams);
   try {
     await dynamoDB.send(new PutCommand(examAttemptParams));
     return {
@@ -397,7 +398,6 @@ export async function getPreviousAttempt(userID, examID) {
   try {
     const { Items = [] } = await dynamoDB.send(new QueryCommand(params));
     items = Items;
-    console.log("items", items);
   } catch (err) {
     console.error("getPreviousAttempt DynamoDB error:", err);
     throw new Error("Failed to fetch previous attempts");

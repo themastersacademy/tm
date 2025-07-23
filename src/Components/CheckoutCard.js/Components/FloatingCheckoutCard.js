@@ -1,8 +1,8 @@
+"use client"
 import { Stack, Typography, Select, MenuItem, Button } from "@mui/material";
 import { East } from "@mui/icons-material";
 import Image from "next/image";
 import defaultThumbnail from "@/public/images/defaultThumbnail.svg";
-import { useRouter, useParams } from "next/navigation";
 
 export default function FloatingCheckoutCard({
   courseDetails,
@@ -11,10 +11,26 @@ export default function FloatingCheckoutCard({
   plans,
   calculateDiscountedPrice,
   formatPlanLabel,
+  handleCheckout,
+  isFree, // Added isFree prop
 }) {
-  const router = useRouter();
-  const params = useParams();
-  const { goalID, courseID } = params;
+  // Return early if courseDetails is not available
+  if (!courseDetails) {
+    return (
+      <Stack
+        sx={{
+          backgroundColor: "white",
+          padding: "10px",
+          height: "120px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Typography>Loading...</Typography>
+      </Stack>
+    );
+  }
 
   return (
     <Stack
@@ -51,8 +67,7 @@ export default function FloatingCheckoutCard({
               style={{ borderRadius: "5px" }}
             />
           </Stack>
-          {/* Plan Selector */}
-
+          {/* Plan Selector and Price */}
           <Stack
             flexDirection={{ xs: "column" }}
             marginTop={{ xs: "10px", sm: "10px", md: "0px", lg: "0px" }}
@@ -63,58 +78,53 @@ export default function FloatingCheckoutCard({
               alignItems="center"
               display={{ xs: "flex", sm: "none" }}
             >
-              <Select
-                variant="outlined"
-                value={selectedPlan?.duration || ""}
-                onChange={handlePlanChange}
-                displayEmpty
-                renderValue={(selected) => {
-                  const plan = selected
-                    ? plans.find((p) => p.duration === selected)
-                    : plans[0];
-                  return plan ? formatPlanLabel(plan) : "Loading...";
-                }}
-                MenuProps={{
-                  disableScrollLock: true,
-                  PaperProps: {
-                    sx: {
-                      padding: "8px",
-                      "& .MuiList-root": {
-                        paddingBottom: 0,
-                        borderColor: "var(--border-color)",
+              {/* Show Select only for non-free courses */}
+              {!isFree && (
+                <Select
+                  variant="outlined"
+                  value={selectedPlan?.duration || ""}
+                  onChange={handlePlanChange}
+                  displayEmpty
+                  renderValue={(selected) => {
+                    const plan = selected
+                      ? plans.find((p) => p.duration === selected)
+                      : plans[0];
+                    return plan ? formatPlanLabel(plan) : "Loading...";
+                  }}
+                  MenuProps={{
+                    disableScrollLock: true,
+                    PaperProps: {
+                      sx: {
+                        padding: "8px",
+                        "& .MuiList-root": {
+                          paddingBottom: 0,
+                          borderColor: "var(--border-color)",
+                        },
                       },
                     },
-                  },
-                }}
-                sx={{
-                  minWidth: { xs: "100px", sm: "140px" },
-                  height: { xs: "30px", sm: "35px" },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "var(--sec-color)",
-                  },
-                  "&:hover": {
-                    "& .MuiOutlinedInput-notchedOutline": {
+                  }}
+                  sx={{
+                    minWidth: { xs: "100px", sm: "140px" },
+                    height: { xs: "30px", sm: "35px" },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                       borderColor: "var(--sec-color)",
                     },
-                  },
-                }}
-              >
-                {plans.map((plan, index) => (
-                  <MenuItem key={index} value={plan.duration}>
-                    {formatPlanLabel(plan)}
-                  </MenuItem>
-                ))}
-              </Select>
+                    "&:hover": {
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "var(--sec-color)",
+                      },
+                    },
+                  }}
+                >
+                  {plans.map((plan, index) => (
+                    <MenuItem key={index} value={plan.duration}>
+                      {formatPlanLabel(plan)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
               <Button
-                onClick={() => {
-                  const selectedIndex = plans.findIndex(
-                    (plan) => plan.duration === selectedPlan?.duration
-                  );
-                  console.log(selectedIndex);
-                  router.push(
-                    `/dashboard/${goalID}/courses/${courseID}/checkout?plan=${selectedIndex}`
-                  );
-                }}
+                onClick={handleCheckout}
                 variant="text"
                 endIcon={<East />}
                 sx={{
@@ -129,12 +139,13 @@ export default function FloatingCheckoutCard({
                   minWidth: { xs: "80px", sm: "120px" },
                   height: { sm: "38px", xs: "32px" },
                 }}
-                disabled={!selectedPlan}
+                disabled={!isFree && !selectedPlan} // Disable if not free and no plan selected
               >
-                checkout
+                {isFree ? "Enroll Now" : "checkout"}
               </Button>
             </Stack>
-            {selectedPlan ? (
+            {/* Price (only for non-free courses) */}
+            {!isFree && selectedPlan ? (
               <Stack
                 flexDirection="row"
                 gap="5px"
@@ -177,7 +188,7 @@ export default function FloatingCheckoutCard({
                   ({selectedPlan.discountInPercent}% off)
                 </Typography>
               </Stack>
-            ) : (
+            ) : !isFree ? (
               <Typography
                 sx={{
                   fontFamily: "Lato",
@@ -187,7 +198,7 @@ export default function FloatingCheckoutCard({
               >
                 Loading...
               </Typography>
-            )}
+            ) : null}
           </Stack>
         </Stack>
         <Stack
@@ -196,58 +207,53 @@ export default function FloatingCheckoutCard({
           alignItems="center"
           display={{ xs: "none", sm: "flex" }}
         >
-          <Select
-            variant="outlined"
-            value={selectedPlan?.duration || ""}
-            onChange={handlePlanChange}
-            displayEmpty
-            renderValue={(selected) => {
-              const plan = selected
-                ? plans.find((p) => p.duration === selected)
-                : plans[0];
-              return plan ? formatPlanLabel(plan) : "Loading...";
-            }}
-            MenuProps={{
-              disableScrollLock: true,
-              PaperProps: {
-                sx: {
-                  padding: "8px",
-                  "& .MuiList-root": {
-                    paddingBottom: 0,
-                    borderColor: "var(--border-color)",
+          {/* Show Select only for non-free courses */}
+          {!isFree && (
+            <Select
+              variant="outlined"
+              value={selectedPlan?.duration || ""}
+              onChange={handlePlanChange}
+              displayEmpty
+              renderValue={(selected) => {
+                const plan = selected
+                  ? plans.find((p) => p.duration === selected)
+                  : plans[0];
+                return plan ? formatPlanLabel(plan) : "Loading...";
+              }}
+              MenuProps={{
+                disableScrollLock: true,
+                PaperProps: {
+                  sx: {
+                    padding: "8px",
+                    "& .MuiList-root": {
+                      paddingBottom: 0,
+                      borderColor: "var(--border-color)",
+                    },
                   },
                 },
-              },
-            }}
-            sx={{
-              minWidth: { xs: "100px", sm: "140px" },
-              height: { xs: "30px", sm: "35px" },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "var(--sec-color)",
-              },
-              "&:hover": {
-                "& .MuiOutlinedInput-notchedOutline": {
+              }}
+              sx={{
+                minWidth: { xs: "100px", sm: "140px" },
+                height: { xs: "30px", sm: "35px" },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                   borderColor: "var(--sec-color)",
                 },
-              },
-            }}
-          >
-            {plans.map((plan, index) => (
-              <MenuItem key={index} value={plan.duration}>
-                {formatPlanLabel(plan)}
-              </MenuItem>
-            ))}
-          </Select>
+                "&:hover": {
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--sec-color)",
+                  },
+                },
+              }}
+            >
+              {plans.map((plan, index) => (
+                <MenuItem key={index} value={plan.duration}>
+                  {formatPlanLabel(plan)}
+                </MenuItem>
+              ))}
+            </Select>
+          )}
           <Button
-            onClick={() => {
-              const selectedIndex = plans.findIndex(
-                (plan) => plan.duration === selectedPlan?.duration
-              );
-              console.log(selectedIndex);
-              router.push(
-                `/dashboard/${goalID}/courses/${courseID}/checkout?plan=${selectedIndex}`
-              );
-            }}
+            onClick={handleCheckout}
             variant="text"
             endIcon={<East />}
             sx={{
@@ -262,9 +268,9 @@ export default function FloatingCheckoutCard({
               minWidth: { xs: "100px", sm: "120px" },
               height: { sm: "38px" },
             }}
-            disabled={!selectedPlan}
+            disabled={!isFree && !selectedPlan} // Disable if not free and no plan selected
           >
-            checkout
+            {isFree ? "Enroll Now" : "checkout"}
           </Button>
         </Stack>
       </Stack>

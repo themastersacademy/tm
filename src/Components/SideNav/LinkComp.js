@@ -3,8 +3,7 @@ import { ExpandMore } from "@mui/icons-material";
 import { Stack, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import home from "@/public/icons/home_icon.svg";
 import dashboard from "@/public/icons/dashboard_icon.svg";
 import exam from "@/public/icons/exam_icon.svg";
@@ -79,41 +78,50 @@ const NavComp = ({
   isSideNavOpen,
   sideNavOpen,
   isRoot,
-  selectedGoalId,
 }) => {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const pathname = usePathname();
   const params = useParams();
   const goalID = params.goalID;
+  const router = useRouter();
+  const [tooltipOpen, setTooltipOpen] = useState(false);
 
   const isParentActive = isRoot
     ? pathname === `/dashboard/${goalID}`
     : pathname === href || pathname.startsWith(href + "/");
   const isChildActive = list?.some((item) => pathname.startsWith(item.href));
 
-  // const toggleLibrary = () => {
-  //   setIsNavOpen((prev) => {
-  //     !prev && sideNavOpen && sideNavOpen();
-  //     return !prev;
-  //   });
-  // };
-
   const toggleLibrary = () => {
     if (!isNavOpen && sideNavOpen) {
-      sideNavOpen(); // ✅ only trigger parent state change here
+      sideNavOpen();
     }
-    setIsNavOpen((prev) => !prev); // ✅ separate, safe call
+    setIsNavOpen((prev) => !prev);
+  };
+
+  const handleClick = () => {
+    if (list) {
+      toggleLibrary();
+      setTooltipOpen(false);
+    } else if (href) {
+      router.push(href);
+    }
   };
 
   useEffect(() => {
-    isSideNavOpen && setIsNavOpen(false);
-    !isSideNavOpen && setIsNavOpen(true);
+    isSideNavOpen ? setIsNavOpen(false) : setIsNavOpen(true);
   }, [isSideNavOpen]);
 
   return (
     <Stack>
-      <Tooltip title={title} disableHoverListener={!isSideNavOpen}>
+      <Tooltip
+        title={title}
+        disableHoverListener={!isSideNavOpen}
+        open={tooltipOpen}
+        onOpen={() => setTooltipOpen(true)}
+        onClose={() => setTooltipOpen(false)}
+      >
         <Stack
+          onClick={handleClick}
           sx={{
             minHeight: "40px",
             padding: "10px 20px",
@@ -131,84 +139,74 @@ const NavComp = ({
             },
           }}
         >
-          <Link href={href || "#"} passHref>
-            <Stack
-              flexDirection="row"
-              alignItems="center"
-              onClick={list ? toggleLibrary : undefined}
-            >
-              <Stack
-                direction={"row"}
-                alignItems={"center"}
-                gap={"10px"}
-                height={"20px"}
-              >
-                <Image src={icon} alt={title} width={16} height={16} />
-                {!isSideNavOpen && (
-                  <Typography
-                    sx={{
-                      fontFamily: "Lato",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "var(--primary-color)",
-                    }}
-                  >
-                    {title}
-                  </Typography>
-                )}
-              </Stack>
-              {list && !isSideNavOpen && (
-                <ExpandMore
+          <Stack flexDirection="row" alignItems="center" width="100%">
+            <Stack direction="row" alignItems="center" gap="10px" height="20px">
+              <Image src={icon} alt={title} width={16} height={16} />
+              {!isSideNavOpen && (
+                <Typography
                   sx={{
+                    fontFamily: "Lato",
+                    fontSize: "14px",
+                    fontWeight: "600",
                     color: "var(--primary-color)",
-                    marginLeft: "auto",
-                    transform: isNavOpen ? "rotate(180deg)" : "rotate(0deg)",
                   }}
-                />
+                >
+                  {title}
+                </Typography>
               )}
             </Stack>
-          </Link>
-
-          {isNavOpen && list && (
-            <Stack
-              sx={{
-                pl: "15px",
-                mt: "10px",
-                justifyContent: "center",
-                gap: "2px",
-              }}
-            >
-              {list.map((item, index) => (
-                <Link href={item.href} key={index} passHref>
-                  <Typography
-                    sx={{
-                      fontFamily: "Lato",
-                      fontSize: "14px",
-                      fontWeight: "700",
-                      color: pathname.startsWith(item.href)
-                        ? "var(--primary-color)"
-                        : "var(--text3)",
-                      whiteSpace: "nowrap",
-                      borderRadius: "20px",
-                      height: "28px",
-                      paddingTop: "4px",
-                      paddingLeft: "15px",
-                      backgroundColor: pathname.startsWith(item.href)
-                        ? "var(--primary-color-acc-2)"
-                        : "transparent",
-                      "&:hover": {
-                        backgroundColor: "var(--primary-color-acc-2)",
-                      },
-                    }}
-                  >
-                    {item.title}
-                  </Typography>
-                </Link>
-              ))}
-            </Stack>
-          )}
+            {list && !isSideNavOpen && (
+              <ExpandMore
+                sx={{
+                  color: "var(--primary-color)",
+                  marginLeft: "auto",
+                  transform: isNavOpen ? "rotate(180deg)" : "rotate(0deg)",
+                }}
+              />
+            )}
+          </Stack>
         </Stack>
       </Tooltip>
+
+      {isNavOpen && list && (
+        <Stack
+          sx={{
+            pl: "15px",
+            mt: "10px",
+            justifyContent: "center",
+            gap: "2px",
+          }}
+        >
+          {list.map((item, index) => (
+            <Typography
+              key={index}
+              onClick={() => router.push(item.href)}
+              sx={{
+                fontFamily: "Lato",
+                fontSize: "14px",
+                fontWeight: "700",
+                color: pathname.startsWith(item.href)
+                  ? "var(--primary-color)"
+                  : "var(--text3)",
+                whiteSpace: "nowrap",
+                borderRadius: "20px",
+                height: "28px",
+                paddingTop: "4px",
+                paddingLeft: "15px",
+                backgroundColor: pathname.startsWith(item.href)
+                  ? "var(--primary-color-acc-2)"
+                  : "transparent",
+                "&:hover": {
+                  backgroundColor: "var(--primary-color-acc-2)",
+                },
+                cursor: "pointer",
+              }}
+            >
+              {item.title}
+            </Typography>
+          ))}
+        </Stack>
+      )}
     </Stack>
   );
 };

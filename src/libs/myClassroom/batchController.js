@@ -151,3 +151,28 @@ export async function getStudentEnrolledBatch(userID, batchID) {
     },
   };
 }
+
+export async function getTotalClassroomJoins(userID) {
+  const response = await dynamoDB.send(
+    new QueryCommand({
+      TableName: MASTER_TABLE,
+      IndexName: MASTER_INDEX_TABLE,
+      KeyConditionExpression: "#gsi1pk = :pk",
+      FilterExpression: "userID = :userID",
+      ExpressionAttributeNames: { "#gsi1pk": "GSI1-pKey" },
+      ExpressionAttributeValues: {
+        ":pk": "STUDENT_BATCHES",
+        ":userID": userID,
+      },
+      Select: "COUNT",
+    })
+  );
+
+  return {
+    success: true,
+    message: "Total classroom joins for user fetched successfully",
+    data: {
+      count: response.Count || 0,
+    },
+  };
+}

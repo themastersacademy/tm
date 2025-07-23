@@ -32,6 +32,7 @@
     "next-auth": "^4.24.7",
     "nodemailer": "^6.10.0",
     "notistack": "^3.0.2",
+    "player.js": "^0.1.0",
     "razorpay": "^2.9.6",
     "react": "^19.0.0",
     "react-countdown": "^2.3.6",

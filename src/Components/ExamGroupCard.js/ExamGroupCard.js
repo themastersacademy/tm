@@ -71,7 +71,7 @@ export default function ExamGroupCard() {
           }}
           disableElevation
         >
-          Attempt(1/10)
+          Attempt
         </Button>
       </Stack>
       <Stack sx={{ marginLeft: "auto" }}>

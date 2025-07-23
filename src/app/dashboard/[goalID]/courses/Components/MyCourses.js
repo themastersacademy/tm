@@ -17,18 +17,16 @@ export default function MyCourses() {
   const hasCourses =
     Array.isArray(enrolledCourses) && enrolledCourses.length > 0;
 
+    // const hasCourses =
+    // Array.isArray(enrolledCourses) && enrolledCourses.length > 0;
   return (
-    <Box px={{ xs: 1, sm: 2 }} py={2} width="100%">
+    <Box px={{ xs: 0, sm: 0 }} py={0} width="100%">
       <Stack
         direction="row"
         flexWrap="wrap"
         justifyContent={{ xs: "center", sm: "flex-start" }}
-        alignItems="stretch"
-        sx={{
-          columnGap: { xs: 1, sm: 2, md: 3 },
-          rowGap: { xs: 2, sm: 3 },
-          width: "100%",
-        }}
+        alignItems="flex-start"
+        sx={{ columnGap: { xs: "4px", md: "20px" }, rowGap: "10px" }}
       >
         {!loading ? (
           hasCourses ? (
@@ -41,17 +39,19 @@ export default function MyCourses() {
                   title={item.title || "Untitled Course"}
                   thumbnail={item.thumbnail}
                   lessons={`${item.lessons || 0} Lessons`}
-                  hours={`${item.duration || 0} minutes`}
+                  hours={`${item.duration || 0} min`}
                   Language={item.language || "N/A"}
                   actionButton={
                     <Button
                       variant="text"
-                      endIcon={<East />}
+                      endIcon={<East sx={{ width: 16, height: 16 }} />}
                       onClick={() => router.push(courseUrl)}
                       sx={{
-                        color: "var(--primary-color)",
+                        color: "white",
                         textTransform: "none",
-                        fontSize: "14px",
+                        fontSize: "13px",
+                        height: "24px",
+                        width: "80px",
                       }}
                     >
                       View
@@ -60,12 +60,12 @@ export default function MyCourses() {
                   actionMobile={
                     <Button
                       variant="contained"
-                      endIcon={<East />}
+                      endIcon={<East sx={{ width: 16, height: 16 }}/>}
                       onClick={() => router.push(courseUrl)}
                       sx={{
                         textTransform: "none",
-                        color: "var(--primary-color)",
-                        backgroundColor: "var(--primary-color-acc-2)",
+                        color: "white",
+                        backgroundColor: "var(--primary-color)",
                         borderRadius: "0px 0px 10px 10px",
                       }}
                     >
@@ -76,7 +76,15 @@ export default function MyCourses() {
               );
             })
           ) : (
-            <NoDataFound info="No Courses are enrolled" />
+            <Stack
+              width="100%"
+              height="100%"
+              minHeight="60vh"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <NoDataFound info="No Courses are enrolled" />
+            </Stack>
           )
         ) : (
           <CourseCardSkeleton />

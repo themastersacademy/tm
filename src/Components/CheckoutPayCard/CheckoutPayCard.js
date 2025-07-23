@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Stack, Card, CardContent, Typography, Skeleton } from "@mui/material";
-import { useEffect, useState } from "react";
 import { calculatePriceBreakdownWithCoupon } from "@/src/utils/pricing";
 import PayCardHeader from "./Components/PayCardHeader";
 import PayCardDuration from "./Components/PayCardDuration";
@@ -23,15 +22,9 @@ export default function CheckoutPayCard({
   planIndex,
   setSelectedPlan,
 }) {
-  const [priceBreakdown, setPriceBreakdown] = useState(
-    calculatePriceBreakdownWithCoupon(
-      selectedPlan.priceWithTax,
-      selectedPlan.discountInPercent,
-      18,
-      null
-    )
-  );
+  const [priceBreakdown, setPriceBreakdown] = useState(null);
 
+  // Set selected plan based on planIndex
   useEffect(() => {
     if (courseDetails?.subscription?.plans && planIndex !== null) {
       const index = parseInt(planIndex, 10);
@@ -45,35 +38,24 @@ export default function CheckoutPayCard({
         setSelectedPlan(courseDetails.subscription.plans[0]);
       }
     }
-  }, [courseDetails, planIndex]);
+  }, [courseDetails, planIndex, setSelectedPlan]);
 
+  // Update price breakdown whenever selectedPlan or couponDetails changes
   useEffect(() => {
-    if (couponDetails) {
-      setPriceBreakdown(
-        calculatePriceBreakdownWithCoupon(
-          selectedPlan.priceWithTax,
-          selectedPlan.discountInPercent,
-          18,
-          couponDetails
-        )
+    if (selectedPlan) {
+      const breakdown = calculatePriceBreakdownWithCoupon(
+        selectedPlan.priceWithTax,
+        selectedPlan.discountInPercent,
+        18,
+        couponDetails || null
       );
-    } else {
-      setPriceBreakdown(
-        calculatePriceBreakdownWithCoupon(
-          selectedPlan.priceWithTax,
-          selectedPlan.discountInPercent,
-          18,
-          null
-        )
-      );
+      setPriceBreakdown(breakdown);
     }
   }, [selectedPlan, couponDetails]);
 
-  const [isLoading, setIsLoading] = useState(false);
-
   return (
     <Stack
-      sx={{ padding: "0px", Width: "500px", maxWidth: "100%", margin: "0 " }}
+      sx={{ padding: "0px", width: "500px", maxWidth: "100%", margin: "0" }}
     >
       <Card
         sx={{
@@ -84,6 +66,7 @@ export default function CheckoutPayCard({
           width: { sm: "100%", lg: "350px", md: "350px", xs: "350px" },
           height: "auto",
           maxWidth: { xs: "100%" },
+          alignSelf: { xs: "center", md: "flex-end" },
         }}
       >
         <CardContent>
@@ -91,11 +74,7 @@ export default function CheckoutPayCard({
           <Stack flexDirection={{ xs: "column", sm: "column", md: "column" }}>
             {/* Course Header Left side */}
             <Stack>
-              {isLoading ? (
-                <Skeleton variant="rectangular" width="100%" height={250} />
-              ) : (
-                <PayCardHeader courseDetails={courseDetails} />
-              )}
+              <PayCardHeader courseDetails={courseDetails} />
             </Stack>
 
             {/* Course Header Right side */}
@@ -129,12 +108,14 @@ export default function CheckoutPayCard({
                   Duration
                 </Typography>
 
-                <PayCardDuration
-                  selectedPlan={selectedPlan}
-                  courseDetails={courseDetails}
-                  handlePlanChange={handlePlanChange}
-                  planIndex={planIndex}
-                />
+                {selectedPlan && (
+                  <PayCardDuration
+                    selectedPlan={selectedPlan}
+                    courseDetails={courseDetails}
+                    handlePlanChange={handlePlanChange}
+                    planIndex={planIndex}
+                  />
+                )}
               </Stack>
               <hr
                 style={{
@@ -144,7 +125,6 @@ export default function CheckoutPayCard({
               />
 
               {/* Coupon Code */}
-
               <Stack sx={{ paddingTop: "10px" }} gap="5px">
                 <PayCardCoupon
                   couponDetails={couponDetails}
@@ -164,14 +144,17 @@ export default function CheckoutPayCard({
           </Stack>
 
           {/* Total Amount */}
-          <PayCardTotalAmount
-            priceBreakdown={priceBreakdown}
-            selectedPlan={selectedPlan}
-            couponDetails={couponDetails}
-          />
+          {priceBreakdown && selectedPlan && (
+            <PayCardTotalAmount
+              priceBreakdown={priceBreakdown}
+              selectedPlan={selectedPlan}
+              couponDetails={couponDetails}
+            />
+          )}
         </CardContent>
       </Card>
 
+      {/* Mobile Floating Button */}
       <Stack
         sx={{
           display: { xs: "block", md: "none" },
@@ -182,14 +165,16 @@ export default function CheckoutPayCard({
           zIndex: "1000",
         }}
       >
-        <FloatingBtn
-          priceBreakdown={priceBreakdown}
-          selectedPlan={selectedPlan}
-          couponDetails={couponDetails}
-          isDisabled={isDisabled}
-          onPaymentClick={onPaymentClick}
-          loading={loading}
-        />
+        {priceBreakdown && selectedPlan && (
+          <FloatingBtn
+            priceBreakdown={priceBreakdown}
+            selectedPlan={selectedPlan}
+            couponDetails={couponDetails}
+            isDisabled={isDisabled}
+            onPaymentClick={onPaymentClick}
+            loading={loading}
+          />
+        )}
       </Stack>
     </Stack>
   );

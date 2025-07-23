@@ -1,7 +1,13 @@
 "use client";
 import MobileHeader from "@/src/Components/MobileHeader/MobileHeader";
 import { Edit, Logout } from "@mui/icons-material";
-import { Button, Stack, Typography, IconButton, CircularProgress } from "@mui/material";
+import {
+  Button,
+  Stack,
+  Typography,
+  IconButton,
+  CircularProgress,
+} from "@mui/material";
 import incrix_logo from "@/public/images/incrix-logo.svg";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
@@ -19,6 +25,7 @@ export default function Profile() {
   const router = useRouter();
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const handlePlansDialogOpen = () => {
     setPlansDialogOpen(true);
@@ -82,7 +89,14 @@ export default function Profile() {
   const tabsData = [
     {
       label: "Basic Info",
-      content: <BasicInfo session={session} handleLogout={handleLogout} />,
+      content: (
+        <BasicInfo
+          session={session}
+          handleLogout={handleLogout}
+          isEditMode={isEditMode}
+          setIsEditMode={setIsEditMode}
+        />
+      ),
     },
     {
       label: "Payment",
@@ -224,7 +238,7 @@ export default function Profile() {
               Crafted by Incrix Techlutions LLP, Tamil Nadu, India
             </Typography>
             <Typography
-            variant="body2"
+              variant="body2"
               sx={{
                 fontFamily: "Lato",
                 fontSize: "12px",
