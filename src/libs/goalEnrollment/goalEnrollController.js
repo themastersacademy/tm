@@ -32,6 +32,7 @@ export async function createGoalEnrollment({ userID, goalID }) {
 
   // Check if the goal enrollment already exists
   const existingEnrollment = await getGoalEnrollment({ userID, goalID });
+  console.log(existingEnrollment);
   if (existingEnrollment.data !== null) {
     return {
       success: false,
