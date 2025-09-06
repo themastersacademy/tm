@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 
 export default async function Dashboard({ searchParams }) {
   const path = await searchParams?.path;
-  console.log(path);
+
   // 1) Check auth
   const session = await getSession();
   if (!session?.isAuthenticated) {
