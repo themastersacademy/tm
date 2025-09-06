@@ -247,7 +247,7 @@ export async function startExam({ examID, userID }) {
       updatedAt: now,
     },
   };
-  console.log("examAttemptParams", examAttemptParams);
+  // console.log("examAttemptParams", examAttemptParams);
   try {
     await dynamoDB.send(new PutCommand(examAttemptParams));
     return {

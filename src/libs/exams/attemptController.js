@@ -504,6 +504,7 @@ export async function getScheduledExamAttemptsByUserID(userID, batchID) {
         "pKey",
         "sKey",
         "examID",
+        "batchID",
         "startTimeStamp",
         "#duration",
         "#status",
@@ -528,7 +529,7 @@ export async function getScheduledExamAttemptsByUserID(userID, batchID) {
     totalQuestions: item.totalQuestions,
     title: item.title,
     totalMarks: item.totalMarks,
+    batchID: item.batchID,
   }));
-
   return { success: true, data };
 }
