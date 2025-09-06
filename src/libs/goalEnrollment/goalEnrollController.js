@@ -2,9 +2,6 @@ import { dynamoDB } from "@/src/utils/awsAgent";
 import {
   PutCommand,
   QueryCommand,
-  //   DeleteCommand,
-  //   UpdateCommand,
-    ScanCommand,
   GetCommand,
 } from "@aws-sdk/lib-dynamodb";
 
@@ -16,6 +13,8 @@ export async function createGoalEnrollment({ userID, goalID }) {
   const enrollmentItem = {
     pKey: `GOAL_ENROLLMENT#${userID}#${goalID}`, // Unique enrollment record key
     sKey: `GOAL_ENROLLMENT#${userID}`, // Partition key per user enrollment
+    "GSI1-pKey": `GOAL_ENROLLMENTS`,
+    "GSI1-sKey": `GOAL_ENROLLMENT#${userID}`,
     userID,
     goalID,
     status: "active", // Current enrollment status
@@ -95,26 +94,30 @@ export async function getAllGoalEnrollments({ userID }) {
   }
 
   const TableName = `${process.env.AWS_DB_NAME}users`;
-  const prefix = `GOAL_ENROLLMENT#${userID}#`;
+  const IndexName = "GSI1-index";
 
   const params = {
     TableName,
-    FilterExpression: "begins_with(pKey, :pfx) AND #st = :active",
+    IndexName,
+    KeyConditionExpression: "#gsi1pk = :pKey AND #gsi1sk = :sKey",
+    FilterExpression: "#st = :active",
     ExpressionAttributeNames: {
+      "#gsi1pk": "GSI1-pKey",
+      "#gsi1sk": "GSI1-sKey",
       "#st": "status",
     },
     ExpressionAttributeValues: {
-      ":pfx": prefix,
+      ":pKey": "GOAL_ENROLLMENTS",
+      ":sKey": `GOAL_ENROLLMENT#${userID}`,
       ":active": "active",
     },
-    ProjectionExpression: "pKey, goalID, #st, createdAt, updatedAt",
+    ProjectionExpression: "pKey, goalID, createdAt, updatedAt",
   };
 
   try {
-    const { Items = [] } = await dynamoDB.send(new ScanCommand(params));
-
+    const { Items = [] } = await dynamoDB.send(new QueryCommand(params));
     const data = Items.map((item) => {
-      const id = item.pKey.split("#")[2]; // GOAL_ENROLLMENT#<userID>#<goalID>
+      const id = item.pKey.split("#")[2];
       return {
         id,
         goalID: item.goalID,

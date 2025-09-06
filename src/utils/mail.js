@@ -24,7 +24,7 @@ export const sendOTPToMail = async ({ to, otp }) => {
   });
 
   const mailInfo = {
-    from: '"The Masters Academy" <no-reply@incrix.in>',
+    from: `The Masters Academy <${process.env.MAIL_USER}>`,
     to, // recipient email address
     subject: "Verify Your Account - The Masters Academy",
     html: `
@@ -126,7 +126,6 @@ export const sendOTPToMail = async ({ to, otp }) => {
       </html>
     `,
   };
-  
 
   await new Promise((resolve, reject) => {
     transporter.sendMail(mailInfo, function (error, info) {
