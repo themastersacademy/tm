@@ -111,7 +111,7 @@ export async function getAllGoalEnrollments({ userID }) {
       ":sKey": `GOAL_ENROLLMENT#${userID}`,
       ":active": "active",
     },
-    ProjectionExpression: "pKey, goalID, createdAt, updatedAt",
+    ProjectionExpression: "pKey, goalID, createdAt, #st, updatedAt",
   };
 
   try {

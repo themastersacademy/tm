@@ -12,7 +12,7 @@ import SecondaryCardSkeleton from "@/src/Components/SkeletonCards/SecondaryCardS
 import banking from "@/public/icons/banking.svg";
 import Image from "next/image";
 
-export default function Exams({ scheduledExams, examID }) {
+export default function Exams({ scheduledExams, examID, batchID }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [examHistory, setExamHistory] = useState([]);
@@ -23,9 +23,10 @@ export default function Exams({ scheduledExams, examID }) {
     setIsLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/my-classroom/${examID}/get-scheduled-history`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/my-classroom/${batchID}/get-scheduled-history`
       );
       const data = await res.json();
+      console.log(data);
       if (data.success) {
         setExamHistory(data.data || []);
         setIsLoading(false);
@@ -146,23 +147,25 @@ export default function Exams({ scheduledExams, examID }) {
         >
           Exams
         </Typography>
-        {!isLoading ? (
-          examList.length > 0 ? (
-            examList.map((item) => (
-              <PrimaryCard
-                key={item.key}
-                title={item.title}
-                icon={item.icon}
-                subtitle={item.subtitle}
-                actionButton={item.actionButton}
-              />
-            ))
+        <Stack gap="10px" direction="row" flexWrap="wrap">
+          {!isLoading ? (
+            examList.length > 0 ? (
+              examList.map((item) => (
+                <PrimaryCard
+                  key={item.key}
+                  title={item.title}
+                  icon={item.icon}
+                  subtitle={item.subtitle}
+                  actionButton={item.actionButton}
+                />
+              ))
+            ) : (
+              <NoDataFound info="No scheduled exams available" />
+            )
           ) : (
-            <NoDataFound info="No scheduled exams available" />
-          )
-        ) : (
-          <PrimaryCardSkeleton />
-        )}
+            <PrimaryCardSkeleton />
+          )}
+        </Stack>
       </Stack>
 
       {/* Attempted Exams */}

@@ -19,7 +19,7 @@ export default async function Dashboard({ searchParams }) {
   });
 
   const goalEnrollments = response.data;
-
+  console.log(goalEnrollments);
   if (!Array.isArray(goalEnrollments) || goalEnrollments.length === 0) {
     return redirect("/profile-setup?goal=true");
   }

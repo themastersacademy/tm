@@ -73,12 +73,12 @@ export default function Classroom() {
     () => [
       {
         label: "Exams",
-        content: <Exams scheduledExams={scheduledExams} examID={batchID} />,
+        content: <Exams scheduledExams={scheduledExams} batchID={batchID} examID={batchID} />,
       },
-      {
-        label: "Courses",
-        content: <Courses />,
-      },
+      // {
+      //   label: "Courses",
+      //   content: <Courses />,
+      // },
     ],
     [scheduledExams, batchID]
   );
@@ -145,7 +145,8 @@ export default function Classroom() {
       </Stack>
 
       <Stack>
-        <CustomTabs tabs={tabs} />
+        {/* <CustomTabs tabs={tabs} customstyles={ {tabs: {width: "106px !important"}}} /> */}
+        {tabs[0].content}
       </Stack>
 
       <LeaveGroupDialog
