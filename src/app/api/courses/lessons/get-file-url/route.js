@@ -14,6 +14,7 @@ export async function POST(req) {
         lessonID,
         courseID,
         enrollmentID,
+        userID: session.user.id,
       });
       return Response.json(result);
     } catch (error) {

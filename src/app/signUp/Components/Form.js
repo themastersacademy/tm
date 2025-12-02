@@ -1,9 +1,19 @@
 "use client";
-import { useCallback, memo } from "react";
+import { useCallback, memo, useState } from "react";
 import StyledTextField from "@/src/Components/StyledTextField/StyledTextField";
-import { Button, CircularProgress, Stack, Typography } from "@mui/material";
+import {
+  Button,
+  CircularProgress,
+  Stack,
+  Typography,
+  Checkbox,
+  FormControlLabel,
+  Link,
+} from "@mui/material";
 import { useRouter } from "next/navigation";
 import ContinueWithGoogle from "@/src/Components/ContinueWithGoogle/ContinueWithGoogle";
+import PolicyDialog from "./PolicyDialog";
+import { termsContent, privacyContent, refundContent } from "./policyContent";
 
 function Form({
   email,
@@ -17,6 +27,8 @@ function Form({
   confirmPassword,
 }) {
   const router = useRouter();
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [activePolicy, setActivePolicy] = useState(null);
 
   // Memoize input handlers
   const handleEmailChange = useCallback(
@@ -31,6 +43,10 @@ function Form({
     (e) => setConfirmPassword(e.target.value),
     [setConfirmPassword]
   );
+
+  const handleCheckboxChange = useCallback((e) => {
+    setAgreedToTerms(e.target.checked);
+  }, []);
 
   // Handle "Enter" key to trigger OTP fetch
   const handleKeyDown = useCallback(
@@ -49,12 +65,13 @@ function Form({
     password !== confirmPassword ||
     !email ||
     !password ||
-    !confirmPassword;
+    !confirmPassword ||
+    !agreedToTerms;
 
   return (
     <Stack
       sx={{
-        width: { xs: "300px",sm:'350px', md: "350px" },
+        width: { xs: "300px", sm: "350px", md: "350px" },
         gap: 2,
         justifyContent: "center",
         alignItems: "center",
@@ -131,8 +148,73 @@ function Form({
         )}
       </Stack>
 
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={agreedToTerms}
+            onChange={handleCheckboxChange}
+            sx={{
+              color: "var(--primary-color)",
+              "&.Mui-checked": {
+                color: "var(--primary-color)",
+              },
+            }}
+          />
+        }
+        label={
+          <Typography
+            sx={{ fontSize: "12px", color: "var(--text3)", fontFamily: "Lato" }}
+          >
+            I agree to the{" "}
+            <Link
+              component="button"
+              type="button"
+              onClick={() => setActivePolicy("terms")}
+              sx={{
+                color: "var(--primary-color)",
+                textDecoration: "none",
+                fontWeight: 600,
+              }}
+            >
+              Terms & Conditions
+            </Link>
+            ,{" "}
+            <Link
+              component="button"
+              type="button"
+              onClick={() => setActivePolicy("privacy")}
+              sx={{
+                color: "var(--primary-color)",
+                textDecoration: "none",
+                fontWeight: 600,
+              }}
+            >
+              Data Privacy
+            </Link>{" "}
+            and{" "}
+            <Link
+              component="button"
+              type="button"
+              onClick={() => setActivePolicy("refund")}
+              sx={{
+                color: "var(--primary-color)",
+                textDecoration: "none",
+                fontWeight: 600,
+              }}
+            >
+              No Refund Policy
+            </Link>
+          </Typography>
+        }
+        sx={{ width: "100%", alignItems: "flex-start", ml: 0 }}
+      />
+
       {/* Get OTP Button */}
-      <Stack gap={1} width={{ xs: "300px", sm: "350px", md: "350px" }} alignItems="center">
+      <Stack
+        gap={1}
+        width={{ xs: "300px", sm: "350px", md: "350px" }}
+        alignItems="center"
+      >
         <Button
           variant="contained"
           onClick={handleGetOTP}
@@ -155,10 +237,30 @@ function Form({
         </Button>
         <Typography color="var(--text4)">Or</Typography>
         <ContinueWithGoogle
-          isButtonDisabled={isLoading}
+          isButtonDisabled={isLoading || !agreedToTerms}
           isLoading={isLoading}
         />
       </Stack>
+
+      {/* Policy Dialogs */}
+      <PolicyDialog
+        open={activePolicy === "terms"}
+        onClose={() => setActivePolicy(null)}
+        title="Terms & Conditions"
+        content={termsContent}
+      />
+      <PolicyDialog
+        open={activePolicy === "privacy"}
+        onClose={() => setActivePolicy(null)}
+        title="Data Privacy Policy"
+        content={privacyContent}
+      />
+      <PolicyDialog
+        open={activePolicy === "refund"}
+        onClose={() => setActivePolicy(null)}
+        title="No Refund Policy"
+        content={refundContent}
+      />
     </Stack>
   );
 }

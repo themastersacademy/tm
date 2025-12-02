@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { SnackbarProvider, MaterialDesignContent } from "notistack";
 import { CircularProgress, styled } from "@mui/material";
 import { GoalProvider } from "@/src/app/context/GoalProvider";
+import { SubscriptionProvider } from "@/src/app/context/SubscriptionProvider";
 
 const StyledMaterialDesignContent = styled(MaterialDesignContent)(() => ({
   "&.notistack-MuiContent-success": {
@@ -26,7 +27,7 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(() => ({
   },
 }));
 
-export default function ClientProviders({ children, session }) {
+export default function Providers({ children, session }) {
   return (
     <SessionProvider session={session}>
       <SnackbarProvider
@@ -50,7 +51,9 @@ export default function ClientProviders({ children, session }) {
           info: StyledMaterialDesignContent,
         }}
       >
-        <GoalProvider>{children}</GoalProvider>
+        <GoalProvider>
+          <SubscriptionProvider>{children}</SubscriptionProvider>
+        </GoalProvider>
       </SnackbarProvider>
     </SessionProvider>
   );

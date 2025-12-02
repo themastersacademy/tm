@@ -2,6 +2,7 @@
   --primary-color: #187163;
   --primary-color-acc-1: #8cb8b1;
   --primary-color-acc-2: #d8e2df;
+  --primary-color-dark: #12544a;
   --sec-color: #fea800;
   --sec-color-acc-1: #feecc9;
   --sec-color-acc-2: #fff8eb;
@@ -13,7 +14,8 @@
   --library-expand: #f6f6f6;
   --white: #ffffff;
   --delete-color: #d64545;
-  --delete-color-acc-1: #F2C8C6;
+  --delete-color-acc-1: #feecc9;
+  --delete-color-acc-2: #ffe5e5;
   --info-color: #78909c;
   --gradient-color: linear-gradient(45deg, #ff3c00, #7a00ff);
 }

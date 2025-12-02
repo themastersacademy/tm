@@ -6,7 +6,8 @@ import {
   Button,
   IconButton,
   CircularProgress,
-  Checkbox,
+  Radio,
+  Box,
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 import DeleteDialogBox from "@/src/Components/DeleteDialogBox/DeleteDialogBox";
@@ -42,103 +43,122 @@ export default function AddressCard({
   };
 
   const handleToggleSelect = () => {
-    onSelect(index); // Pass index to toggle selection
+    onSelect(index);
   };
 
   return (
     <>
-      <Stack
-        backgroundColor={isSelected ? "#EFFDF3" : "var(--white)"}
-        border={
-          isSelected
-            ? "2px solid var(--primary-color)"
-            : "1px solid var(--border-color)"
-        }
-        padding="20px"
-        borderRadius="8px"
-        sx={{ cursor: "pointer", marginBottom: "20px" }}
+      <Box
         onClick={handleToggleSelect}
+        sx={{
+          p: 3,
+          borderRadius: "16px",
+          bgcolor: isSelected ? "var(--primary-color-acc-2)" : "var(--white)",
+          border: "1px solid",
+          borderColor: isSelected
+            ? "var(--primary-color)"
+            : "var(--border-color)",
+          cursor: "pointer",
+          transition: "all 0.2s",
+          "&:hover": {
+            borderColor: "var(--primary-color)",
+            bgcolor: isSelected
+              ? "var(--primary-color-acc-2)"
+              : "var(--library-expand)",
+          },
+          position: "relative",
+          overflow: "hidden",
+        }}
       >
-        {/* Address Header */}
-        <Stack
-          flexDirection="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Checkbox
-              checked={isSelected}
-              onChange={handleToggleSelect}
-              onClick={(e) => e.stopPropagation()}
-              sx={{
+        <Stack direction="row" alignItems="flex-start" gap={2}>
+          <Radio
+            checked={isSelected}
+            onChange={handleToggleSelect}
+            sx={{
+              p: 0,
+              mt: 0.5,
+              color: "var(--text4)",
+              "&.Mui-checked": {
                 color: "var(--primary-color)",
-                "&.Mui-checked": {
-                  color: "var(--primary-color)",
-                },
-              }}
-            />
-            <Typography
-              sx={{
-                color: "var(--primary-color)",
-                fontWeight: "bold",
-                fontSize: { xs: "14px", sm: "16px", md: "18px" },
-              }}
+              },
+            }}
+          />
+
+          <Stack flex={1} gap={1}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
             >
-              {title}
-            </Typography>
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(billingInfo, index);
-              }}
-            >
-              <Edit
+              <Typography
                 sx={{
-                  color: "var(--primary-color)",
-                  fontSize: { xs: "18px", sm: "20px", md: "22px" },
+                  fontSize: "16px",
+                  fontWeight: 700,
+                  color: "var(--text1)",
                 }}
-              />
-            </IconButton>
-          </Stack>
-          <Stack>
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteClick();
-              }}
-            >
-              {loading ? (
-                <CircularProgress
-                  size={24}
-                  sx={{ color: "var(--primary-color)" }}
-                />
-              ) : (
-                <Delete
-                  sx={{
-                    color: "var(--delete-color)",
-                    fontSize: { xs: "18px", sm: "20px", md: "22px" },
+              >
+                {title}
+              </Typography>
+              <Stack direction="row" gap={1}>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(billingInfo, index);
                   }}
-                />
-              )}
-            </IconButton>
+                  sx={{
+                    color: "var(--text3)",
+                    "&:hover": { color: "var(--primary-color)" },
+                  }}
+                >
+                  <Edit fontSize="small" />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteClick();
+                  }}
+                  sx={{
+                    color: "var(--text3)",
+                    "&:hover": { color: "var(--delete-color)" },
+                  }}
+                >
+                  {loading ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : (
+                    <Delete fontSize="small" />
+                  )}
+                </IconButton>
+              </Stack>
+            </Stack>
+
+            <Stack gap={0.5}>
+              <Typography
+                sx={{
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  color: "var(--text2)",
+                }}
+              >
+                {billingInfo.firstName} {billingInfo.lastName}
+              </Typography>
+              <Typography sx={{ fontSize: "14px", color: "var(--text3)" }}>
+                {billingInfo.address}
+              </Typography>
+              <Typography sx={{ fontSize: "14px", color: "var(--text3)" }}>
+                {billingInfo.city}, {billingInfo.state} - {billingInfo.zip}
+              </Typography>
+              <Typography
+                sx={{ fontSize: "14px", color: "var(--text3)", mt: 0.5 }}
+              >
+                Phone: {billingInfo.phone}
+              </Typography>
+            </Stack>
           </Stack>
         </Stack>
-        {/* Address Details */}
-        <Stack sx={{ marginTop: "20px" }}>
-          <Typography sx={{ fontSize: { xs: "14px", sm: "16px", md: "18px" } }}>
-            {billingInfo.firstName} {billingInfo.lastName}
-          </Typography>
-          <Typography sx={{ fontSize: { xs: "14px", sm: "16px", md: "18px" } }}>
-            {billingInfo.phone}
-          </Typography>
-          <Typography sx={{ fontSize: { xs: "14px", sm: "16px", md: "18px" } }}>
-            {billingInfo.address}
-          </Typography>
-          <Typography sx={{ fontSize: { xs: "14px", sm: "16px", md: "18px" } }}>
-            {billingInfo.city}, {billingInfo.state}, {billingInfo.zip}
-          </Typography>
-        </Stack>
-      </Stack>
+      </Box>
+
       <DeleteDialogBox
         isOpen={isDeleteDialogOpen}
         actionButton={
@@ -151,15 +171,23 @@ export default function AddressCard({
             <Button
               onClick={handleDeleteConfirm}
               variant="contained"
-              sx={{ backgroundColor: "var(--delete-color)" }}
+              sx={{
+                bgcolor: "var(--delete-color)",
+                "&:hover": { bgcolor: "#b91c1c" },
+                textTransform: "none",
+              }}
               disabled={loading}
             >
-              Confirm
+              Delete Address
             </Button>
             <Button
               onClick={handleDeleteCancel}
               variant="outlined"
-              sx={{ color: "black", borderColor: "black" }}
+              sx={{
+                color: "var(--text2)",
+                borderColor: "var(--border-color)",
+                textTransform: "none",
+              }}
               disabled={loading}
             >
               Cancel
@@ -168,7 +196,7 @@ export default function AddressCard({
         }
         name={`${billingInfo.firstName} ${billingInfo.lastName}`}
         title="Delete Address"
-        warning="Are you sure you want to delete this address?"
+        warning="Are you sure you want to delete this address? This action cannot be undone."
       />
     </>
   );

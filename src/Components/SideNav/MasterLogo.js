@@ -22,13 +22,12 @@ export default function MasterLogo({ isSideNavOpen }) {
       {!isSideNavOpen && (
         <Typography
           sx={{
-            fontFamily: "Lato",
             fontSize: "14px",
             fontWeight: "700",
             letterSpacing: "0.3px",
             color: "var(--primary-color)",
             whiteSpace: "nowrap",
-            display:{xs:"none",md:"block"},
+            display: { xs: "none", md: "block" },
           }}
         >
           {process.env.NEXT_PUBLIC_COMPANY_NAME}

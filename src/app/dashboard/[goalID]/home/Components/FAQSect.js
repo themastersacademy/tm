@@ -1,4 +1,4 @@
-import { ExpandMore } from "@mui/icons-material";
+import { ExpandMore, HelpOutline } from "@mui/icons-material";
 import {
   Accordion,
   AccordionDetails,
@@ -8,11 +8,13 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  Box,
 } from "@mui/material";
+import { useState } from "react";
 
 const faqData = [
   {
-    question: " What is this platform used for?",
+    question: "What is this platform used for?",
     answer:
       "This platform helps students prepare for competitive exams through structured courses, mock tests, and performance tracking — all in one place.",
   },
@@ -42,7 +44,7 @@ const faqData = [
       "Yes, detailed solutions and explanations are provided after completing each test to help you improve.",
   },
   {
-    question: " Is the test pattern similar to real exams?",
+    question: "Is the test pattern similar to real exams?",
     answer:
       "Absolutely. Our mock tests are designed to mirror real exam patterns, difficulty levels, and question formats.",
   },
@@ -56,17 +58,34 @@ const faqData = [
 export default function FAQSect() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [expanded, setExpanded] = useState(false);
+
+  const handleChange = (panel) => (event, isExpanded) => {
+    setExpanded(isExpanded ? panel : false);
+  };
 
   return (
     <Container maxWidth="md">
-      <Stack gap={3} alignItems="center" py={4}>
-        <Stack gap="5px" width="100%" alignItems="center">
+      <Stack gap={4} alignItems="center" py={6}>
+        <Stack gap="12px" width="100%" alignItems="center" textAlign="center">
+          <Box
+            sx={{
+              p: "12px",
+              borderRadius: "50%",
+              bgcolor: "var(--sec-color-acc-1)",
+              color: "var(--primary-color)",
+              mb: 1,
+            }}
+          >
+            <HelpOutline sx={{ fontSize: 32 }} />
+          </Box>
           <Typography
-            fontWeight={700}
             sx={{
               fontFamily: "Lato",
-              fontSize: isMobile ? "22px" : "28px",
-              textAlign: "center",
+              fontSize: { xs: "28px", md: "36px" },
+              fontWeight: 800,
+              color: "var(--text1)",
+              letterSpacing: "-0.5px",
             }}
           >
             Frequently Asked Questions
@@ -74,38 +93,90 @@ export default function FAQSect() {
           <Typography
             sx={{
               fontFamily: "Lato",
-              fontSize: isMobile ? "14px" : "16px",
+              fontSize: { xs: "16px", md: "18px" },
               color: "var(--text3)",
+              maxWidth: "600px",
             }}
           >
-            Have questions? We’ve got answers.
+            Everything you need to know about our platform and services. Can&apos;t
+            find the answer you&apos;re looking for? Contact our support team.
           </Typography>
         </Stack>
 
-        <Stack gap={1} width="100%">
+        <Stack gap={2} width="100%">
           {faqData.map((faq, index) => (
             <Accordion
               key={index}
+              expanded={expanded === `panel${index}`}
+              onChange={handleChange(`panel${index}`)}
               sx={{
                 boxShadow: "none",
-                border: "1px solid var(--border-color)",
-                borderRadius: "5px",
-                "&::before": {
+                border: "1px solid",
+                borderColor:
+                  expanded === `panel${index}`
+                    ? "var(--primary-color)"
+                    : "var(--border-color)",
+                borderRadius: "16px !important",
+                overflow: "hidden",
+                bgcolor:
+                  expanded === `panel${index}`
+                    ? "var(--bg-color)"
+                    : "var(--white)",
+                transition: "all 0.3s ease",
+                "&:before": {
                   display: "none",
                 },
+                "&:hover": {
+                  borderColor: "var(--primary-color)",
+                },
+                mb: "0 !important",
               }}
             >
               <AccordionSummary
-                expandIcon={<ExpandMore />}
+                expandIcon={
+                  <ExpandMore
+                    sx={{
+                      color:
+                        expanded === `panel${index}`
+                          ? "var(--primary-color)"
+                          : "var(--text3)",
+                    }}
+                  />
+                }
                 aria-controls={`faq-content-${index}`}
                 id={`faq-header-${index}`}
+                sx={{
+                  px: { xs: 2, md: 3 },
+                  py: 1,
+                  "& .MuiAccordionSummary-content": {
+                    my: 2,
+                  },
+                }}
               >
-                <Typography sx={{ fontFamily: "Lato" }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Lato",
+                    fontSize: "16px",
+                    fontWeight: 700,
+                    color:
+                      expanded === `panel${index}`
+                        ? "var(--primary-color)"
+                        : "var(--text1)",
+                    transition: "color 0.2s",
+                  }}
+                >
                   {faq.question}
                 </Typography>
               </AccordionSummary>
-              <AccordionDetails>
-                <Typography sx={{ fontFamily: "Lato", fontSize: "16px" }}>
+              <AccordionDetails sx={{ px: { xs: 2, md: 3 }, pb: 3, pt: 0 }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Lato",
+                    fontSize: "15px",
+                    lineHeight: 1.6,
+                    color: "var(--text3)",
+                  }}
+                >
                   {faq.answer}
                 </Typography>
               </AccordionDetails>

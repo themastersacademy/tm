@@ -16,6 +16,7 @@ export default function PayCardCoupon({
   setCouponCode,
   applyCoupon,
   removeCoupon,
+  priceBreakdown,
 }) {
   const [confettiTrigger, setConfettiTrigger] = useState(false);
   const textFieldRef = useRef(null); // Create a ref for StyledTextField
@@ -115,26 +116,36 @@ export default function PayCardCoupon({
             )}
           </Button>
         </Stack>
-        {couponDetails && <CouponCard couponDetails={couponDetails} />}
+        {couponDetails && (
+          <CouponCard
+            couponDetails={couponDetails}
+            priceBreakdown={priceBreakdown}
+          />
+        )}
         <Confetti trigger={confettiTrigger} origin={confettiOrigin} />
       </Stack>
     </Stack>
   );
 }
 
-function CouponCard({ couponDetails }) {
+function CouponCard({ couponDetails, priceBreakdown }) {
+  const isMinOrderMet = priceBreakdown?.isMinOrderMet ?? true;
+
   return (
     <Card
       sx={{
         borderRadius: "10px",
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-        backgroundColor: "var(--sec-color-acc-2)",
+        backgroundColor: isMinOrderMet
+          ? "var(--sec-color-acc-2)"
+          : "rgba(255, 152, 0, 0.1)", // Orange tint for warning
         padding: "15px",
         marginTop: "10px",
         marginBottom: "10px",
         width: "100%",
         height: "auto",
         gap: "10px",
+        border: isMinOrderMet ? "none" : "1px solid orange",
       }}
     >
       <Typography
@@ -149,10 +160,23 @@ function CouponCard({ couponDetails }) {
         </font>
          applied
       </Typography>
+      {!isMinOrderMet && (
+        <Typography
+          sx={{
+            color: "orange",
+            fontSize: "12px",
+            fontWeight: "bold",
+            marginTop: "4px",
+          }}
+        >
+          Minimum order value of ₹{couponDetails.minOrderAmount} not met.
+        </Typography>
+      )}
       <Typography
         sx={{
           color: "var(--text3)",
           fontSize: "14px",
+          marginTop: "4px",
         }}
       >
         {`Get ${couponDetails.discountType === "FIXED" ? "₹" : ""}${

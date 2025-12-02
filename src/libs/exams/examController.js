@@ -134,6 +134,9 @@ export async function getScheduledExamByBatch(userID, batchID) {
     settings: ex.settings,
     createdAt: ex.createdAt,
     updatedAt: ex.updatedAt,
+    totalQuestions: ex.totalQuestions,
+    totalMarks: ex.totalMarks,
+    endTimeStamp: ex.endTimeStamp,
   }));
 
   return {

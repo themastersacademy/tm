@@ -7,12 +7,22 @@ import {
   CircularProgress,
   Button,
   Skeleton,
+  Box,
+  Grid,
+  Divider,
 } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
+import {
+  CheckCircle,
+  Cancel,
+  HourglassEmpty,
+  Replay,
+  Dashboard,
+  ReceiptLong,
+  Event,
+  CreditCard,
+  Tag,
+} from "@mui/icons-material";
 import { useSession } from "next-auth/react";
-import ReplayIcon from "@mui/icons-material/Replay";
-import MovingIcon from "@mui/icons-material/Moving";
 import { enqueueSnackbar } from "notistack";
 import PaymentLoadingOverlay from "@/src/Components/PaymentOverlay/PaymentOverlay";
 
@@ -181,15 +191,59 @@ export default function Transaction() {
     setShouldFetch(true);
   }, []);
 
-  const renderIcon = () => {
-    if (status === "error")
-      return <CancelIcon sx={{ color: "red", fontSize: "40px" }} />;
-    if (status === "completed")
-      return <CheckCircleIcon sx={{ color: "green", fontSize: "40px" }} />;
-    if (status === "failed" || status === "pending" || status === "cancelled")
-      return <CancelIcon sx={{ color: "red", fontSize: "40px" }} />;
-    return <CircularProgress sx={{ color: "var(--primary-color)" }} />;
+  const getStatusConfig = () => {
+    switch (status) {
+      case "completed":
+        return {
+          icon: <CheckCircle sx={{ fontSize: 80, color: "#22c55e" }} />,
+          title: "Payment Successful!",
+          message: "Your payment has been successfully processed.",
+          color: "#22c55e",
+        };
+      case "failed":
+      case "cancelled":
+        return {
+          icon: <Cancel sx={{ fontSize: 80, color: "var(--delete-color)" }} />,
+          title:
+            status === "cancelled" ? "Payment Cancelled" : "Payment Failed",
+          message:
+            status === "cancelled"
+              ? "You cancelled the payment process."
+              : "Something went wrong. Please try again.",
+          color: "var(--delete-color)",
+        };
+      case "pending":
+        return {
+          icon: (
+            <HourglassEmpty sx={{ fontSize: 80, color: "var(--sec-color)" }} />
+          ),
+          title: "Payment Pending",
+          message: "We are verifying your payment status.",
+          color: "var(--sec-color)",
+        };
+      case "error":
+        return {
+          icon: <Cancel sx={{ fontSize: 80, color: "var(--delete-color)" }} />,
+          title: "Error",
+          message: error || "Failed to fetch transaction details.",
+          color: "var(--delete-color)",
+        };
+      default:
+        return {
+          icon: (
+            <CircularProgress
+              size={60}
+              sx={{ color: "var(--primary-color)" }}
+            />
+          ),
+          title: "Loading...",
+          message: "Fetching transaction details...",
+          color: "var(--primary-color)",
+        };
+    }
   };
+
+  const { icon, title, message: statusMessage, color } = getStatusConfig();
 
   const amount = transaction?.amount || "N/A";
   const refNumber =
@@ -198,104 +252,52 @@ export default function Transaction() {
       : transaction?.order?.id || "N/A";
   const refLabel = status === "completed" ? "Payment ID" : "Order ID";
   const paymentTime = transaction?.updatedAt
-    ? new Date(transaction.updatedAt).toLocaleString("en-IN")
+    ? new Date(transaction.updatedAt).toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
     : "-";
   const method = transaction?.paymentDetails?.method || "-";
-
-  const headline =
-    status === "error"
-      ? "Error Fetching Transaction"
-      : status === "completed"
-      ? "Payment Success!"
-      : status === "failed"
-      ? "Payment Failed!"
-      : status === "cancelled"
-      ? "Payment Cancelled!"
-      : status === "pending"
-      ? "Payment Pending!"
-      : "Loading Transaction...";
-
-  const message =
-    status === "error"
-      ? error
-      : status === "completed"
-      ? "Your payment has been successfully done."
-      : status === "failed"
-      ? "Your payment has failed. Please try again."
-      : status === "cancelled"
-      ? "Your payment was cancelled. Please try again."
-      : status === "pending"
-      ? "Your payment is pending. Please complete the payment."
-      : "Fetching transaction details...";
 
   if (status === "loading") {
     return (
       <Stack
-        display="flex"
-        justifyContent="center"
         alignItems="center"
-        height="100vh"
+        justifyContent="center"
+        minHeight="100vh"
+        bgcolor="var(--library-expand)"
+        p={3}
       >
         <Stack
+          width="100%"
+          maxWidth="500px"
+          bgcolor="var(--white)"
+          borderRadius="24px"
+          p={4}
+          alignItems="center"
+          gap={3}
           sx={{
-            backgroundColor: "white",
-            padding: 4,
-            height: "auto",
-            width: { xs: "300px", sm: "450px", md: "450px", lg: "450px" },
-            borderTopRightRadius: "25px",
-            borderTopLeftRadius: "25px",
+            boxShadow: "0px 10px 40px rgba(0,0,0,0.05)",
+            border: "1px solid var(--border-color)",
           }}
         >
-          <Stack display="flex" justifyContent="center" alignItems="center">
-            <Skeleton variant="circular" width={40} height={40} />
-            <Skeleton variant="text" width={200} sx={{ marginTop: 1 }} />
-            <Skeleton variant="text" width={250} sx={{ paddingTop: 2 }} />
-            <hr
-              style={{
-                width: "100%",
-                margin: "20px 0",
-                borderColor: "var(--border-color)",
-              }}
+          <Skeleton variant="circular" width={80} height={80} />
+          <Stack alignItems="center" width="100%" gap={1}>
+            <Skeleton variant="text" width="60%" height={40} />
+            <Skeleton variant="text" width="80%" />
+          </Stack>
+          <Divider flexItem />
+          <Stack width="100%" gap={2}>
+            <Skeleton
+              variant="rectangular"
+              height={60}
+              sx={{ borderRadius: 2 }}
             />
-            <Stack
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Skeleton variant="text" width={100} />
-              <Skeleton variant="text" width={120} sx={{ fontSize: "28px" }} />
-              <Skeleton variant="text" width={150} sx={{ fontSize: "12px" }} />
-            </Stack>
-            <Stack
-              direction="row"
-              gap={2}
-              marginTop={4}
-              width="100%"
-              paddingX={1}
-            >
-              {[1, 2].map((_, i) => (
-                <Stack
-                  key={i}
-                  sx={{
-                    border: "1px solid var(--border-color)",
-                    padding: "5px",
-                    width: "180px",
-                    borderRadius: "5px",
-                  }}
-                >
-                  <Skeleton variant="text" width={80} />
-                  <Skeleton variant="text" width={120} />
-                </Stack>
-              ))}
-            </Stack>
-            <Stack direction="row" gap={2} justifyContent="center">
-              <Skeleton
-                variant="rectangular"
-                width={200}
-                height={36}
-                sx={{ marginTop: "20px", borderRadius: "4px" }}
-              />
-            </Stack>
+            <Skeleton
+              variant="rectangular"
+              height={60}
+              sx={{ borderRadius: 2 }}
+            />
           </Stack>
         </Stack>
       </Stack>
@@ -304,12 +306,11 @@ export default function Transaction() {
 
   return (
     <Stack
-      display="flex"
-      justifyContent="center"
       alignItems="center"
-      height="100vh"
-      padding={{ xs: "15px", sm: "0", md: "0", lg: "0" }}
-      sx={{ backgroundColor: "var(--primary-color-acc-2)" }}
+      justifyContent="center"
+      minHeight="100vh"
+      bgcolor="var(--library-expand)"
+      p={3}
     >
       {paymentLoading && retryPaymentInfo && (
         <PaymentLoadingOverlay
@@ -318,272 +319,242 @@ export default function Transaction() {
           onClose={handlePaymentClose}
         />
       )}
+
       <Stack
+        width="100%"
+        maxWidth="500px"
+        bgcolor="var(--white)"
+        borderRadius="24px"
+        p={{ xs: 3, sm: 5 }}
+        alignItems="center"
+        gap={3}
         sx={{
-          backgroundColor: "white",
-          padding: 4,
-          height: "auto",
-          width: { xs: "100%", sm: "450px", md: "450px", lg: "450px" },
-          borderTopRightRadius: "25px",
-          borderTopLeftRadius: "25px",
+          boxShadow: "0px 10px 40px rgba(0,0,0,0.05)",
+          border: "1px solid var(--border-color)",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        <Stack display="flex" justifyContent="center" alignItems="center">
-          {renderIcon()}
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: "bold",
-              marginTop: 1,
-              fontSize: { xs: "16px", sm: "20px", md: "20px", lg: "20px" },
-            }}
-          >
-            {headline}
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              paddingTop: 2,
-              fontSize: { xs: "10px", sm: "14px", md: "14px", lg: "14px" },
-            }}
-          >
-            {message}
-          </Typography>
+        {/* Top Decoration */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "6px",
+            bgcolor: color,
+          }}
+        />
 
-          {(status === "completed" ||
-            status === "failed" ||
-            status === "pending" ||
-            status === "cancelled") && (
-            <>
-              <hr
-                style={{
-                  width: "100%",
-                  margin: "20px 0",
-                  borderColor: "var(--border-color)",
-                }}
-              />
-              <Stack
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontWeight: "bold",
-                    color: "var(--text4)",
-                    fontSize: {
-                      xs: "10px",
-                      sm: "12px",
-                      md: "12px",
-                      lg: "12px",
-                    },
-                  }}
-                >
-                  Total Payment
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontWeight: "bold",
-                    fontSize: {
-                      xs: "18px",
-                      sm: "28px",
-                      md: "28px",
-                      lg: "28px",
-                    },
-                  }}
-                >
-                  INR ₹{amount}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontSize: { xs: "8px", sm: "12px", md: "12px", lg: "12px" },
-                  }}
-                >
-                  <span style={{ fontWeight: "bold", color: "var(--text4)" }}>
-                    Transaction ID:
-                  </span>{" "}
-                  {transactionID}
-                </Typography>
-              </Stack>
-              <Stack
-                direction={{ xs: "column", sm: "row", md: "row", lg: "row" }}
-                gap={2}
-                marginTop={4}
-                width="100%"
-                paddingX={1}
-              >
-                <Stack
-                  sx={{
-                    border: "1px solid var(--border-color)",
-                    padding: "5px",
-                    width: {
-                      xs: "100%",
-                      sm: "180px",
-                      md: "180px",
-                      lg: "180px",
-                    },
-                    borderRadius: "5px",
-                  }}
-                >
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: "var(--text4)",
-                      paddingTop: "5px",
-                      fontSize: {
-                        xs: "10px",
-                        sm: "12px",
-                        md: "12px",
-                        lg: "12px",
-                      },
-                    }}
-                  >
-                    {refLabel}
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontSize: {
-                        xs: "10px",
-                        sm: "14px",
-                        md: "14px",
-                        lg: "14px",
-                      },
-                      paddingTop: "5px",
-                    }}
-                  >
-                    {refNumber}
-                  </Typography>
-                </Stack>
-                <Stack
-                  sx={{
-                    border: "1px solid var(--border-color)",
-                    padding: "5px",
-                    width: {
-                      xs: "100%",
-                      sm: "180px",
-                      md: "180px",
-                      lg: "180px",
-                    },
-                    borderRadius: "5px",
-                  }}
-                >
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: "var(--text4)",
-                      paddingTop: "5px",
-                      fontSize: {
-                        xs: "10px",
-                        sm: "12px",
-                        md: "12px",
-                        lg: "12px",
-                      },
-                    }}
-                  >
-                    Payment Time
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontSize: {
-                        xs: "10px",
-                        sm: "14px",
-                        md: "14px",
-                        lg: "14px",
-                      },
-                      paddingTop: "5px",
-                    }}
-                  >
-                    {paymentTime}
-                  </Typography>
-                </Stack>
-              </Stack>
-              {status === "completed" && (
-                <Stack marginTop={4} width="100%" paddingX={1}>
-                  <Stack
-                    sx={{
-                      border: "1px solid var(--border-color)",
-                      padding: "5px",
-                      maxWidth: "100%",
-                    }}
-                  >
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: "var(--text4)",
-                        paddingTop: "5px",
-                        fontSize: {
-                          xs: "10px",
-                          sm: "12px",
-                          md: "12px",
-                          lg: "12px",
-                        },
-                      }}
-                    >
-                      Payment Method
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        fontSize: {
-                          xs: "10px",
-                          sm: "14px",
-                          md: "14px",
-                          lg: "14px",
-                        },
-                        paddingTop: "5px",
-                      }}
-                    >
-                      {method}
-                    </Typography>
-                  </Stack>
-                </Stack>
-              )}
-            </>
-          )}
-        </Stack>
-        <Stack
-          direction={{ xs: "column", sm: "row", md: "row", lg: "row" }}
-          gap={{ xs: 0, sm: 1, md: 2, lg:2 }}
-          justifyContent="center"
-        >
-          {(status === "failed" ||
-            status === "pending" ||
-            status === "cancelled") && (
-            <Button
-              variant="contained"
-              onClick={retryPayment}
+        <Stack alignItems="center" gap={2} textAlign="center">
+          {icon}
+          <Stack gap={0.5}>
+            <Typography
+              variant="h4"
               sx={{
-                marginTop: "20px",
-                color: "white",
-                backgroundColor: "var(--sec-color)",
-                textTransform: "none",
-                width: "100%",
+                fontWeight: 800,
+                color: "var(--text1)",
+                fontSize: { xs: "24px", sm: "28px" },
               }}
             >
-              <ReplayIcon sx={{ marginRight: "5px" }} />
-              Retry Payment
-            </Button>
-          )}
-          <Button
-            variant="contained"
-            onClick={() => router.push("/dashboard")}
-            sx={{
-              marginTop: "20px",
-              color: "white",
-              backgroundColor: "var(--primary-color)",
-              textTransform: "none",
-              width: "100%",
-            }}
-          >
-            <MovingIcon sx={{ marginRight: "5px" }} />
-            Go to Dashboard
-          </Button>
+              {title}
+            </Typography>
+            <Typography
+              sx={{
+                color: "var(--text2)",
+                fontSize: "15px",
+                lineHeight: 1.5,
+              }}
+            >
+              {statusMessage}
+            </Typography>
+          </Stack>
         </Stack>
+
+        {(status === "completed" ||
+          status === "failed" ||
+          status === "pending" ||
+          status === "cancelled") && (
+          <>
+            <Divider flexItem sx={{ borderStyle: "dashed" }} />
+
+            <Stack width="100%" gap={2.5}>
+              {/* Amount */}
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                bgcolor="var(--library-expand)"
+                p={2}
+                borderRadius="16px"
+              >
+                <Stack direction="row" alignItems="center" gap={1.5}>
+                  <ReceiptLong sx={{ color: "var(--text3)" }} />
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      color: "var(--text2)",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Total Amount
+                  </Typography>
+                </Stack>
+                <Typography
+                  sx={{
+                    fontWeight: 800,
+                    color: "var(--text1)",
+                    fontSize: "20px",
+                  }}
+                >
+                  ₹{amount}
+                </Typography>
+              </Stack>
+
+              {/* Details Grid */}
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Stack gap={0.5}>
+                    <Stack direction="row" alignItems="center" gap={1}>
+                      <Tag sx={{ fontSize: 16, color: "var(--text4)" }} />
+                      <Typography
+                        sx={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: "var(--text3)",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {refLabel}
+                      </Typography>
+                    </Stack>
+                    <Typography
+                      sx={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "var(--text1)",
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {refNumber}
+                    </Typography>
+                  </Stack>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Stack gap={0.5}>
+                    <Stack direction="row" alignItems="center" gap={1}>
+                      <Event sx={{ fontSize: 16, color: "var(--text4)" }} />
+                      <Typography
+                        sx={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: "var(--text3)",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Date & Time
+                      </Typography>
+                    </Stack>
+                    <Typography
+                      sx={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "var(--text1)",
+                      }}
+                    >
+                      {paymentTime}
+                    </Typography>
+                  </Stack>
+                </Grid>
+
+                {status === "completed" && (
+                  <Grid item xs={12}>
+                    <Stack gap={0.5}>
+                      <Stack direction="row" alignItems="center" gap={1}>
+                        <CreditCard
+                          sx={{ fontSize: 16, color: "var(--text4)" }}
+                        />
+                        <Typography
+                          sx={{
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            color: "var(--text3)",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Payment Method
+                        </Typography>
+                      </Stack>
+                      <Typography
+                        sx={{
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "var(--text1)",
+                        }}
+                      >
+                        {method}
+                      </Typography>
+                    </Stack>
+                  </Grid>
+                )}
+              </Grid>
+            </Stack>
+
+            <Stack width="100%" gap={2} mt={1}>
+              {(status === "failed" ||
+                status === "pending" ||
+                status === "cancelled") && (
+                <Button
+                  variant="contained"
+                  onClick={retryPayment}
+                  startIcon={<Replay />}
+                  sx={{
+                    bgcolor: "var(--sec-color)",
+                    color: "var(--white)",
+                    py: 1.5,
+                    borderRadius: "100px",
+                    textTransform: "none",
+                    fontWeight: 700,
+                    fontSize: "16px",
+                    boxShadow: "0px 4px 15px rgba(0,0,0,0.1)",
+                    "&:hover": {
+                      bgcolor: "var(--sec-color)",
+                      filter: "brightness(0.9)",
+                      transform: "translateY(-2px)",
+                    },
+                    transition: "all 0.2s",
+                  }}
+                >
+                  Retry Payment
+                </Button>
+              )}
+              <Button
+                variant="contained"
+                onClick={() => router.push("/dashboard")}
+                startIcon={<Dashboard />}
+                sx={{
+                  bgcolor: "var(--primary-color)",
+                  color: "var(--white)",
+                  py: 1.5,
+                  borderRadius: "100px",
+                  textTransform: "none",
+                  fontWeight: 700,
+                  fontSize: "16px",
+                  boxShadow: "0px 4px 15px rgba(0,0,0,0.1)",
+                  "&:hover": {
+                    bgcolor: "var(--primary-color-dark)",
+                    transform: "translateY(-2px)",
+                  },
+                  transition: "all 0.2s",
+                }}
+              >
+                Go to Dashboard
+              </Button>
+            </Stack>
+          </>
+        )}
       </Stack>
     </Stack>
   );

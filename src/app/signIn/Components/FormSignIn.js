@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, memo } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, useSession, signOut } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import StyledTextField from "@/src/Components/StyledTextField/StyledTextField";
 import {
   Button,
@@ -41,10 +41,6 @@ const FormSignIn = memo(() => {
     }
   }, [session, router]);
 
-  useEffect(() => {
-    console.log("session", session);
-  }, [session]);
-
   // Show error snackbar when error message changes
   useEffect(() => {
     if (formState.errorMsg) {
@@ -74,9 +70,22 @@ const FormSignIn = memo(() => {
     []
   );
 
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   const handleCredentialsLogin = useCallback(
     async (e) => {
       e.preventDefault();
+
+      if (!validateEmail(formState.email)) {
+        setFormState((prev) => ({
+          ...prev,
+          errorMsg: "Please enter a valid email address",
+        }));
+        return;
+      }
+
       setFormState((prev) => ({ ...prev, isLoading: true, errorMsg: "" }));
 
       const res = await signIn("credentials", {
@@ -92,7 +101,6 @@ const FormSignIn = memo(() => {
           isLoading: false,
         }));
       } else {
-        // router.push("/dashboard");
         setFormState((prev) => ({ ...prev, isLoading: false }));
       }
     },
@@ -112,7 +120,7 @@ const FormSignIn = memo(() => {
   }
 
   const { email, password, isLoading, isGoogleLoading } = formState;
-  const isButtonDisabled = isLoading || isGoogleLoading;
+  const isButtonDisabled = isLoading || isGoogleLoading || !email || !password;
 
   if (session) {
     return (
@@ -199,6 +207,7 @@ const FormSignIn = memo(() => {
             fontSize: "16px",
             color: "var(--sec-color)",
             cursor: "pointer",
+            alignSelf: "flex-end",
           }}
           onClick={() => router.push("/forgot-password")}
         >
@@ -209,7 +218,7 @@ const FormSignIn = memo(() => {
       <Button
         variant="contained"
         type="submit"
-        disabled={isButtonDisabled || !email || !password}
+        disabled={isButtonDisabled}
         sx={{
           textTransform: "none",
           backgroundColor: "var(--primary-color)",
@@ -218,6 +227,9 @@ const FormSignIn = memo(() => {
           fontSize: "18px",
           height: "40px",
           width: "100%",
+          "&:disabled": {
+            backgroundColor: "#e0e0e0",
+          },
         }}
         disableElevation
         startIcon={
@@ -229,11 +241,21 @@ const FormSignIn = memo(() => {
         Continue
       </Button>
 
-      <Typography color="var(--text4)">Or</Typography>
+      <Stack direction="row" alignItems="center" width="100%" spacing={2}>
+        <Stack
+          sx={{ height: "1px", bgcolor: "var(--border-color)", flex: 1 }}
+        />
+        <Typography color="var(--text4)" sx={{ fontFamily: "Lato" }}>
+          Or
+        </Typography>
+        <Stack
+          sx={{ height: "1px", bgcolor: "var(--border-color)", flex: 1 }}
+        />
+      </Stack>
 
       <Button
         variant="outlined"
-        disabled={isButtonDisabled}
+        disabled={isLoading || isGoogleLoading}
         onClick={handleGoogleSignIn}
         sx={{
           textTransform: "none",
@@ -244,6 +266,10 @@ const FormSignIn = memo(() => {
           width: "100%",
           color: "var(--primary-color)",
           borderColor: "var(--primary-color)",
+          "&:hover": {
+            borderColor: "var(--primary-color-dark)",
+            backgroundColor: "var(--sec-color-acc-2)",
+          },
         }}
         startIcon={
           isGoogleLoading ? (

@@ -11,6 +11,7 @@ const unprotectedRoutes = [
   "/",
   "/404",
   "/500",
+  "/api/homepage",
 ];
 
 export async function middleware(req) {

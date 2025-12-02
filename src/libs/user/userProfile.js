@@ -13,13 +13,12 @@ export async function userProfileSetup({ userID, name, phoneNumber, gender }) {
     pKey: `USER#${userID}`,
     sKey: `USER#${userID}`,
   };
-  console.log("userID", userID);
+
   try {
     // Fetch the user using GetCommand instead of an update command
     const { Item: user } = await dynamoDB.send(
       new GetCommand({ TableName, Key })
     );
-    console.log(user);
     if (!user) {
       return {
         success: false,
@@ -99,44 +98,51 @@ export async function getFullUserByID(userID) {
   return user;
 }
 
-  export async function updateUserProfile(userID, data) {
+export async function updateUserProfile(userID, data) {
   const TableName = `${process.env.AWS_DB_NAME}users`;
   const Key = {
     pKey: `USER#${userID}`,
     sKey: `USER#${userID}`,
   };
-  const { Item: user } = await dynamoDB.send(
-    new GetCommand({ TableName, Key })
-  );
-  if (!user) {
-    return {
-      success: false,
-      message: "User not found",
-    };
+
+  // Build update expression dynamically
+  let UpdateExpression = "set";
+  const ExpressionAttributeNames = {};
+  const ExpressionAttributeValues = {};
+
+  const fields = Object.keys(data);
+  fields.forEach((field, index) => {
+    const attributeName = `#${field}`;
+    const attributeValue = `:${field}`;
+
+    UpdateExpression += ` ${attributeName} = ${attributeValue}`;
+    if (index < fields.length - 1) UpdateExpression += ",";
+
+    ExpressionAttributeNames[attributeName] = field;
+    ExpressionAttributeValues[attributeValue] = data[field];
+  });
+
+  // If no fields to update, return success
+  if (fields.length === 0) {
+    return { success: true, message: "No changes to update" };
   }
-  const { name, email, phoneNumber, gender } = data;
-  await dynamoDB.send(
-    new UpdateCommand({
-      TableName,
-      Key,
-      UpdateExpression:
-        "set #name = :name, #email = :email, #phoneNumber = :phoneNumber, #gender = :gender",
-      ExpressionAttributeNames: {
-        "#name": "name",
-        "#email": "email",
-        "#phoneNumber": "phoneNumber",
-        "#gender": "gender",
-      },
-      ExpressionAttributeValues: {
-        ":name": name,
-        ":email": email,
-        ":phoneNumber": phoneNumber,
-        ":gender": gender,
-      },
-    })
-  );
-  return {
-    success: true,
-    message: "User profile updated successfully",
-  };
+
+  try {
+    await dynamoDB.send(
+      new UpdateCommand({
+        TableName,
+        Key,
+        UpdateExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+      })
+    );
+    return {
+      success: true,
+      message: "User profile updated successfully",
+    };
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
 }

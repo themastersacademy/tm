@@ -20,10 +20,10 @@ function handleError(error) {
 }
 
 export async function POST(req) {
-  const { batchCode } = await req.json();
+  const { batchCode, rollNo } = await req.json();
   return withAuth(async (session) => {
     try {
-      const response = await enrollStudent(session.user.id, batchCode);
+      const response = await enrollStudent(session.user.id, batchCode, rollNo);
       return Response.json(response);
     } catch (error) {
       return handleError(error);

@@ -40,9 +40,11 @@ export default function MobileBottomNav() {
         bottom: 0,
         left: 0,
         width: "100%",
-        height: "60px",
+        height: "64px",
         bgcolor: "var(--white)",
-        zIndex: 1,
+        zIndex: 100,
+        borderTop: "1px solid var(--border-color)",
+        boxShadow: "0 -2px 10px rgba(0,0,0,0.05)",
       }}
     >
       {[
@@ -59,20 +61,30 @@ export default function MobileBottomNav() {
             <Image
               src={icon}
               alt={label}
-              width={16}
+              width={20}
               height={20}
-              style={{ opacity: value === index ? 1 : 0.6 }}
+              style={{
+                opacity: value === index ? 1 : 0.5,
+                filter:
+                  value === index
+                    ? "brightness(0) saturate(100%) invert(34%) sepia(16%) saturate(1939%) hue-rotate(128deg) brightness(98%) contrast(92%)"
+                    : "grayscale(100%)",
+                transition: "all 0.3s ease",
+              }}
             />
           }
           sx={{
             minWidth: "fit-content",
+            padding: "6px 0",
             "& .MuiBottomNavigationAction-label": {
-              fontSize: value === index ? "12px" : "10px",
-              color: value === index ? "var(--primary-color)" : "var(--text3)",
-              marginTop: "3px",
+              fontSize: value === index ? "11px" : "10px",
+              fontWeight: value === index ? 700 : 500,
+              color: value === index ? "var(--primary-color)" : "var(--text4)",
+              marginTop: "4px",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
+              transition: "all 0.3s ease",
             },
           }}
         />

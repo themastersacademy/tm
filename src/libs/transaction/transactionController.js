@@ -15,12 +15,14 @@ import {
 
 const USER_TABLE = `${process.env.AWS_DB_NAME}users`;
 const USER_TABLE_INDEX = "GSI1-index";
+const MASTER_TABLE = `${process.env.AWS_DB_NAME}master`;
 
 export async function createTransaction({
   userID,
   document,
   amount,
   userMeta,
+  itemName,
 }) {
   if (!userID || !document || typeof amount !== "number" || !userMeta) {
     throw new Error("createTransaction: missing or invalid parameters");
@@ -28,7 +30,11 @@ export async function createTransaction({
   const now = Date.now();
   const transactionID = randomUUID();
 
-  const order = await createOrder(amount, userID);
+  const notes = {};
+  if (itemName) {
+    notes.itemName = itemName;
+  }
+  const order = await createOrder(amount, userID, notes);
 
   await dynamoDB.send(
     new PutCommand({
@@ -133,6 +139,37 @@ export async function verifyPayment({
       },
     };
     await dynamoDB.send(new UpdateCommand(updateCourseEnrollParams));
+
+    // Update Coupon Analytics
+    if (documentDetails.couponDetails && documentDetails.couponDetails.id) {
+      const couponId = documentDetails.couponDetails.id;
+      const discountAmount =
+        documentDetails.priceBreakdown?.couponDiscount || 0;
+      const salesAmount = documentDetails.priceBreakdown?.totalPrice || 0;
+
+      const updateCouponParams = {
+        TableName: MASTER_TABLE,
+        Key: {
+          pKey: `COUPON#${couponId}`,
+          sKey: "COUPONS",
+        },
+        UpdateExpression:
+          "SET redemptionCount = if_not_exists(redemptionCount, :zero) + :inc, totalDiscountGiven = if_not_exists(totalDiscountGiven, :zero) + :discount, totalSalesWithCoupon = if_not_exists(totalSalesWithCoupon, :zero) + :sales",
+        ExpressionAttributeValues: {
+          ":inc": 1,
+          ":discount": discountAmount,
+          ":sales": salesAmount,
+          ":zero": 0,
+        },
+      };
+
+      try {
+        await dynamoDB.send(new UpdateCommand(updateCouponParams));
+      } catch (e) {
+        console.error("Failed to update coupon analytics:", e);
+        // Don't throw, as payment verification is successful
+      }
+    }
   }
 
   return {
@@ -358,11 +395,25 @@ export async function getUserTransactions({ userID }) {
   };
 
   try {
-    const result = await dynamoDB.send(new ScanCommand(params));
+    let allItems = [];
+    let lastEvaluatedKey = undefined;
+
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const result = await dynamoDB.send(new ScanCommand(params));
+      if (result.Items) {
+        allItems = [...allItems, ...result.Items];
+      }
+      lastEvaluatedKey = result.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
     // Filter valid transactions server-side
-    const validTransactions = (result.Items || []).filter((item) => {
+    const validTransactions = allItems.filter((item) => {
       if (!item.status) {
-        console.warn("Transaction missing status:", item);
+        // console.warn("Transaction missing status:", item);
         return false;
       }
       return [

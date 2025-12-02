@@ -8,6 +8,7 @@ import {
   Tooltip,
   Typography,
   IconButton,
+  Divider,
 } from "@mui/material";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -38,7 +39,7 @@ export default function Account({ isSideNavOpen }) {
       console.log("Account.js - Redirecting to /signIn");
       router.push("/signIn");
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
   const handlePlansDialogOpen = () => {
     setPlansDialogOpen(true);
@@ -100,51 +101,141 @@ export default function Account({ isSideNavOpen }) {
         sx={{
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
           marginTop: "auto",
-          borderRadius: "28px",
+          borderRadius: "12px",
           cursor: "pointer",
-          padding: isSideNavOpen ? "9px" : "4px 12px 4px 4px",
+          padding: !isSideNavOpen ? "12px" : "8px",
           backgroundColor: open ? "var(--primary-color-acc-2)" : "transparent",
-          "&:hover": { backgroundColor: "var(--primary-color-acc-2)" },
+          border: "1px solid transparent",
+          transition: "all 0.2s ease",
+          "&:hover": {
+            backgroundColor: "var(--primary-color-acc-2)",
+            borderColor: "var(--border-color)",
+          },
+          width: "100%",
+          justifyContent: !isSideNavOpen ? "flex-start" : "center",
         }}
       >
-        <Stack sx={{ flexDirection: "row", alignItems: "center", gap: "12px" }}>
-          <Tooltip title="Account" disableHoverListener={!isSideNavOpen}>
+        <Tooltip
+          title={isSideNavOpen ? session?.user?.name || "Account" : ""}
+          placement="right"
+        >
+          <Stack position="relative">
             {userImage ? (
               <Image
                 src={userImage}
                 alt="profile"
-                width={45}
-                height={45}
-                style={{ borderRadius: "50%" }}
+                width={40}
+                height={40}
+                style={{
+                  borderRadius: "50%",
+                  border: "2px solid var(--white)",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                }}
               />
             ) : (
-              <Avatar sx={{ width: 45, height: 45 }} />
+              <Avatar
+                sx={{
+                  width: 40,
+                  height: 40,
+                  bgcolor: "var(--primary-color)",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                }}
+              >
+                {session?.user?.name?.charAt(0) || "U"}
+              </Avatar>
             )}
-          </Tooltip>
-          {!isSideNavOpen && (
+            {session?.user?.accountType === "PRO" && isSideNavOpen && (
+              <Stack
+                sx={{
+                  position: "absolute",
+                  bottom: -2,
+                  right: -2,
+                  bgcolor: "#FFD700",
+                  width: "14px",
+                  height: "14px",
+                  borderRadius: "50%",
+                  border: "2px solid white",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
+                  sx={{ fontSize: "8px", fontWeight: "bold", color: "#000" }}
+                >
+                  P
+                </Typography>
+              </Stack>
+            )}
+          </Stack>
+        </Tooltip>
+
+        {!isSideNavOpen && (
+          <Stack sx={{ ml: 1.5, overflow: "hidden", flex: 1 }}>
+            <Stack direction="row" alignItems="center" gap={1}>
+              <Typography
+                sx={{
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  color: "var(--text1)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  fontFamily: "Lato",
+                }}
+              >
+                {session?.user?.name || "User"}
+              </Typography>
+              {session?.user?.accountType === "PRO" && (
+                <Stack
+                  sx={{
+                    backgroundColor: "#FFD700",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "10px",
+                      fontWeight: "800",
+                      color: "#000",
+                      fontFamily: "Lato",
+                      lineHeight: 1,
+                    }}
+                  >
+                    PRO
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
             <Typography
               sx={{
+                fontSize: "12px",
+                color: "var(--text3)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
                 fontFamily: "Lato",
-                fontSize: "14px",
-                fontWeight: "700",
-                color: "var(--primary-color)",
               }}
             >
-              My Account
+              {session?.user?.email || "user@example.com"}
             </Typography>
-          )}
-        </Stack>
+          </Stack>
+        )}
+
         {!isSideNavOpen && (
           <Image
             src={more_img}
             alt="more"
-            width={18}
-            height={18}
+            width={16}
+            height={16}
             style={{
               transform: open ? "rotate(180deg)" : "rotate(0)",
-              transition: "all .5s ease",
+              transition: "all .3s ease",
+              opacity: 0.6,
             }}
           />
         )}
@@ -155,69 +246,197 @@ export default function Account({ isSideNavOpen }) {
         onClose={handleClose}
         autoFocus={false}
         disableScrollLock={true}
+        transformOrigin={{ horizontal: "left", vertical: "bottom" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
         sx={{
           "& .MuiPaper-root": {
-            width: "240px",
-            marginTop: "-90px",
-            backgroundColor: "var(--sec-color-acc-2)",
-            borderRadius: "6px",
-            color: "var(--text3)",
+            width: "260px",
+            marginLeft: "10px",
+            backgroundColor: "var(--white)",
+            borderRadius: "12px",
+            color: "var(--text1)",
             border: "1px solid var(--border-color)",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            overflow: "hidden",
             "& .MuiMenuItem-root": {
+              padding: "10px 16px",
+              gap: "12px",
               "&:hover": {
-                backgroundColor: "var(--sec-color-acc-1)",
-              },
-              "&:active": {
-                backgroundColor: "var(--sec-color-acc-1) !important",
+                backgroundColor: "var(--sec-color-acc-2)",
               },
             },
           },
         }}
         elevation={0}
       >
+        {/* Menu Header */}
+        <Stack sx={{ p: "16px 16px 12px 16px", gap: 1.5, outline: "none" }}>
+          <Stack direction="row" alignItems="center" gap={1.5}>
+            {userImage ? (
+              <Image
+                src={userImage}
+                alt="profile"
+                width={48}
+                height={48}
+                style={{
+                  borderRadius: "50%",
+                  border: "1px solid var(--border-color)",
+                }}
+              />
+            ) : (
+              <Avatar
+                sx={{
+                  width: 48,
+                  height: 48,
+                  bgcolor: "var(--primary-color)",
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                }}
+              >
+                {session?.user?.name?.charAt(0) || "U"}
+              </Avatar>
+            )}
+            <Stack sx={{ overflow: "hidden" }}>
+              <Stack direction="row" alignItems="center" gap={0.5}>
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: "15px",
+                    fontFamily: "Lato",
+                    color: "var(--text1)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: "140px",
+                  }}
+                >
+                  {session?.user?.name || "User"}
+                </Typography>
+                {session?.user?.accountType === "PRO" && (
+                  <Stack
+                    sx={{ bgcolor: "#FFD700", px: 0.5, borderRadius: "3px" }}
+                  >
+                    <Typography
+                      sx={{ fontSize: "9px", fontWeight: 800, color: "black" }}
+                    >
+                      PRO
+                    </Typography>
+                  </Stack>
+                )}
+              </Stack>
+              <Typography
+                sx={{
+                  fontSize: "12px",
+                  color: "var(--text3)",
+                  fontFamily: "Lato",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "150px",
+                }}
+              >
+                {session?.user?.email}
+              </Typography>
+            </Stack>
+          </Stack>
+          <Stack
+            onClick={() => {
+              router.push(`/dashboard/${goalID}/profile`);
+              handleClose();
+            }}
+            sx={{
+              border: "1px solid var(--border-color)",
+              borderRadius: "6px",
+              py: 0.5,
+              cursor: "pointer",
+              textAlign: "center",
+              transition: "all 0.2s",
+              "&:hover": {
+                bgcolor: "var(--sec-color-acc-2)",
+                borderColor: "var(--primary-color)",
+              },
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "var(--text2)",
+                fontFamily: "Lato",
+              }}
+            >
+              Manage Account
+            </Typography>
+          </Stack>
+        </Stack>
+
+        <Divider sx={{ my: 0.5 }} />
+
         <MenuItem
           onClick={() => {
             router.push(`/dashboard/${goalID}/profile`);
             handleClose();
           }}
-          sx={{
-            gap: "15px",
-            fontFamily: "Lato",
-            fontSize: "14px",
-            fontWeight: "700",
-          }}
         >
-          <Image src={students_img} alt="profile" width={16} height={16} />
-          Profile
-        </MenuItem>
-        {session?.user?.accountType !== "PRO" && (
-          <MenuItem
+          <Stack
             sx={{
-              gap: "10px",
-              fontFamily: "Lato",
-              fontSize: "14px",
-              fontWeight: "700",
+              bgcolor: "var(--sec-color-acc-2)",
+              p: 0.8,
+              borderRadius: "6px",
             }}
-            onClick={handlePlansDialogOpen}
           >
-            <HowToRegRounded
-              sx={{ color: "var(--primary-color)" }}
-              fontSize="small"
-            />
-            Upgrade to PRO
+            <Image src={students_img} alt="profile" width={18} height={18} />
+          </Stack>
+          <Typography
+            sx={{ fontSize: "14px", fontWeight: 600, fontFamily: "Lato" }}
+          >
+            Profile
+          </Typography>
+        </MenuItem>
+
+        {session?.user?.accountType !== "PRO" && (
+          <MenuItem onClick={handlePlansDialogOpen}>
+            <Stack
+              sx={{
+                bgcolor: "var(--sec-color-acc-2)",
+                p: 0.8,
+                borderRadius: "6px",
+              }}
+            >
+              <HowToRegRounded
+                sx={{ color: "var(--primary-color)", fontSize: "18px" }}
+              />
+            </Stack>
+            <Stack>
+              <Typography
+                sx={{ fontSize: "14px", fontWeight: 600, fontFamily: "Lato" }}
+              >
+                Upgrade Plan
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "10px",
+                  color: "var(--text3)",
+                  fontFamily: "Lato",
+                }}
+              >
+                Unlock all features
+              </Typography>
+            </Stack>
           </MenuItem>
         )}
-        <MenuItem
-          onClick={handleLogout}
-          sx={{
-            gap: "15px",
-            fontFamily: "Lato",
-            fontSize: "14px",
-            fontWeight: "700",
-          }}
-        >
-          <Image src={logout_img} alt="logout" width={16} height={16} />
-          Logout
+
+        <Divider sx={{ my: 0.5 }} />
+
+        <MenuItem onClick={handleLogout} sx={{ color: "var(--delete-color)" }}>
+          <Stack sx={{ bgcolor: "#FEE2E2", p: 0.8, borderRadius: "6px" }}>
+            <Image src={logout_img} alt="logout" width={18} height={18} />
+          </Stack>
+          <Typography
+            sx={{ fontSize: "14px", fontWeight: 600, fontFamily: "Lato" }}
+          >
+            Logout
+          </Typography>
         </MenuItem>
       </Menu>
       <PlansDialogBox

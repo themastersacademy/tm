@@ -6,12 +6,14 @@ import { SubscriptionProvider } from "@/src/app/context/SubscriptionProvider";
 import { ExamProvider } from "@/src/app/context/ExamProvider";
 import { BannerProvider } from "@/src/app/context/BannerProvider";
 import { ClassroomProvider } from "@/src/app/context/ClassroomProvider";
+import SessionGuard from "./Components/SessionGuard";
 
 export default function Layout({ children }) {
   return (
     <BannerProvider>
       <SubscriptionProvider>
         <ExamProvider>
+          <SessionGuard />
           <Stack
             flexDirection="row"
             bgcolor="var(--sec-color-acc-2)"

@@ -9,11 +9,12 @@ export default function KnowYourTest({ instruction }) {
     <Stack
       sx={{
         border: "1px solid var(--border-color)",
-        borderRadius: "10px",
-        width: { xs: "100%", sm: "370px" },
-        minHeight: "100px",
-        padding: "10px 15px",
-        gap: "10px",
+        borderRadius: "16px",
+        width: "100%",
+        minHeight: "auto",
+        padding: "20px",
+        gap: "16px",
+        bgcolor: "#f8fafc",
         display:
           instruction?.settings?.isAntiCheat ||
           instruction?.settings?.isFullScreenMode ||

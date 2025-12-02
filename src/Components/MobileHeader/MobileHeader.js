@@ -12,11 +12,14 @@ export default function MobileHeader() {
       justifyContent="space-between"
       sx={{
         width: "100%",
-        height: "60px",
-        padding: "10px",
+        height: "64px",
+        padding: "0 16px",
         backgroundColor: "var(--white)",
-        marginTop: "15px",
+        borderBottom: "1px solid var(--border-color)",
         display: { xs: "flex", md: "none" },
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
       }}
     >
       <Stack>
@@ -26,13 +29,32 @@ export default function MobileHeader() {
         <Stack
           flexDirection="row"
           alignItems="center"
-          sx={{ marginLeft: "auto", gap: "8px" }}
+          sx={{ marginLeft: "auto", gap: "12px" }}
         >
-          <IconButton sx={{ padding: "0px" }}>
+          <IconButton sx={{ padding: "4px" }}>
             <Notifications sx={{ color: "var(--primary-color)" }} />
           </IconButton>
-          <Image src={mCoins} alt="mCoins" />
-          <Typography>100</Typography>
+          <Stack
+            flexDirection="row"
+            alignItems="center"
+            gap="4px"
+            sx={{
+              backgroundColor: "var(--sec-color-acc-1)",
+              padding: "4px 8px",
+              borderRadius: "16px",
+            }}
+          >
+            <Image src={mCoins} alt="mCoins" width={16} height={16} />
+            <Typography
+              sx={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "var(--sec-color)",
+              }}
+            >
+              100
+            </Typography>
+          </Stack>
         </Stack>
       </Stack>
     </Stack>

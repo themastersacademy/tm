@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography, Grid, Box } from "@mui/material";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import CheckoutPayCard from "@/src/Components/CheckoutPayCard/CheckoutPayCard";
 import { ArrowBackIos, CheckCircle } from "@mui/icons-material";
@@ -108,7 +108,7 @@ export default function Checkout() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          courseID: params.courseID,
+          courseID: courseID,
           goalID: goalID,
         }),
       }
@@ -141,7 +141,37 @@ export default function Checkout() {
     );
     const data = await response.json();
     if (data.success) {
-      setCouponDetails(data.data);
+      const coupon = data.data;
+      // Validate coupon applicability
+      if (coupon.couponClass === "COURSES") {
+        const applicableCourses = (coupon.applicableCourses || []).map((id) =>
+          String(id).trim()
+        );
+        if (
+          applicableCourses.length > 0 &&
+          !applicableCourses.includes(String(courseID).trim())
+        ) {
+          enqueueSnackbar("Coupon is not applicable to this course", {
+            variant: "error",
+          });
+          return;
+        }
+      } else if (coupon.couponClass === "GOALS") {
+        const applicableGoals = (coupon.applicableGoals || []).map((id) =>
+          String(id).trim()
+        );
+        if (
+          applicableGoals.length > 0 &&
+          !applicableGoals.includes(String(goalID).trim())
+        ) {
+          enqueueSnackbar("Coupon is not applicable to this goal", {
+            variant: "error",
+          });
+          return;
+        }
+      }
+
+      setCouponDetails(coupon);
       enqueueSnackbar("Coupon applied successfully", {
         variant: "success",
       });
@@ -461,208 +491,223 @@ export default function Checkout() {
         />
       )}
       <Stack
-        padding={{ xs: "10px", sm: "30px" }}
+        padding={{ xs: "20px", sm: "40px" }}
         alignItems="center"
-        marginBottom={{ xs: "250px", sm: "250px", lg: "20px" }}
+        minHeight="100vh"
+        bgcolor="var(--library-expand)"
       >
         {isLoading ? (
           <PageSkeleton />
         ) : (
-          <Stack gap="20px" width="100%" maxWidth="1200px">
+          <Stack gap="30px" width="100%" maxWidth="1200px">
+            {/* Header */}
             <Stack
+              direction="row"
+              alignItems="center"
+              gap={2}
               sx={{
-                width: "100%",
-                alignItems: "center",
-                flexDirection: "row",
-                border: "1px solid var(--border-color)",
-                borderRadius: "10px",
-                backgroundColor: "var(--white)",
-                padding: "20px",
-                height: "60px",
+                cursor: "pointer",
+                width: "fit-content",
               }}
+              onClick={() => router.back()}
             >
-              <ArrowBackIos
-                onClick={() => router.back()}
-                sx={{ cursor: "pointer", fontSize: "20px" }}
-              />
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  bgcolor: "var(--white)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px solid var(--border-color)",
+                  transition: "all 0.2s",
+                  "&:hover": {
+                    bgcolor: "var(--primary-color)",
+                    color: "var(--white)",
+                    borderColor: "var(--primary-color)",
+                  },
+                  color: "var(--text1)",
+                }}
+              >
+                <ArrowBackIos sx={{ fontSize: "18px", ml: 1 }} />
+              </Box>
               <Typography
-                sx={{ fontSize: "20px", fontFamily: "Lato", fontWeight: "700" }}
+                sx={{
+                  fontSize: "24px",
+                  fontWeight: 800,
+                  color: "var(--text1)",
+                }}
               >
                 Checkout
               </Typography>
             </Stack>
-            <Stack
-              direction={{ xs: "column", lg: "row", md: "row" }}
-              gap={{ xs: "20px", lg: "30px" }}
-              width="100%"
-            >
-              <Stack
-                flex={{ xs: "auto", lg: 0.6 }}
-                gap={{ xs: "20px", lg: "30px" }}
-              >
-                {isPaidCourseForUser ? (
-                  <Stack>
-                    {billingInfoList
-                      .filter((info) => info && info.firstName)
-                      .map((info, index) => (
-                        <AddressCard
-                          key={index}
-                          billingInfo={info}
-                          title={`Billing Address ${index + 1}`}
-                          onEdit={editBillingInfo}
-                          index={index}
-                          onDelete={deleteBillingInfo}
-                          isSelected={selectedAddressIndex === index}
-                          onSelect={() => handleAddressSelect(index)}
-                        />
-                      ))}
-                  </Stack>
-                ) : (
-                  <Stack
-                    sx={{
-                      border: "1px solid var(--border-color)",
-                      borderRadius: 2,
-                      p: 2.5,
-                      bgcolor: "var(--white)",
-                      gap: 1.5,
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: 20,
-                        fontWeight: 700,
-                        fontFamily: "Lato",
-                        color: "var(--text1)",
-                      }}
-                    >
-                      Enroll for Free
-                    </Typography>
 
-                    <Typography
-                      sx={{
-                        fontSize: 14,
-                        fontWeight: 400,
-                        fontFamily: "Lato",
-                        color: "var(--text2)",
-                      }}
-                    >
-                      This course is completely free of cost. You’ll get full
-                      access to all lessons and materials after enrollment.
-                    </Typography>
-
-                    <Stack direction="row" alignItems="center" gap={1}>
-                      <CheckCircle sx={{ fontSize: 20, color: "green" }} />
-                      <Typography
-                        sx={{
-                          fontSize: 14,
-                          fontFamily: "Lato",
-                          color: "var(--text1)",
-                        }}
-                      >
-                        100% Free – No card required for Enroll
-                      </Typography>
-                    </Stack>
-
-                    <Stack direction="row" alignItems="center" gap={1}>
-                      <CheckCircle sx={{ fontSize: 20, color: "green" }} />
-                      <Typography
-                        sx={{
-                          fontSize: 14,
-                          fontFamily: "Lato",
-                          color: "var(--text1)",
-                        }}
-                      >
-                        Unlock resources for free by Enroll
-                      </Typography>
-                    </Stack>
-
-                    <Stack direction="row" alignItems="center" gap={1}>
-                      <CheckCircle sx={{ fontSize: 20, color: "green" }} />
-                      <Typography
-                        sx={{
-                          fontSize: 14,
-                          fontFamily: "Lato",
-                          color: "var(--text1)",
-                        }}
-                      >
-                        Get 1 Year Free Access for Enroll
-                      </Typography>
-                    </Stack>
-
-                    <Button
-                      variant="contained"
-                      onClick={handleEnroll}
-                      sx={{
-                        backgroundColor: "var(--sec-color)",
-                        color: "var(--white)",
-                        fontSize: "16px",
-                        fontFamily: "Lato",
-                        fontWeight: "700",
-                        textTransform: "none",
-                        width: "100%",
-                      }}
-                    >
-                      Enroll Now for Free
-                    </Button>
-                  </Stack>
-                )}
-                {isPaidCourseForUser ? (
-                  <BillingInformation
-                    billingInfo={billingInfo}
-                    setBillingInfo={setBillingInfo}
-                    handlePinChange={handlePinChange}
-                    addBillingInfo={addBillingInfo}
-                    showBillingForm={showBillingForm}
-                    setShowBillingForm={setShowBillingForm}
-                    updateBillingInfo={updateBillingInfo}
-                    editIndex={editIndex}
-                  />
-                ) : (
-                  ""
-                )}
-                <Stack
-                  marginTop="0px"
-                  width="100%"
-                  sx={{ display: { xs: "none", md: "block" } }}
-                >
+            <Grid container spacing={4}>
+              {/* Left Column: Billing & Details */}
+              <Grid item xs={12} lg={8}>
+                <Stack gap={4}>
                   {isPaidCourseForUser ? (
-                    <PaymentButton
+                    <Stack gap={3}>
+                      <Typography
+                        sx={{
+                          fontSize: "18px",
+                          fontWeight: 700,
+                          color: "var(--text1)",
+                        }}
+                      >
+                        Billing Address
+                      </Typography>
+                      {billingInfoList
+                        .filter((info) => info && info.firstName)
+                        .map((info, index) => (
+                          <AddressCard
+                            key={index}
+                            billingInfo={info}
+                            title={`Address ${index + 1}`}
+                            onEdit={editBillingInfo}
+                            index={index}
+                            onDelete={deleteBillingInfo}
+                            isSelected={selectedAddressIndex === index}
+                            onSelect={() => handleAddressSelect(index)}
+                          />
+                        ))}
+                      <BillingInformation
+                        billingInfo={billingInfo}
+                        setBillingInfo={setBillingInfo}
+                        handlePinChange={handlePinChange}
+                        addBillingInfo={addBillingInfo}
+                        showBillingForm={showBillingForm}
+                        setShowBillingForm={setShowBillingForm}
+                        updateBillingInfo={updateBillingInfo}
+                        editIndex={editIndex}
+                      />
+                    </Stack>
+                  ) : (
+                    <Stack
+                      sx={{
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "24px",
+                        p: 4,
+                        bgcolor: "var(--white)",
+                        gap: 3,
+                      }}
+                    >
+                      <Stack gap={1}>
+                        <Typography
+                          sx={{
+                            fontSize: "24px",
+                            fontWeight: 800,
+                            color: "var(--text1)",
+                          }}
+                        >
+                          Enroll for Free
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: "16px",
+                            color: "var(--text2)",
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          This course is completely free of cost. You’ll get
+                          full access to all lessons and materials immediately
+                          after enrollment.
+                        </Typography>
+                      </Stack>
+
+                      <Stack gap={2}>
+                        {[
+                          "100% Free – No credit card required",
+                          "Instant access to all course materials",
+                          "Learn at your own pace with lifetime access",
+                        ].map((text, i) => (
+                          <Stack
+                            key={i}
+                            direction="row"
+                            alignItems="center"
+                            gap={2}
+                          >
+                            <CheckCircle
+                              sx={{
+                                fontSize: 24,
+                                color: "var(--primary-color)",
+                              }}
+                            />
+                            <Typography
+                              sx={{
+                                fontSize: "16px",
+                                fontWeight: 500,
+                                color: "var(--text1)",
+                              }}
+                            >
+                              {text}
+                            </Typography>
+                          </Stack>
+                        ))}
+                      </Stack>
+
+                      <Button
+                        variant="contained"
+                        onClick={handleEnroll}
+                        sx={{
+                          bgcolor: "var(--primary-color)",
+                          color: "var(--white)",
+                          fontSize: "16px",
+                          fontWeight: 700,
+                          textTransform: "none",
+                          py: 2,
+                          borderRadius: "100px",
+                          boxShadow: "0px 4px 20px rgba(0,0,0,0.1)",
+                          "&:hover": {
+                            bgcolor: "var(--primary-color-dark)",
+                            transform: "translateY(-2px)",
+                            boxShadow: "0px 8px 25px rgba(0,0,0,0.15)",
+                          },
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        Enroll Now for Free
+                      </Button>
+                    </Stack>
+                  )}
+
+                  {isPaidCourseForUser && (
+                    <Stack sx={{ display: { xs: "none", md: "block" } }}>
+                      <PaymentButton
+                        isDisabled={selectedAddressIndex === null}
+                        onPaymentClick={courseEnroll}
+                        loading={paymentLoading}
+                        isFree={courseDetails?.subscription?.isFree}
+                      />
+                    </Stack>
+                  )}
+                </Stack>
+              </Grid>
+
+              {/* Right Column: Order Summary */}
+              {isPaidCourseForUser && (
+                <Grid item xs={12} lg={4}>
+                  <Stack position="sticky" top={24}>
+                    <CheckoutPayCard
+                      courseDetails={courseDetails}
+                      selectedPlan={selectedPlan}
+                      handlePlanChange={handlePlanChange}
+                      couponDetails={couponDetails}
+                      applyCoupon={applyCoupon}
+                      setCouponCode={setCouponCode}
+                      couponCode={couponCode}
+                      removeCoupon={removeCoupon}
                       isDisabled={selectedAddressIndex === null}
                       onPaymentClick={courseEnroll}
                       loading={paymentLoading}
-                      isFree={courseDetails?.subscription?.isFree}
+                      planIndex={planIndex}
+                      setSelectedPlan={setSelectedPlan}
                     />
-                  ) : (
-                    ""
-                  )}
-                </Stack>
-              </Stack>
-              {isPaidCourseForUser ? (
-                <Stack
-                  flex={{ xs: "auto", lg: 0.4 }}
-                  gap="20px"
-                  alignItems={{ xs: "center", lg: "flex-end" }}
-                >
-                  <CheckoutPayCard
-                    courseDetails={courseDetails}
-                    selectedPlan={selectedPlan}
-                    handlePlanChange={handlePlanChange}
-                    couponDetails={couponDetails}
-                    applyCoupon={applyCoupon}
-                    setCouponCode={setCouponCode}
-                    couponCode={couponCode}
-                    removeCoupon={removeCoupon}
-                    isDisabled={selectedAddressIndex === null}
-                    onPaymentClick={courseEnroll}
-                    loading={paymentLoading}
-                    planIndex={planIndex}
-                    setSelectedPlan={setSelectedPlan}
-                  />
-                </Stack>
-              ) : (
-                ""
+                  </Stack>
+                </Grid>
               )}
-            </Stack>
+            </Grid>
           </Stack>
         )}
       </Stack>

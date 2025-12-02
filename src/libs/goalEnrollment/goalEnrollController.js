@@ -1,12 +1,7 @@
 import { dynamoDB } from "@/src/utils/awsAgent";
-import {
-  PutCommand,
-  QueryCommand,
-  GetCommand,
-} from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 
 export async function createGoalEnrollment({ userID, goalID }) {
-  console.log(userID, goalID);
   const TableName = `${process.env.AWS_DB_NAME}users`;
   const now = Date.now();
 
@@ -31,7 +26,6 @@ export async function createGoalEnrollment({ userID, goalID }) {
 
   // Check if the goal enrollment already exists
   const existingEnrollment = await getGoalEnrollment({ userID, goalID });
-  console.log(existingEnrollment);
   if (existingEnrollment.data !== null) {
     return {
       success: false,

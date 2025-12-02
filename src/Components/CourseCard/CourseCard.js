@@ -1,12 +1,15 @@
 "use client";
 import { memo } from "react";
-import { Stack, Typography } from "@mui/material";
+import { Stack, Typography, Box, LinearProgress } from "@mui/material";
 import Image from "next/image";
 import defaultThumbnail from "@/public/images/defaultThumbnail.svg";
 import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
 import PlayLessonIcon from "@mui/icons-material/PlayLesson";
-import StarIcon from '@mui/icons-material/Star';
-import { CrownFilled  } from '@ant-design/icons';
+import {
+  WorkspacePremium,
+  SignalCellularAlt,
+  Person,
+} from "@mui/icons-material";
 
 const CourseCard = memo(function CourseCard({
   title = "Untitled Course",
@@ -17,194 +20,306 @@ const CourseCard = memo(function CourseCard({
   actionButton = null,
   actionMobile = null,
   isPro = false,
-  isFree = false
+  isFree = false,
+  progress = 0,
+  instructor = null,
+  difficulty = null,
+  enrolledCount = null,
 }) {
   const imageSrc = thumbnail || defaultThumbnail.src;
-
   const badgeText = isPro ? "PRO" : isFree ? "FREE" : null;
+
+  // Difficulty badge config
+  const getDifficultyConfig = (level) => {
+    switch (level?.toLowerCase()) {
+      case "beginner":
+        return { color: "#4CAF50", label: "Beginner", icon: 1 };
+      case "intermediate":
+        return { color: "#FF9800", label: "Intermediate", icon: 2 };
+      case "advanced":
+        return { color: "#F44336", label: "Advanced", icon: 3 };
+      default:
+        return null;
+    }
+  };
+
+  const difficultyConfig = getDifficultyConfig(difficulty);
 
   return (
     <Stack
-      maxWidth={{ xs: "400px", sm: "300px" }}
-      width={{ xs: "100%", sm: "260px" }}
-      minHeight={{ xs: "auto", sm: "320px" }}
       sx={{
-        border: "1px solid var(--border-color)",
-        borderRadius: "10px",
+        width: { xs: "100%", sm: "300px" },
+        borderRadius: "16px",
         backgroundColor: "var(--white)",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        position: "relative",
+        border: "1px solid var(--border-color)",
         overflow: "hidden",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        cursor: "pointer",
+        "&:hover": {
+          transform: "translateY(-8px)",
+          boxShadow: "0 12px 32px rgba(0,0,0,0.12)",
+          borderColor: "var(--primary-color)",
+          "& .thumbnail": {
+            transform: "scale(1.05)",
+          },
+        },
       }}
     >
-      {/* Content Area */}
-      <Stack
-        flexDirection={{ xs: "row", sm: "column" }}
-        sx={{ flexGrow: 1 }}
-        gap={1}
+      {/* Thumbnail Section */}
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          height: { xs: "180px", sm: "200px" },
+          overflow: "hidden",
+          backgroundColor: "#f5f5f5",
+        }}
       >
-        {/* Thumbnail */}
-        <Stack
-          sx={{ display: { xs: "none", sm: "flex" }, position: "relative" }}
-        >
-          <Image
-            src={imageSrc}
-            alt="Course Thumbnail"
-            width="260"
-            height="140"
-            loading="lazy"
-            style={{
-              borderTopLeftRadius: "10px",
-              borderTopRightRadius: "10px",
+        <Image
+          src={imageSrc}
+          alt={title}
+          fill
+          className="thumbnail"
+          style={{
+            objectFit: "cover",
+            transition: "transform 0.3s ease",
+          }}
+        />
+
+        {/* Progress Bar Overlay */}
+        {progress > 0 && (
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              width: "100%",
+              backgroundColor: "rgba(0,0,0,0.6)",
+              backdropFilter: "blur(8px)",
+              padding: "8px 12px",
             }}
-          />
-          {badgeText && (
-            <Stack
+          >
+            <Stack direction="row" alignItems="center" gap="8px">
+              <Typography
+                sx={{
+                  color: "white",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  minWidth: "35px",
+                }}
+              >
+                {progress}%
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={progress}
+                sx={{
+                  flex: 1,
+                  height: "6px",
+                  borderRadius: "3px",
+                  backgroundColor: "rgba(255,255,255,0.3)",
+                  "& .MuiLinearProgress-bar": {
+                    backgroundColor: "#4CAF50",
+                    borderRadius: "3px",
+                  },
+                }}
+              />
+            </Stack>
+          </Box>
+        )}
+
+        {/* Badge */}
+        {badgeText && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              background: isPro
+                ? "linear-gradient(135deg, #FF6B6B 0%, #C92A2A 100%)"
+                : "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%)",
+              color: "white",
+              padding: "6px 12px",
+              borderRadius: "8px",
+              fontSize: "12px",
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            }}
+          >
+            {isPro && <WorkspacePremium sx={{ fontSize: 16 }} />}
+            {badgeText}
+          </Box>
+        )}
+
+        {/* Difficulty Badge */}
+        {difficultyConfig && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 12,
+              left: 12,
+              backgroundColor: difficultyConfig.color,
+              color: "white",
+              padding: "4px 10px",
+              borderRadius: "6px",
+              fontSize: "11px",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            }}
+          >
+            <SignalCellularAlt sx={{ fontSize: 14 }} />
+            {difficultyConfig.label}
+          </Box>
+        )}
+      </Box>
+
+      {/* Content Section */}
+      <Stack padding="20px" gap="16px">
+        {/* Title */}
+        <Typography
+          sx={{
+            fontSize: "18px",
+            fontWeight: 700,
+            color: "var(--text1)",
+            lineHeight: 1.3,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            minHeight: "48px",
+          }}
+        >
+          {title}
+        </Typography>
+
+        {/* Instructor Info */}
+        {instructor && (
+          <Stack direction="row" alignItems="center" gap="8px">
+            <Person
               sx={{
-                position: "absolute",
-                top: 10,
-                right: 10,
-                backgroundColor: isPro ? "red" : "var(--primary-color)",
-                color: "white",
-                padding: "2px 8px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontFamily: "Lato",
-                fontWeight: "bold",
-                width: isFree ? "45px" : "50px",
-                height: "20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexDirection: "row",
-                gap:0.5
+                fontSize: 16,
+                color: "var(--text3)",
+              }}
+            />
+            <Typography
+              sx={{
+                fontSize: "13px",
+                color: "var(--text3)",
+                fontWeight: 500,
               }}
             >
-              {isPro && <CrownFilled />} {badgeText}
-            </Stack>
-          )}
-        </Stack>
-        <Stack sx={{ display: { xs: "flex", sm: "none" }, padding: "10px" }}>
-          <Image
-            src={imageSrc}
-            alt="Course Thumbnail"
-            width="130"
-            height="80"
-            loading="lazy"
-            style={{ borderRadius: "10px" }}
-          />
-        </Stack>
+              {instructor}
+            </Typography>
+          </Stack>
+        )}
 
-        {/* Text Content */}
-        <Stack
-          sx={{ maxWidth: "100%", overflow: "hidden" }}
-          padding={{ xs: "10px", sm: "15px 10px" }}
-          gap="6px"
-          flexGrow={1}
-        >
-          <Typography
-            sx={{
-              fontFamily: "Lato",
-              fontSize: { xs: "10px", sm: "14px", md: "16px" },
-              fontWeight: "bold",
-              marginBottom: { xs: "0px", sm: "10px" },
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {title}
-          </Typography>
-
-          <hr style={{ border: "1px solid var(--border-color)" }} />
-
-          <Stack
-            direction="row"
-            gap="4px"
-            flexWrap="wrap"
-            marginTop={{ xs: "4px", sm: "10px" }}
-          >
+        {/* Language Tags */}
+        {Language.length > 0 && (
+          <Stack direction="row" gap="8px" flexWrap="wrap">
             {Language.map((lang, idx) => (
-              <Stack
+              <Box
                 key={idx}
                 sx={{
-                  backgroundColor: "var(--sec-color-acc-1)",
+                  backgroundColor: "var(--sec-color-acc-2)",
                   color: "var(--sec-color)",
-                  fontSize: "10px",
-                  fontFamily: "Lato",
-                  height: 20,
-                  px: 1,
-                  borderRadius: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
                 }}
               >
                 {lang}
-              </Stack>
+              </Box>
             ))}
           </Stack>
+        )}
 
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            marginTop={{ xs: "4px", sm: "12px" }}
-          >
-            <Stack direction="row" gap={1}>
-              <Stack direction="row" alignItems="center" gap={0.5}>
-                <PlayLessonIcon
-                  sx={{ fontSize: 16, color: "var(--primary-color)" }}
-                />
-                <Typography fontSize={10} fontFamily="Lato">
-                  {lessons}
-                </Typography>
-              </Stack>
-              <Stack direction="row" alignItems="center" gap={0.5}>
-                <AccessTimeFilledIcon
-                  sx={{ fontSize: 16, color: "var(--primary-color)" }}
-                />
-                <Typography fontSize={10} fontFamily="Lato">
-                  {hours}
-                </Typography>
-              </Stack>
-            </Stack>
-
-            {/* Desktop Action Button */}
-            {actionButton && (
-              <Stack
+        {/* Stats */}
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{
+            paddingTop: "12px",
+            borderTop: "1px solid var(--border-color)",
+          }}
+        >
+          <Stack direction="row" gap="16px">
+            <Stack direction="row" alignItems="center" gap="6px">
+              <PlayLessonIcon
+                sx={{ fontSize: 18, color: "var(--primary-color)" }}
+              />
+              <Typography
                 sx={{
-                  display: { xs: "none", sm: "flex" },
-                  backgroundColor: "var(--primary-color)",
-                  borderRadius: "5px",
-                  padding: "5px 10px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "var(--text2)",
                 }}
               >
-                {actionButton}
-              </Stack>
-            )}
+                {lessons}
+              </Typography>
+            </Stack>
+            <Stack direction="row" alignItems="center" gap="6px">
+              <AccessTimeFilledIcon
+                sx={{ fontSize: 18, color: "var(--primary-color)" }}
+              />
+              <Typography
+                sx={{
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "var(--text2)",
+                }}
+              >
+                {hours}
+              </Typography>
+            </Stack>
           </Stack>
         </Stack>
+
+        {/* Enrollment Count */}
+        {enrolledCount && (
+          <Typography
+            sx={{
+              fontSize: "12px",
+              color: "var(--text3)",
+              fontWeight: 500,
+            }}
+          >
+            {enrolledCount} students enrolled
+          </Typography>
+        )}
+
+        {/* Desktop Action Button */}
+        {actionButton && (
+          <Box
+            sx={{
+              display: { xs: "none", sm: "block" },
+              marginTop: "8px",
+            }}
+          >
+            {actionButton}
+          </Box>
+        )}
       </Stack>
 
-      {/* Mobile Action Button: Full width and no padding */}
+      {/* Mobile Action Button */}
       {actionMobile && (
-        <Stack
+        <Box
           sx={{
-            display: { xs: "flex", sm: "none" },
-            width: "100%",
-            padding: 0,
-            margin: 0,
-            backgroundColor: "var(--primary-color)",
-            borderRadius: 0,
-            borderBottomLeftRadius: "10px",
-            borderBottomRightRadius: "10px",
+            display: { xs: "block", sm: "none" },
+            borderTop: "1px solid var(--border-color)",
           }}
         >
           {actionMobile}
-        </Stack>
+        </Box>
       )}
     </Stack>
   );

@@ -1,12 +1,19 @@
 import { getTransaction } from "@/src/libs/transaction/transactionController";
+import { getSession } from "@/src/utils/serverSession";
 
 export async function POST(req) {
+  const session = await getSession();
+  if (!session) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: "Unauthorized",
+      }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
   try {
     const { transactionID, userID } = await req.json();
-    console.log("Received request to /api/transaction:", {
-      transactionID,
-      userID,
-    });
 
     if (!transactionID || !userID) {
       return new Response(
@@ -19,7 +26,6 @@ export async function POST(req) {
     }
 
     const transaction = await getTransaction({ transactionID, userID });
-    console.log("Transaction fetched from DynamoDB:", transaction);
 
     return new Response(JSON.stringify({ success: true, data: transaction }), {
       status: 200,

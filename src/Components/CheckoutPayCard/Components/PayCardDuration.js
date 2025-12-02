@@ -5,6 +5,7 @@ export default function PayCardDuration({
   selectedPlan,
   handlePlanChange,
   planIndex,
+  couponDetails,
 }) {
   // Determine the index of the selected plan
   const selectedPlanIndex =
@@ -30,7 +31,9 @@ export default function PayCardDuration({
           }}
           displayEmpty
           renderValue={(selected) => {
-            const plan = courseDetails?.subscription?.plans[selected] || courseDetails?.subscription?.plans[0];
+            const plan =
+              courseDetails?.subscription?.plans[selected] ||
+              courseDetails?.subscription?.plans[0];
             return plan
               ? `${plan.duration} ${plan.type === "MONTHLY" ? "month" : "year"}`
               : "Select a plan";
@@ -60,11 +63,40 @@ export default function PayCardDuration({
             },
           }}
         >
-          {courseDetails?.subscription?.plans.map((plan, index) => (
-            <MenuItem key={index} value={index}>
-              {`${plan.duration} ${plan.type === "MONTHLY" ? "month" : "year"}`}
-            </MenuItem>
-          ))}
+          {courseDetails?.subscription?.plans.map((plan, index) => {
+            const actualPriceRaw = plan.priceWithTax / 1.18; // Assuming 18% tax
+            const isEligible =
+              !couponDetails?.minOrderAmount ||
+              actualPriceRaw >= couponDetails.minOrderAmount;
+
+            return (
+              <MenuItem key={index} value={index}>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  width="100%"
+                  alignItems="center"
+                >
+                  <Box>
+                    {`${plan.duration} ${
+                      plan.type === "MONTHLY" ? "month" : "year"
+                    } - ₹${plan.priceWithTax}`}
+                  </Box>
+                  {couponDetails && (
+                    <Box
+                      sx={{
+                        fontSize: "12px",
+                        color: isEligible ? "green" : "orange",
+                        ml: 1,
+                      }}
+                    >
+                      {isEligible ? "Coupon Applicable" : "Min order not met"}
+                    </Box>
+                  )}
+                </Stack>
+              </MenuItem>
+            );
+          })}
         </Select>
       </Stack>
     </Box>

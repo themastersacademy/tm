@@ -114,6 +114,7 @@ export default function CheckoutPayCard({
                     courseDetails={courseDetails}
                     handlePlanChange={handlePlanChange}
                     planIndex={planIndex}
+                    couponDetails={couponDetails}
                   />
                 )}
               </Stack>
@@ -132,6 +133,7 @@ export default function CheckoutPayCard({
                   setCouponCode={setCouponCode}
                   applyCoupon={applyCoupon}
                   removeCoupon={removeCoupon}
+                  priceBreakdown={priceBreakdown}
                 />
               </Stack>
               <hr
