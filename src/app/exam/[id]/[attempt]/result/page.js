@@ -51,6 +51,7 @@ export default function Result() {
   }, [fetchResult]);
 
   const viewResult = result?.settings?.viewResult ?? true;
+  const showAnswers = result?.settings?.showAnswers ?? true;
 
   return (
     <Box sx={{ bgcolor: "#f8fafc", minHeight: "100vh", pb: 4 }}>
@@ -215,6 +216,7 @@ export default function Result() {
                         answerList={answerList}
                         userAnswerList={userAnswerList}
                         startIndex={currentStartIndex}
+                        showAnswers={showAnswers}
                       />
                     );
                   })}

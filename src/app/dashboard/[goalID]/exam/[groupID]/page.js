@@ -24,6 +24,8 @@ import { useSession } from "next-auth/react";
 import ExamCard from "@/src/Components/ExamCard/ExamCard";
 import trophy from "@/public/icons/troffy.svg";
 
+import ExamInstructionDialog from "@/src/Components/ExamInstruction/ExamInstructionDialog";
+
 export default function GroupID() {
   const { data: session } = useSession();
   const isPro = session?.user?.accountType === "PRO";
@@ -34,6 +36,21 @@ export default function GroupID() {
   const [groupExam, setGroupExam] = useState([]);
   const [groupExamData, setGroupExamData] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [instructionOpen, setInstructionOpen] = useState(false);
+  const [selectedExam, setSelectedExam] = useState(null);
+
+  const handleExamClick = (exam) => {
+    setSelectedExam(exam);
+    setInstructionOpen(true);
+  };
+
+  const handleStartExam = () => {
+    if (selectedExam) {
+      router.push(`/exam/${selectedExam.id}`);
+    }
+    setInstructionOpen(false);
+  };
 
   const fetchGroupExam = async () => {
     setLoading(true);
@@ -300,7 +317,7 @@ export default function GroupID() {
                             fullWidth
                             disabled={isLocked}
                             startIcon={isLocked ? <Lock /> : null}
-                            onClick={() => router.push(`/exam/${group.id}`)}
+                            onClick={() => handleExamClick(group)}
                             sx={{
                               bgcolor: isLocked
                                 ? "var(--border-color)"
@@ -364,6 +381,21 @@ export default function GroupID() {
           </Grid>
         </Box>
       </Stack>
+
+      {selectedExam && (
+        <ExamInstructionDialog
+          open={instructionOpen}
+          onClose={() => setInstructionOpen(false)}
+          onStart={handleStartExam}
+          examData={{
+            title: selectedExam.title,
+            icon: trophy.src,
+            duration: selectedExam.duration,
+            totalQuestions: selectedExam.totalQuestions,
+            totalMarks: selectedExam.totalMarks,
+          }}
+        />
+      )}
     </Box>
   );
 }

@@ -41,23 +41,23 @@ export default function GoalCard({
       sx={{
         width: "100%",
         minHeight: "280px",
-        borderRadius: "20px",
+        borderRadius: "24px",
         background: isSelected
-          ? "linear-gradient(135deg, #EBF4FF 0%, #FFFFFF 100%)"
+          ? "linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 100%)"
           : "var(--white)",
-        border: `3px solid ${
-          isSelected ? "var(--primary-color)" : "var(--border-color)"
-        }`,
+        border: isSelected
+          ? "2px solid var(--primary-color)"
+          : "1px solid var(--border-color)",
         cursor: "pointer",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
         position: "relative",
         overflow: "hidden",
         "&:hover": {
           borderColor: "var(--primary-color)",
-          transform: "translateY(-6px) scale(1.02)",
+          transform: "translateY(-8px)",
           boxShadow: isSelected
-            ? "0 20px 40px rgba(33, 150, 243, 0.2)"
-            : "0 20px 40px rgba(0,0,0,0.08)",
+            ? "0 24px 48px rgba(33, 150, 243, 0.15)"
+            : "0 20px 40px rgba(0,0,0,0.06)",
         },
       }}
     >

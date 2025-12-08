@@ -19,8 +19,11 @@ export default function QuestionPreview({
   result,
   userAnswerList,
   answerList,
+  showAnswers = true,
 }) {
   const [expanded, setExpanded] = useState(false);
+
+  // ... (toggle logic) ...
 
   const handleToggle = (event) => {
     event.stopPropagation();
@@ -47,6 +50,7 @@ export default function QuestionPreview({
       }}
     >
       <Stack flexDirection="row" alignItems="center" gap="8px">
+        {/* ... (header logic mostly same, keeping brevity) ... */}
         <Typography
           sx={{
             fontFamily: "var(--font-geist-sans)",
@@ -57,7 +61,7 @@ export default function QuestionPreview({
           Q{qNum}.
         </Typography>
         <Button
-          variant="contained"
+          disableElevation
           sx={{
             backgroundColor: "var(--sec-color-acc-1)",
             color: "var(--sec-color)",
@@ -69,7 +73,6 @@ export default function QuestionPreview({
             fontFamily: "var(--font-geist-sans)",
             fontWeight: 600,
           }}
-          disableElevation
         >
           {result.type}
         </Button>
@@ -80,6 +83,7 @@ export default function QuestionPreview({
           sx={{ marginLeft: "auto" }}
           alignItems="center"
         >
+          {/* Status Chips - Keep these as they are about user's attempt */}
           {(() => {
             const isSkippedMCQMSQ =
               (result.type === "MCQ" || result.type === "MSQ") &&
@@ -129,6 +133,7 @@ export default function QuestionPreview({
             return null;
           })()}
 
+          {/* Show marks only? Or marks reveal correctness? Usually marks are okay but maybe hide if very strict? Assuming marks are OK for now as user asked about "Question and Correct Answer". */}
           <Chip
             label={userAnswer?.pMarkObtained || 0}
             size="small"
@@ -166,21 +171,36 @@ export default function QuestionPreview({
             const isSelected = userAnswer?.selectedOptions?.includes(option.id);
             const correctOptionIds =
               answerInfo?.correct.map((opt) => opt.id) || [];
-            const isOptionCorrect = correctOptionIds.includes(option.id);
+
+            // If showAnswers is false, act as if no option is correct for display purposes
+            const isOptionCorrect = showAnswers
+              ? correctOptionIds.includes(option.id)
+              : false;
 
             let borderColor = "var(--border-color)";
             let label = "";
             let labelColor = "text.secondary";
 
-            if (isSelected && isOptionCorrect) {
-              borderColor = "var(--primary-color)";
-              label = "Correct Answer";
-              labelColor = "var(--primary-color)";
-            } else if (isSelected && !isOptionCorrect) {
-              borderColor = "var(--delete-color)";
-              label = "Incorrect Answer";
-              labelColor = "var(--delete-color)";
-            } else if (!isSelected && isOptionCorrect) {
+            if (isSelected) {
+              // If selected, we want to know if it's correct/incorrect only if showAnswers is true
+              if (showAnswers) {
+                if (isOptionCorrect) {
+                  borderColor = "var(--primary-color)";
+                  label = "Correct Answer";
+                  labelColor = "var(--primary-color)";
+                } else {
+                  borderColor = "var(--delete-color)";
+                  label = "Incorrect Answer";
+                  labelColor = "var(--delete-color)";
+                }
+              } else {
+                // Just show it was selected
+                borderColor = "var(--primary-color)"; // Neutral or primary to show selection
+                label = "Your Answer";
+                labelColor = "var(--primary-color)";
+              }
+            } else if (isOptionCorrect && showAnswers) {
+              // Show missed correct answers ONLY if showAnswers is true
               borderColor = "var(--primary-color)";
               label = "Correct Answer (Missed)";
               labelColor = "var(--primary-color)";
@@ -231,10 +251,12 @@ export default function QuestionPreview({
             );
           })}
 
+        {/* FIB Logic similar update */}
         {result.type === "FIB" &&
           answerInfo?.blanks.map((blank, index) => {
             const userResponse = userAnswer?.blankAnswers?.[index] || "";
-            const isCorrect = userAnswer?.isCorrect;
+            // Only show correctness coloring if showAnswers is true
+            const isCorrect = showAnswers ? userAnswer?.isCorrect : true; // Default to neutral if hiding
 
             return (
               <Stack
@@ -242,7 +264,11 @@ export default function QuestionPreview({
                 gap="4px"
                 sx={{
                   border: `1px solid ${
-                    isCorrect ? "var(--primary-color)" : "var(--delete-color)"
+                    showAnswers
+                      ? isCorrect
+                        ? "var(--primary-color)"
+                        : "var(--delete-color)"
+                      : "var(--border-color)"
                   }`,
                   padding: "8px 12px",
                   width: "100%",
@@ -268,69 +294,72 @@ export default function QuestionPreview({
           })}
       </Stack>
 
-      <Accordion
-        expanded={expanded}
-        onChange={handleToggle}
-        sx={{
-          boxShadow: "none",
-          border: "none",
-          "&::before": { display: "none" },
-          bgcolor: "transparent",
-          m: "0 !important",
-        }}
-      >
-        <AccordionSummary
+      {/* Only show solution accordion if showAnswers is true */}
+      {showAnswers && (
+        <Accordion
+          expanded={expanded}
+          onChange={handleToggle}
           sx={{
-            minHeight: "auto",
-            p: 0,
-            "& .MuiAccordionSummary-content": { m: 0 },
+            boxShadow: "none",
+            border: "none",
+            "&::before": { display: "none" },
+            bgcolor: "transparent",
+            m: "0 !important",
           }}
         >
-          <Stack
-            direction="row"
-            alignItems="center"
-            gap="6px"
+          <AccordionSummary
             sx={{
-              cursor: "pointer",
-              color: "var(--primary-color)",
-              "&:hover": { opacity: 0.8 },
+              minHeight: "auto",
+              p: 0,
+              "& .MuiAccordionSummary-content": { m: 0 },
             }}
           >
-            <Typography
+            <Stack
+              direction="row"
+              alignItems="center"
+              gap="6px"
               sx={{
-                fontFamily: "var(--font-geist-sans)",
-                fontSize: "12px",
-                fontWeight: "700",
+                cursor: "pointer",
+                color: "var(--primary-color)",
+                "&:hover": { opacity: 0.8 },
               }}
             >
-              {expanded ? "Hide Solution" : "View Solution"}
-            </Typography>
-            {expanded ? (
-              <ExpandLess fontSize="small" color="inherit" />
-            ) : (
-              <ExpandMore fontSize="small" color="inherit" />
-            )}
-          </Stack>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: 0, pt: 1 }}>
-          <Box
-            sx={{
-              p: 2,
-              bgcolor: "#f1f5f9",
-              borderRadius: "8px",
-              fontSize: "13px",
-              "& p": { m: 0 },
-            }}
-          >
-            <MDPreview
-              value={
-                answerList.find((ans) => ans.questionID === result.questionID)
-                  ?.solution || "No solution provided."
-              }
-            />
-          </Box>
-        </AccordionDetails>
-      </Accordion>
+              <Typography
+                sx={{
+                  fontFamily: "var(--font-geist-sans)",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                }}
+              >
+                {expanded ? "Hide Solution" : "View Solution"}
+              </Typography>
+              {expanded ? (
+                <ExpandLess fontSize="small" color="inherit" />
+              ) : (
+                <ExpandMore fontSize="small" color="inherit" />
+              )}
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 0, pt: 1 }}>
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: "#f1f5f9",
+                borderRadius: "8px",
+                fontSize: "13px",
+                "& p": { m: 0 },
+              }}
+            >
+              <MDPreview
+                value={
+                  answerList.find((ans) => ans.questionID === result.questionID)
+                    ?.solution || "No solution provided."
+                }
+              />
+            </Box>
+          </AccordionDetails>
+        </Accordion>
+      )}
     </Stack>
   );
 }

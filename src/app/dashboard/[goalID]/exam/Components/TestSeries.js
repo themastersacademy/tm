@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Button, Stack } from "@mui/material";
+import { Button, Stack, Box, Typography } from "@mui/material";
 import { East, Lock } from "@mui/icons-material";
 import { useRouter, useParams } from "next/navigation";
 import StyledSelect from "@/src/Components/StyledSelect/StyledSelect";
@@ -19,13 +19,6 @@ export default function TestSeries({ subjectOptions, isPro }) {
     setPlansDialogOpen(true);
   };
   const handleStartTest = async () => {
-    // if (!selectedSubject) {
-    //   enqueueSnackbar("Please select a subject", {
-    //     variant: "error",
-    //   });
-    //   return;
-    // }
-
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/type/${goalID}/practice/create`,
       {
@@ -41,9 +34,6 @@ export default function TestSeries({ subjectOptions, isPro }) {
       router.push(`/exam/${data.data.examID}/${data.data.attemptID}`);
     } else {
       console.log(data.message);
-      // enqueueSnackbar(data.message, {
-      //   variant: "error",
-      // });
     }
   };
 
@@ -55,9 +45,27 @@ export default function TestSeries({ subjectOptions, isPro }) {
   ];
 
   return (
-    <Stack gap="15px" width="100%">
+    <Stack gap={2} width="100%">
+      <Stack direction="row" alignItems="center" gap={1} mb={1}>
+        <Box
+          sx={{ p: 1, bgcolor: "var(--sec-color-acc-2)", borderRadius: "8px" }}
+        >
+          <East sx={{ color: "var(--primary-color)", fontSize: 20 }} />
+        </Box>
+        <Box>
+          <Typography
+            sx={{ fontSize: "16px", fontWeight: 700, color: "var(--text1)" }}
+          >
+            Custom Practice
+          </Typography>
+          <Typography sx={{ fontSize: "12px", color: "var(--text3)" }}>
+            Create your own test by topic
+          </Typography>
+        </Box>
+      </Stack>
+
       <StyledSelect
-        title="Select topic"
+        title="Select Topic"
         options={subjectOptions}
         getLabel={(option) => option.label}
         getValue={(option) => option.value}
@@ -72,20 +80,31 @@ export default function TestSeries({ subjectOptions, isPro }) {
         value={difficultyLevel}
         onChange={(e) => setDifficultyLevel(e.target.value)}
       />
+
       <Button
-        variant="text"
-        width="100%"
-        endIcon={isPro ? <East /> : <Lock />}
+        variant="contained"
+        fullWidth
+        startIcon={!isPro && <Lock />}
+        endIcon={isPro && <East />}
         onClick={isPro ? handleStartTest : handlePlansDialogOpen}
         sx={{
           textTransform: "none",
-          color: "var(--primary-color)",
+          bgcolor: "var(--primary-color)",
+          color: "white",
           fontFamily: "Lato",
-          alignSelf: "center",
+          fontWeight: 700,
+          fontSize: "14px",
+          py: 1.5,
+          borderRadius: "12px",
+          mt: 1,
+          "&:hover": {
+            bgcolor: "var(--primary-color-dark)",
+          },
         }}
       >
-        {isPro ? "Start Test" : "Upgrade to PRO"}
+        {isPro ? "Start Practice Test" : "Unlock with PRO"}
       </Button>
+
       <PlansDialogBox
         plansDialogOpen={plansDialogOpen}
         handlePlansDialogClose={handlePlansDialogClose}

@@ -17,9 +17,12 @@ import Image from "next/image";
 import TestSeries from "./TestSeries";
 import MyClassroom from "../../myClassroom/page";
 import ExamHistoryResponsive from "@/src/Components/ExamHistoryResponsive/ExamHistoryResponsive";
-import PrimaryCard from "@/src/Components/PrimaryCard/PrimaryCard";
+// import PrimaryCard from "@/src/Components/PrimaryCard/PrimaryCard"; // Removing PrimaryCard
+import ExamCard from "@/src/Components/ExamCard/ExamCard"; // Importing ExamCard - Updated
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+
+import ExamInstructionDialog from "@/src/Components/ExamInstruction/ExamInstructionDialog";
 
 export default function ResponsiveTestSeries({
   testSeries,
@@ -34,6 +37,21 @@ export default function ResponsiveTestSeries({
   };
   const router = useRouter();
   const [groupExam, setGroupExam] = useState({});
+
+  const [instructionOpen, setInstructionOpen] = useState(false);
+  const [selectedExam, setSelectedExam] = useState(null);
+
+  const handleExamClick = (exam) => {
+    setSelectedExam(exam);
+    setInstructionOpen(true);
+  };
+
+  const handleStartExam = () => {
+    if (selectedExam) {
+      router.push(`/exam/${selectedExam.id}`);
+    }
+    setInstructionOpen(false);
+  };
 
   const fetchGroupExam = async (groupID) => {
     try {
@@ -58,249 +76,204 @@ export default function ResponsiveTestSeries({
     });
   }, [groupExams]);
 
+  const SectionHeader = ({ title }) => (
+    <Typography
+      sx={{
+        fontSize: "18px",
+        fontWeight: 800,
+        color: "var(--text1)",
+        mb: 1.5,
+        mt: 1,
+      }}
+    >
+      {title}
+    </Typography>
+  );
+
+  const HorizontalScrollBox = ({ children }) => (
+    <Box
+      sx={{
+        overflowX: "auto",
+        whiteSpace: "nowrap",
+        scrollbarWidth: "none",
+        "&::-webkit-scrollbar": { display: "none" },
+        width: "100%",
+        pb: 1, // Add some padding for shadow/elevation visibility
+      }}
+    >
+      <Stack
+        flexDirection="row"
+        gap={2}
+        sx={{
+          minWidth: "max-content",
+          pr: 2, // Right padding for last item
+        }}
+      >
+        {children}
+      </Stack>
+    </Box>
+  );
+
   return (
-    <Stack sx={{ display: { xs: "block", md: "none" } }}>
-      <Stack>
-        <Stack sx={{ marginBottom: "15px" }}>
-          <MobileHeader />
-        </Stack>
-        <Stack sx={{ padding: "10px", gap: "10px" }}>
-          <Accordion
-            expanded={expanded === "panel1"}
-            onChange={handleChange("panel1")}
+    <Stack sx={{ display: { xs: "block", md: "none" }, pb: 10 }}>
+      {/* Header */}
+      <Stack sx={{ mb: 2 }}>
+        <MobileHeader />
+      </Stack>
+
+      <Stack sx={{ px: 2, gap: 3 }}>
+        {/* Practice Test Section */}
+        <Box>
+          <SectionHeader title="Practice Test" />
+          <Box
             sx={{
-              boxShadow: "none",
-              border: "none",
-              "&::before": { display: "none" },
-              borderRadius: "10px",
-              overflow: "hidden",
+              bgcolor: "var(--white)",
+              p: 2,
+              borderRadius: "16px",
+              border: "1px solid var(--border-color)",
             }}
           >
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel1bh-content"
-              id="panel1bh-header"
-            >
-              <Stack
-                sx={{
-                  width: "60px",
-                  height: "60px",
-                  backgroundColor: "var(--sec-color-acc-1)",
-                  borderRadius: "10px",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginRight: "15px",
-                }}
-              >
-                <Image src={mocks} alt="" width={22} height={22} />
-              </Stack>
-              <Stack>
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "16px",
-                    fontWeight: "700",
-                  }}
-                >
-                  Masters test series
-                </Typography>
-                <Typography sx={{ fontFamily: "Lato", fontSize: "14px" }}>
-                  Tap to see more
-                </Typography>
-              </Stack>
-            </AccordionSummary>
-            <AccordionDetails>
+            <TestSeries subjectOptions={subjectOptions} isPro={isPro} />
+          </Box>
+        </Box>
+
+        {/* Test Series Section */}
+        <Box>
+          <SectionHeader title="Test Series" />
+          <HorizontalScrollBox>
+            {testSeries.length > 0 ? (
+              testSeries.map((item, index) => (
+                <Box key={index} sx={{ width: "280px", flexShrink: 0 }}>
+                  <ExamCard
+                    title={item.title}
+                    icon={mocks.src}
+                    duration={item.duration}
+                    totalQuestions={item.totalQuestions}
+                    totalMarks={item.totalMarks}
+                    status={item.status || "upcoming"}
+                    actionButton={
+                      <Button
+                        variant="contained"
+                        endIcon={<East />}
+                        onClick={() => handleExamClick(item)}
+                        fullWidth
+                        sx={{
+                          bgcolor: "var(--primary-color)",
+                          color: "white",
+                          textTransform: "none",
+                          fontSize: "14px",
+                          fontWeight: 700,
+                          borderRadius: "10px",
+                          py: 1,
+                          "&:hover": {
+                            bgcolor: "var(--primary-color-dark)",
+                          },
+                        }}
+                      >
+                        Take Test
+                      </Button>
+                    }
+                  />
+                </Box>
+              ))
+            ) : (
               <Box
                 sx={{
-                  overflowX: "auto",
-                  whiteSpace: "nowrap",
-                  scrollbarWidth: "none",
-                  "&::-webkit-scrollbar": { display: "none" },
+                  p: 2,
                   width: "100%",
+                  textAlign: "center",
+                  bgcolor: "#F8F9FA",
+                  borderRadius: "12px",
                 }}
               >
-                <Stack
-                  flexDirection="row"
-                  flexWrap={{ xs: "wrap" }}
-                  gap="10px"
-                  sx={{
-                    minWidth: { xs: "max-content", md: "100%" },
-                  }}
-                >
-                  {testSeries.length > 0 ? (
-                    testSeries.map((item, index) => (
-                      <PrimaryCard
-                        key={index}
-                        title={item.title}
-                        actionButton={
-                          <Button
-                            variant="text"
-                            endIcon={<East />}
-                            onClick={() => router.push(`/exam/${item.id}`)}
-                            sx={{
-                              color: "var(--primary-color)",
-                              textTransform: "none",
-                              fontSize: "12px",
-                            }}
-                          >
-                            Take Test
-                          </Button>
-                        }
-                        icon={mocks.src}
-                      />
+                <Typography sx={{ color: "text.secondary", fontSize: "14px" }}>
+                  No test series found
+                </Typography>
+              </Box>
+            )}
+          </HorizontalScrollBox>
+        </Box>
+
+        {/* Exam Groups Sections */}
+        {groupExams.length > 0 && (
+          <Stack gap={3}>
+            {groupExams.map((item, index) => (
+              <Box key={index}>
+                <SectionHeader title={item.title} />
+                <HorizontalScrollBox>
+                  {(groupExam[item.id] || []).length > 0 ? (
+                    groupExam[item.id].map((exam) => (
+                      <Box key={exam.id} sx={{ width: "280px", flexShrink: 0 }}>
+                        <ExamCard
+                          title={exam.title}
+                          icon={troffy.src}
+                          duration={exam.duration}
+                          totalQuestions={exam.totalQuestions}
+                          totalMarks={exam.totalMarks}
+                          status={exam.status || "upcoming"}
+                          actionButton={
+                            <Button
+                              variant="contained"
+                              endIcon={<East />}
+                              onClick={() => handleExamClick(exam)}
+                              fullWidth
+                              sx={{
+                                bgcolor: "var(--primary-color)",
+                                color: "white",
+                                textTransform: "none",
+                                fontSize: "14px",
+                                fontWeight: 700,
+                                borderRadius: "10px",
+                                py: 1,
+                                "&:hover": {
+                                  bgcolor: "var(--primary-color-dark)",
+                                },
+                              }}
+                            >
+                              Take Test
+                            </Button>
+                          }
+                        />
+                      </Box>
                     ))
                   ) : (
-                    <Typography>No test series found</Typography>
+                    <Box
+                      sx={{
+                        p: 2,
+                        width: "100%",
+                        textAlign: "center",
+                        bgcolor: "#F8F9FA",
+                        borderRadius: "12px",
+                      }}
+                    >
+                      <Typography
+                        sx={{ color: "text.secondary", fontSize: "14px" }}
+                      >
+                        No group exams found
+                      </Typography>
+                    </Box>
                   )}
-                </Stack>
+                </HorizontalScrollBox>
               </Box>
-            </AccordionDetails>
-          </Accordion>
-          <Accordion
-            expanded={expanded === "panel3"}
-            onChange={handleChange("panel3")}
-            sx={{
-              boxShadow: "none",
-              border: "none",
-              "&::before": { display: "none" },
-            }}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel1bh-content"
-              id="panel1bh-header"
-            >
-              <Stack
-                sx={{
-                  width: "60px",
-                  height: "60px",
-                  backgroundColor: "var(--sec-color-acc-1)",
-                  borderRadius: "10px",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginRight: "15px",
-                }}
-              >
-                <Image src={mocks} alt="" width={22} height={22} />
-              </Stack>
-              <Stack>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: "16px",
-                    fontWeight: "700",
-                  }}
-                >
-                  Practice test
-                </Typography>
-                <Typography sx={{ fontFamily: "Lato", fontSize: "14px" }}>
-                  Tap to see more
-                </Typography>
-              </Stack>
-            </AccordionSummary>
-            <AccordionDetails>
-              <TestSeries subjectOptions={subjectOptions} isPro={isPro} />
-            </AccordionDetails>
-          </Accordion>
-          {groupExams.length > 0 &&
-            groupExams.map((item, index) => (
-              <Accordion
-                key={index}
-                expanded={expanded === item.id}
-                onChange={handleChange(item.id)}
-                sx={{
-                  boxShadow: "none",
-                  border: "none",
-                  "&::before": { display: "none" },
-                }}
-              >
-                <AccordionSummary
-                  expandIcon={<ExpandMore />}
-                  aria-controls="panel1bh-content"
-                  id="panel1bh-header"
-                >
-                  <Stack
-                    sx={{
-                      width: "60px",
-                      height: "60px",
-                      backgroundColor: "var(--sec-color-acc-1)",
-                      borderRadius: "10px",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginRight: "15px",
-                    }}
-                  >
-                    <Image src={mocks} alt="" width={22} height={22} />
-                  </Stack>
-                  <Stack>
-                    <Typography
-                      component="span"
-                      sx={{
-                        fontFamily: "Lato",
-                        fontSize: "16px",
-                        fontWeight: "700",
-                      }}
-                    >
-                      {item.title}
-                    </Typography>
-                    <Typography sx={{ fontFamily: "Lato", fontSize: "14px" }}>
-                      Tap to see more
-                    </Typography>
-                  </Stack>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Box
-                    sx={{
-                      overflowX: "auto",
-                      whiteSpace: "nowrap",
-                      scrollbarWidth: "none",
-                      "&::-webkit-scrollbar": { display: "none" },
-                      width: "100%",
-                    }}
-                  >
-                    <Stack
-                      flexDirection="row"
-                      flexWrap={{ xs: "wrap" }}
-                      gap="10px"
-                      sx={{
-                        minWidth: { xs: "max-content", md: "100%" },
-                      }}
-                    >
-                      {(groupExam[item.id] || []).length > 0 ? (
-                        groupExam[item.id].map((exam) => (
-                          <PrimaryCard
-                            key={exam.id}
-                            title={exam.title}
-                            icon={troffy.src}
-                            actionButton={
-                              <Button
-                                variant="text"
-                                endIcon={<East />}
-                                onClick={() => router.push(`/exam/${exam.id}`)}
-                                sx={{
-                                  color: "var(--primary-color)",
-                                  textTransform: "none",
-                                  fontSize: "12px",
-                                }}
-                              >
-                                Take Test
-                              </Button>
-                            }
-                          />
-                        ))
-                      ) : (
-                        <Typography>No exams found</Typography>
-                      )}
-                    </Stack>
-                  </Box>
-                </AccordionDetails>
-              </Accordion>
             ))}
-        </Stack>
-      </Stack>
-      <Stack>
-        <ExamHistoryResponsive />
+          </Stack>
+        )}
+
+        {/* History & Classroom */}
+        <Box>
+          <SectionHeader title="Recent Activity" />
+          <ExamHistoryResponsive />
+        </Box>
+
+        <Box
+          sx={{
+            bgcolor: "var(--white)",
+            borderRadius: "16px",
+            overflow: "hidden",
+          }}
+        >
+          <MyClassroom />
+        </Box>
       </Stack>
       <Stack
         sx={{
@@ -311,6 +284,21 @@ export default function ResponsiveTestSeries({
       >
         <MyClassroom />
       </Stack>
+
+      {selectedExam && (
+        <ExamInstructionDialog
+          open={instructionOpen}
+          onClose={() => setInstructionOpen(false)}
+          onStart={handleStartExam}
+          examData={{
+            title: selectedExam.title,
+            icon: mocks.src,
+            duration: selectedExam.duration,
+            totalQuestions: selectedExam.totalQuestions,
+            totalMarks: selectedExam.totalMarks,
+          }}
+        />
+      )}
     </Stack>
   );
 }

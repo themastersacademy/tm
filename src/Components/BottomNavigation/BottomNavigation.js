@@ -13,15 +13,39 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
   const params = useParams();
   const goalID = params.goalID;
+  /* 
+    User Request Interpretation:
+    - Root `/` is the main Dashboard. Map this to "Home".
+    - `/home` is the Discovery/Store page. Map this to "My Learning" (or just secondary tab).
+  */
   const routeMap = [
-    `/dashboard/${goalID}/home`,
-    `/dashboard/${goalID}`,
+    `/dashboard/${goalID}`, // Index 0: Home -> Root Dashboard
+    `/dashboard/${goalID}/home`, // Index 1: My Learning -> /home (Discovery)
     `/dashboard/${goalID}/exam`,
     `/dashboard/${goalID}/courses`,
     `/dashboard/${goalID}/profile`,
   ];
-  const currentIndex = routeMap.indexOf(pathname);
-  const value = currentIndex !== -1 ? currentIndex : 0;
+
+  const getActiveTab = () => {
+    // Check for specific sub-routes first
+    if (pathname.startsWith(`/dashboard/${goalID}/home`)) return 1; // Now My Learning
+    if (pathname.startsWith(`/dashboard/${goalID}/exam`)) return 2;
+    if (pathname.startsWith(`/dashboard/${goalID}/courses`)) return 3;
+    if (pathname.startsWith(`/dashboard/${goalID}/profile`)) return 4;
+
+    // Check for Root Dashboard and My Classroom (grouped under Home now? or still My Learning?)
+    // Let's assume My Classroom belongs to the "Home" flow if it's main activity,
+    // OR sticking to previous logic: Dashboard root is now Home (0).
+    if (
+      pathname === `/dashboard/${goalID}` ||
+      pathname.startsWith(`/dashboard/${goalID}/myClassroom`)
+    )
+      return 0;
+
+    return 0; // Default to Home
+  };
+
+  const value = getActiveTab();
 
   const handleNavigationChange = (event, newValue) => {
     if (newValue !== value) {

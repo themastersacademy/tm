@@ -5,14 +5,10 @@ const withPWA = withPWAInit({
   dest: "public",
   register: true,
   skipWaiting: true,
-  devOptions: {
-    enabled: true, // <— turn on SW in dev
-    type: "module",
-  },
 });
 
 const nextConfig = {
-  transpilePackages: ["mui-one-time-password-input"],
+  trailingSlash: true,
   images: {
     remotePatterns: [
       {
@@ -29,8 +25,6 @@ const nextConfig = {
       },
     ],
   },
-
-  // Any other configurations you need
 };
 
 export default withPWA(nextConfig);

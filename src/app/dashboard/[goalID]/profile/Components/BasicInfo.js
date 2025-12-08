@@ -1,4 +1,5 @@
 import StyledTextField from "@/src/Components/StyledTextField/StyledTextField";
+import StyledSelect from "@/src/Components/StyledSelect/StyledSelect";
 import { Edit, Person, Email, Phone, Wc, Logout } from "@mui/icons-material";
 import {
   Avatar,
@@ -166,6 +167,57 @@ export default function BasicInfo({
       <Stack gap="20px">
         {formFields.map((field) => {
           const IconComponent = field.icon;
+
+          if (field.name === "gender") {
+            return (
+              <Stack key={field.name} gap="8px">
+                <Stack direction="row" alignItems="center" gap="8px">
+                  <IconComponent sx={{ fontSize: 18, color: "var(--text3)" }} />
+                  <Typography
+                    sx={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "var(--text2)",
+                    }}
+                  >
+                    {field.label}
+                  </Typography>
+                </Stack>
+                {isEditMode ? (
+                  <StyledSelect
+                    options={[
+                      { label: "Male", value: "Male" },
+                      { label: "Female", value: "Female" },
+                      { label: "Other", value: "Other" },
+                    ]}
+                    value={field.value}
+                    onChange={(e) =>
+                      setUserProfileData({
+                        ...userProfileData,
+                        [field.name]: e.target.value,
+                      })
+                    }
+                    getLabel={(option) => option.label}
+                    getValue={(option) => option.value}
+                    placeholder="Select Gender"
+                  />
+                ) : (
+                  <StyledTextField
+                    name={field.name}
+                    placeholder={field.placeholder}
+                    value={field.value}
+                    disabled={true}
+                    fullWidth
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        backgroundColor: "var(--bg1)",
+                      },
+                    }}
+                  />
+                )}
+              </Stack>
+            );
+          }
 
           return (
             <Stack key={field.name} gap="8px">

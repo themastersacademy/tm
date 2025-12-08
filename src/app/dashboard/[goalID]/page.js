@@ -37,6 +37,8 @@ const fetchStats = async (goalID, signal) =>
     signal,
   }).then((res) => res.json());
 
+import ExamInstructionDialog from "@/src/Components/ExamInstruction/ExamInstructionDialog";
+
 export default function Home() {
   const { data: session } = useSession();
   const { mock, loading } = useExams();
@@ -46,6 +48,21 @@ export default function Home() {
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const router = useRouter();
   const { goalID } = useParams();
+
+  const [instructionOpen, setInstructionOpen] = useState(false);
+  const [selectedExam, setSelectedExam] = useState(null);
+
+  const handleExamClick = (exam) => {
+    setSelectedExam(exam);
+    setInstructionOpen(true);
+  };
+
+  const handleStartExam = () => {
+    if (selectedExam) {
+      router.push(`/exam/${selectedExam.id}`);
+    }
+    setInstructionOpen(false);
+  };
 
   useEffect(() => {
     setIsLoading(loading);
@@ -482,7 +499,7 @@ export default function Home() {
                               <Button
                                 variant="contained"
                                 endIcon={<East />}
-                                onClick={() => router.push(`/exam/${item.id}`)}
+                                onClick={() => handleExamClick(item)}
                                 fullWidth
                                 sx={{
                                   textTransform: "none",
@@ -636,6 +653,21 @@ export default function Home() {
           </Stack>
         </Stack>
       </Box>
+
+      {selectedExam && (
+        <ExamInstructionDialog
+          open={instructionOpen}
+          onClose={() => setInstructionOpen(false)}
+          onStart={handleStartExam}
+          examData={{
+            title: selectedExam.title,
+            icon: week1.src,
+            duration: selectedExam.duration,
+            totalQuestions: selectedExam.totalQuestions,
+            totalMarks: selectedExam.totalMarks,
+          }}
+        />
+      )}
     </>
   );
 }

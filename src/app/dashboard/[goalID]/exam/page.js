@@ -28,6 +28,7 @@ import { useExams } from "@/src/app/context/ExamProvider";
 import { useSession } from "next-auth/react";
 import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
+import ExamInstructionDialog from "@/src/Components/ExamInstruction/ExamInstructionDialog";
 
 export default function Exams() {
   const { data: session } = useSession();
@@ -44,6 +45,22 @@ export default function Exams() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [subjectOptions, setSubjectOptions] = useState([]);
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+
+  const [instructionOpen, setInstructionOpen] = useState(false);
+  const [selectedExam, setSelectedExam] = useState(null);
+
+  const handleExamClick = (exam) => {
+    setSelectedExam(exam);
+    setInstructionOpen(true);
+  };
+
+  const handleStartExam = () => {
+    if (selectedExam) {
+      setLoacalLoading(true);
+      router.push(`/exam/${selectedExam.id}`);
+    }
+    setInstructionOpen(false);
+  };
 
   // Tab State
   const [tabValue, setTabValue] = useState(0);
@@ -210,10 +227,7 @@ export default function Exams() {
                                 <Button
                                   variant="outlined"
                                   endIcon={<East />}
-                                  onClick={() => {
-                                    setLoacalLoading(true);
-                                    router.push(`/exam/${test.id}`);
-                                  }}
+                                  onClick={() => handleExamClick(test)}
                                   fullWidth
                                   sx={{
                                     color: "var(--primary-color)",
@@ -583,6 +597,21 @@ export default function Exams() {
             </Stack>
           </DialogContent>
         </DialogBox>
+      )}
+
+      {selectedExam && (
+        <ExamInstructionDialog
+          open={instructionOpen}
+          onClose={() => setInstructionOpen(false)}
+          onStart={handleStartExam}
+          examData={{
+            title: selectedExam.title,
+            icon: mocks.src,
+            duration: selectedExam.duration,
+            totalQuestions: selectedExam.totalQuestions,
+            totalMarks: selectedExam.totalMarks,
+          }}
+        />
       )}
     </Stack>
   );

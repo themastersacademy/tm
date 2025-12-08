@@ -49,15 +49,15 @@ export default function ExamInstruction() {
     try {
       await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${id}`).then(
         (res) =>
-          res.json().then((data) => {
-            setClientPerfAtFetch(performance.now());
-            if (data.success) {
-              console.log(data.data);
+        res.json().then((data) => {
+          setClientPerfAtFetch(performance.now());
+          if (data.success) {
+            console.log(data.data);
 
-              setInstruction(data.data);
-              setIsLoading(false);
-            }
-          })
+            setInstruction(data.data);
+            setIsLoading(false);
+          }
+        })
       );
     } catch (error) {
       console.error("Error fetching instruction:", error);

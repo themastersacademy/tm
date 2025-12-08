@@ -401,6 +401,27 @@ export async function submitExam(attemptID, endedBy = "USER") {
 }
 
 // ——————————————————————————————————————————
+// 5) Update Violation Count
+// ——————————————————————————————————————————
+export async function updateViolationCount(attemptID, count) {
+  await dynamoDB.send(
+    new UpdateCommand({
+      TableName: USER_TABLE,
+      Key: {
+        pKey: `EXAM_ATTEMPT#${attemptID}`,
+        sKey: "EXAM_ATTEMPTS",
+      },
+      UpdateExpression: "SET violationCount = :count, updatedAt = :now",
+      ExpressionAttributeValues: {
+        ":count": count,
+        ":now": Date.now(),
+      },
+    })
+  );
+  return { success: true };
+}
+
+// ——————————————————————————————————————————
 // 5) Get Exam Attempts Result
 // ——————————————————————————————————————————
 async function streamToString(stream) {

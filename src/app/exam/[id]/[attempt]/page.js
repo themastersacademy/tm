@@ -9,20 +9,24 @@ import {
   Backdrop,
   CircularProgress,
 } from "@mui/material";
+import { useDebouncedCallback } from "use-debounce"; // Check if this exists, otherwise use custom
+import _ from "lodash";
 import ExamQuestionCard from "../../Components/ExamQuestionCard";
 import ExamHeader from "../../Components/ExamHeader";
 import MobileSectionDraw from "../../Components/MobileSectionDraw";
 import ExamSection from "../../Components/ExamSection";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { usePreventNavigation } from "../../Components/use-prevent-navigation";
 import NavigationGuard from "../../Components/NavigationGuard";
 import { Bookmark, Fullscreen } from "@mui/icons-material";
 import LoadingComp from "../../Components/LoadingComp";
 import { enqueueSnackbar } from "notistack";
 import { seededShuffle } from "@/src/utils/seededShuffle";
+import AntiCheatToast from "../../Components/AntiCheatToast";
+import ViolationDialog from "../../Components/ViolationDialog";
 
-export default function Exam() {
+function ExamContent() {
   const router = useRouter();
   const params = useParams();
   const examID = params.id;
@@ -55,18 +59,15 @@ export default function Exam() {
   const submitExam = useCallback(
     (endedBy) => {
       setIsSubmitting(true);
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${examID}/${attemptID}/submit-exam`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            endedBy,
-          }),
-        }
-      )
+      fetch(`/api/exams/${examID}/${attemptID}/submit-exam`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          endedBy,
+        }),
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
@@ -101,9 +102,7 @@ export default function Exam() {
 
   const fetchQuestion = useCallback(async () => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${examID}/${attemptID}`
-      );
+      const res = await fetch(`/api/exams/${examID}/${attemptID}`);
       const data = await res.json();
 
       if (data.success) {
@@ -142,6 +141,88 @@ export default function Exam() {
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
+  // Anti-Cheat Implementation
+  const [violationCount, setViolationCount] = useState(0);
+  const [showViolationDialog, setShowViolationDialog] = useState(false);
+
+  // Initialize violation count from server
+  useEffect(() => {
+    if (examData?.violationCount) {
+      setViolationCount(examData.violationCount);
+      // Immediately enforce termination if limit passed
+      if (examData.violationCount >= 3) {
+        // Show specific message or just auto submit
+        setIsSubmitting(true); // Block UI
+        submitExam("AUTO");
+      }
+    }
+  }, [examData, submitExam]);
+
+  const reportViolation = useCallback(
+    async (newCount) => {
+      try {
+        await fetch(`/api/exams/${examID}/${attemptID}/report-violation`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ count: newCount }),
+        });
+      } catch (error) {
+        console.error("Failed to report violation:", error);
+      }
+    },
+    [examID, attemptID]
+  );
+
+  useEffect(() => {
+    if (!questions?.settings?.isAntiCheat) return;
+
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      enqueueSnackbar("Right-click is disabled during the exam.", {
+        variant: "warning",
+      });
+    };
+
+    const handleCopyCutPaste = (e) => {
+      e.preventDefault();
+      enqueueSnackbar("Copy/Paste is disabled during the exam.", {
+        variant: "warning",
+      });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setViolationCount((prev) => {
+          const newCount = prev + 1;
+          reportViolation(newCount);
+          return newCount;
+        });
+        setShowViolationDialog(true);
+      }
+    };
+
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("copy", handleCopyCutPaste);
+    document.addEventListener("cut", handleCopyCutPaste);
+    document.addEventListener("paste", handleCopyCutPaste);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("copy", handleCopyCutPaste);
+      document.removeEventListener("cut", handleCopyCutPaste);
+      document.removeEventListener("paste", handleCopyCutPaste);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [questions?.settings?.isAntiCheat, reportViolation]);
+
+  const handleViolationDialogClose = () => {
+    if (violationCount >= 3) {
+      handleEndTest("AUTO");
+    }
+    setShowViolationDialog(false);
+  };
+
   useEffect(() => {
     fetchQuestion();
   }, [fetchQuestion]);
@@ -168,17 +249,27 @@ export default function Exam() {
         questionState.selectedQuestionIndex
       ]?.questionID;
     if (!getUserAnswer(questionID) && questionID) {
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${examID}/${attemptID}/view-question`,
-        {
-          method: "POST",
-          body: JSON.stringify({ questionID }),
-        }
-      )
+      fetch(`/api/exams/${examID}/${attemptID}/view-question`, {
+        method: "POST",
+        body: JSON.stringify({ questionID }),
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
-            setUserAnswers(data.data);
+            setUserAnswers((prev) => {
+              const newQuestionData = data.data.find(
+                (q) => q.questionID === questionID
+              );
+              if (!newQuestionData) return prev;
+
+              const idx = prev.findIndex((q) => q.questionID === questionID);
+              if (idx !== -1) {
+                const newArr = [...prev];
+                newArr[idx] = newQuestionData;
+                return newArr;
+              }
+              return [...prev, newQuestionData];
+            });
             setClientPerfAtFetch(performance.now());
             setServerTimestamp(data.serverTimestamp);
           } else {
@@ -202,7 +293,18 @@ export default function Exam() {
       const existingIndex = prev.findIndex(
         (ans) => ans.questionID === questionID
       );
-      if (existingIndex === -1) return prev;
+
+      // If not found, create a new entry locally
+      if (existingIndex === -1) {
+        const newAnswer = {
+          questionID,
+          selectedOptions: job === "selectedOptions" ? value : [],
+          blankAnswers: job === "blankAnswers" ? value : [],
+          markedForReview: job === "markedForReview" ? value : false,
+          timeSpentMs: 0,
+        };
+        return [...prev, newAnswer];
+      }
 
       const newAnswers = [...prev];
       const currentAnswer = { ...newAnswers[existingIndex] };
@@ -220,6 +322,36 @@ export default function Exam() {
     });
   };
 
+  // Debounced Save Function
+  const debouncedSave = useCallback(
+    _.debounce(
+      (questionID, job, selectedOptions, blankAnswers, timeSpentMs) => {
+        fetch(`/api/exams/${examID}/${attemptID}/question-response`, {
+          method: "POST",
+          body: JSON.stringify({
+            questionID,
+            selectedOptions:
+              job === "selectedOptions" ? selectedOptions : undefined,
+            blankAnswers: job === "blankAnswers" ? blankAnswers : undefined,
+            timeSpentMs,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              setClientPerfAtFetch(performance.now());
+              setServerTimestamp(data.serverTimestamp);
+            } else {
+              // Ideally revert optimistic update here if needed, or notify
+              // router.push(`/exam/${examID}/${attemptID}/result`); // Maybe too aggressive to kick out?
+            }
+          });
+      },
+      500
+    ), // 500ms debounce
+    [examID, attemptID]
+  );
+
   const updateUserAnswer = (questionID, job, userAnswer) => {
     const { selectedOptions, blankAnswers, timeSpentMs, markedForReview } =
       userAnswer;
@@ -234,36 +366,21 @@ export default function Exam() {
     }
 
     if (job === "blankAnswers" || job === "selectedOptions") {
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${examID}/${attemptID}/question-response`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            questionID,
-            selectedOptions:
-              job === "selectedOptions" ? selectedOptions : undefined,
-            blankAnswers: job === "blankAnswers" ? blankAnswers : undefined,
-            timeSpentMs,
-          }),
-        }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setClientPerfAtFetch(performance.now());
-            setServerTimestamp(data.serverTimestamp);
-          } else {
-            router.push(`/exam/${examID}/${attemptID}/result`);
-          }
-        });
+      debouncedSave(
+        questionID,
+        job,
+        selectedOptions,
+        blankAnswers,
+        timeSpentMs
+      );
     } else if (job === "markedForReview") {
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${examID}/${attemptID}/mark-unmark-question`,
-        {
-          method: "POST",
-          body: JSON.stringify({ questionID, bookmarked: markedForReview }),
-        }
-      )
+      // Mark for review usually doesn't need heavy debouncing but good to be consistent?
+      // Existing logic was direct fetch. Let's keep it direct or maybe debounce slightly?
+      // Keeping direct for now as it's a toggle.
+      fetch(`/api/exams/${examID}/${attemptID}/mark-unmark-question`, {
+        method: "POST",
+        body: JSON.stringify({ questionID, bookmarked: markedForReview }),
+      })
         .then((res) => res.json())
         .then((data) => {
           setClientPerfAtFetch(performance.now());
@@ -398,6 +515,7 @@ export default function Exam() {
         minHeight: "100vh",
         height: "100vh",
         overflow: "hidden",
+        userSelect: questions?.settings?.isAntiCheat ? "none" : "auto",
       }}
     >
       {/* Header */}
@@ -423,6 +541,18 @@ export default function Exam() {
         isOpen={showDialog}
         onConfirm={confirmNavigation}
         onCancel={cancelNavigation}
+      />
+
+      <ViolationDialog
+        open={showViolationDialog}
+        onClose={handleViolationDialogClose}
+        count={violationCount}
+        maxCount={3}
+        message={
+          violationCount >= 3
+            ? "Exam auto-submitted due to multiple security violations."
+            : "Tab switching is prohibited. Continued violations will result in exam termination."
+        }
       />
 
       {/* Submit Dialog */}
@@ -617,6 +747,14 @@ export default function Exam() {
         </Box>
       </Box>
     </Stack>
+  );
+}
+
+export default function Exam() {
+  return (
+    <Suspense fallback={<LoadingComp />}>
+      <ExamContent />
+    </Suspense>
   );
 }
 

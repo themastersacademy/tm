@@ -6,6 +6,7 @@ export default function ResultSection({
   answerList,
   userAnswerList,
   startIndex,
+  showAnswers = true,
 }) {
   return (
     <Box>
@@ -35,6 +36,7 @@ export default function ResultSection({
             result={question}
             userAnswerList={userAnswerList}
             answerList={answerList}
+            showAnswers={showAnswers}
           />
         ))}
       </Stack>

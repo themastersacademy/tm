@@ -288,6 +288,7 @@ export async function getExamAttemptByID(id, userID) {
       "attemptNumber",
       "totalSkippedAnswers",
       "totalAttemptedAnswers",
+      "violationCount",
     ].join(", "),
   };
 
@@ -338,6 +339,7 @@ export async function getExamAttemptByID(id, userID) {
       attemptNumber: Item.attemptNumber,
       totalSkippedAnswers: Item.totalSkippedAnswers,
       totalAttemptedAnswers: Item.totalAttemptedAnswers,
+      violationCount: Item.violationCount || 0,
     });
   }
 
