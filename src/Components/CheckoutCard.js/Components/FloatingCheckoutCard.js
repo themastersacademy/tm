@@ -1,8 +1,13 @@
-"use client"
-import { Stack, Typography, Select, MenuItem, Button } from "@mui/material";
+"use client";
+import {
+  Stack,
+  Typography,
+  Select,
+  MenuItem,
+  Button,
+  Box,
+} from "@mui/material";
 import { East } from "@mui/icons-material";
-import Image from "next/image";
-import defaultThumbnail from "@/public/images/defaultThumbnail.svg";
 
 export default function FloatingCheckoutCard({
   courseDetails,
@@ -12,268 +17,132 @@ export default function FloatingCheckoutCard({
   calculateDiscountedPrice,
   formatPlanLabel,
   handleCheckout,
-  isFree, // Added isFree prop
+  isFree,
+  isPaidCourseForUser,
 }) {
-  // Return early if courseDetails is not available
-  if (!courseDetails) {
-    return (
-      <Stack
-        sx={{
-          backgroundColor: "white",
-          padding: "10px",
-          height: "120px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Typography>Loading...</Typography>
-      </Stack>
-    );
-  }
+  if (!courseDetails) return null;
 
   return (
-    <Stack
+    <Box
       sx={{
-        backgroundColor: "white",
-        padding: "10px",
-        height: "120px",
-        display: "flex",
-        justifyContent: "center",
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        bgcolor: "white",
+        borderTop: "1px solid #e2e8f0",
+        p: 2,
+        zIndex: 1000,
+        boxShadow: "0 -4px 20px rgba(0,0,0,0.05)",
+        pb: "safe-area-inset-bottom", // Handle iPhone home bar
       }}
     >
-      <Stack
-        flexDirection={{ xs: "column", sm: "row" }}
-        gap={2}
-        alignItems="center"
-        justifyContent={{ xs: "center", sm: "space-between" }}
-      >
-        <Stack display="flex-start" flexDirection="row" gap={2}>
-          <Stack display={{ xs: "none", sm: "flex" }}>
-            <Image
-              src={courseDetails?.thumbnail || defaultThumbnail}
-              alt="course thumbnail"
-              width={120}
-              height={70}
-              style={{ borderRadius: "5px" }}
-            />
-          </Stack>
-          <Stack display={{ xs: "flex", sm: "none" }}>
-            <Image
-              src={courseDetails?.thumbnail || defaultThumbnail}
-              alt="course thumbnail"
-              width={100}
-              height={60}
-              style={{ borderRadius: "5px" }}
-            />
-          </Stack>
-          {/* Plan Selector and Price */}
-          <Stack
-            flexDirection={{ xs: "column" }}
-            marginTop={{ xs: "10px", sm: "10px", md: "0px", lg: "0px" }}
+      <Stack gap={2} maxWidth="md" mx="auto">
+        {/* Plan Selector (if applicable) */}
+        {!isPaidCourseForUser && !isFree && plans.length > 0 && (
+          <Select
+            value={selectedPlan?.duration || ""}
+            onChange={handlePlanChange}
+            displayEmpty
+            variant="standard"
+            disableUnderline
+            sx={{
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "#64748b",
+              "& .MuiSelect-select": { py: 0 },
+            }}
           >
-            <Stack
-              flexDirection="row"
-              gap={2}
-              alignItems="center"
-              display={{ xs: "flex", sm: "none" }}
-            >
-              {/* Show Select only for non-free courses */}
-              {!isFree && (
-                <Select
-                  variant="outlined"
-                  value={selectedPlan?.duration || ""}
-                  onChange={handlePlanChange}
-                  displayEmpty
-                  renderValue={(selected) => {
-                    const plan = selected
-                      ? plans.find((p) => p.duration === selected)
-                      : plans[0];
-                    return plan ? formatPlanLabel(plan) : "Loading...";
-                  }}
-                  MenuProps={{
-                    disableScrollLock: true,
-                    PaperProps: {
-                      sx: {
-                        padding: "8px",
-                        "& .MuiList-root": {
-                          paddingBottom: 0,
-                          borderColor: "var(--border-color)",
-                        },
-                      },
-                    },
-                  }}
-                  sx={{
-                    minWidth: { xs: "100px", sm: "140px" },
-                    height: { xs: "30px", sm: "35px" },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "var(--sec-color)",
-                    },
-                    "&:hover": {
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "var(--sec-color)",
-                      },
-                    },
-                  }}
-                >
-                  {plans.map((plan, index) => (
-                    <MenuItem key={index} value={plan.duration}>
-                      {formatPlanLabel(plan)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-              <Button
-                onClick={handleCheckout}
-                variant="text"
-                endIcon={<East />}
-                sx={{
-                  textTransform: "none",
-                  fontFamily: "Lato",
-                  fontSize: { xs: "10px", sm: "14px" },
-                  fontWeight: "700",
-                  color: "var(--sec-color)",
-                  borderRadius: "5px",
-                  backgroundColor: "var(--sec-color-acc-1)",
-                  padding: "10px",
-                  minWidth: { xs: "80px", sm: "120px" },
-                  height: { sm: "38px", xs: "32px" },
-                }}
-                disabled={!isFree && !selectedPlan} // Disable if not free and no plan selected
+            {plans.map((plan, index) => (
+              <MenuItem key={index} value={plan.duration}>
+                {formatPlanLabel(plan)}
+              </MenuItem>
+            ))}
+          </Select>
+        )}
+
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          gap={2}
+        >
+          {/* Price Section */}
+          <Stack>
+            {isPaidCourseForUser ? (
+              <Typography
+                sx={{ fontSize: "16px", fontWeight: 700, color: "#22c55e" }}
               >
-                {isFree ? "Enroll Now" : "checkout"}
-              </Button>
-            </Stack>
-            {/* Price (only for non-free courses) */}
-            {!isFree && selectedPlan ? (
-              <Stack
-                flexDirection="row"
-                gap="5px"
-                marginTop={{ xs: "10px", sm: "10px", md: "0px", lg: "0px" }}
+                Purchased
+              </Typography>
+            ) : isFree ? (
+              <Typography
+                sx={{ fontSize: "20px", fontWeight: 800, color: "#22c55e" }}
               >
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: {
-                      xs: "14px",
-                      sm: "14px",
-                      md: "14px",
-                      lg: "16px",
-                    },
-                    color: "var(--sec-color)",
-                    paddingTop: "5px",
-                  }}
-                >
-                  ₹
-                  {calculateDiscountedPrice(
-                    selectedPlan.priceWithTax,
-                    selectedPlan.discountInPercent
-                  )}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: "Lato",
-                    fontSize: {
-                      xs: "14px",
-                      sm: "14px",
-                      md: "14px",
-                      lg: "16px",
-                    },
-                    paddingTop: "5px",
-                  }}
-                >
-                  <span style={{ textDecoration: "line-through" }}>
+                Free
+              </Typography>
+            ) : selectedPlan ? (
+              <Stack alignItems="flex-start">
+                <Stack direction="row" alignItems="baseline" gap={1}>
+                  <Typography
+                    sx={{ fontSize: "20px", fontWeight: 800, color: "#0f172a" }}
+                  >
+                    ₹
+                    {calculateDiscountedPrice(
+                      selectedPlan.priceWithTax,
+                      selectedPlan.discountInPercent
+                    )}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "12px",
+                      color: "#94a3b8",
+                      textDecoration: "line-through",
+                      fontWeight: 500,
+                    }}
+                  >
                     ₹{selectedPlan.priceWithTax}
-                  </span>{" "}
-                  ({selectedPlan.discountInPercent}% off)
+                  </Typography>
+                </Stack>
+                <Typography
+                  sx={{ fontSize: "10px", color: "#22c55e", fontWeight: 700 }}
+                >
+                  {selectedPlan.discountInPercent}% OFF
                 </Typography>
               </Stack>
-            ) : !isFree ? (
-              <Typography
-                sx={{
-                  fontFamily: "Lato",
-                  fontSize: "10px",
-                  color: "var(--sec-color)",
-                }}
-              >
+            ) : (
+              <Typography sx={{ fontSize: "14px", color: "#64748b" }}>
                 Loading...
               </Typography>
-            ) : null}
+            )}
           </Stack>
-        </Stack>
-        <Stack
-          flexDirection="row"
-          gap={2}
-          alignItems="center"
-          display={{ xs: "none", sm: "flex" }}
-        >
-          {/* Show Select only for non-free courses */}
-          {!isFree && (
-            <Select
-              variant="outlined"
-              value={selectedPlan?.duration || ""}
-              onChange={handlePlanChange}
-              displayEmpty
-              renderValue={(selected) => {
-                const plan = selected
-                  ? plans.find((p) => p.duration === selected)
-                  : plans[0];
-                return plan ? formatPlanLabel(plan) : "Loading...";
-              }}
-              MenuProps={{
-                disableScrollLock: true,
-                PaperProps: {
-                  sx: {
-                    padding: "8px",
-                    "& .MuiList-root": {
-                      paddingBottom: 0,
-                      borderColor: "var(--border-color)",
-                    },
-                  },
-                },
-              }}
-              sx={{
-                minWidth: { xs: "100px", sm: "140px" },
-                height: { xs: "30px", sm: "35px" },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "var(--sec-color)",
-                },
-                "&:hover": {
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "var(--sec-color)",
-                  },
-                },
-              }}
-            >
-              {plans.map((plan, index) => (
-                <MenuItem key={index} value={plan.duration}>
-                  {formatPlanLabel(plan)}
-                </MenuItem>
-              ))}
-            </Select>
-          )}
+
+          {/* Action Button */}
           <Button
             onClick={handleCheckout}
-            variant="text"
+            variant="contained"
             endIcon={<East />}
+            disabled={!isFree && !selectedPlan}
             sx={{
+              px: 4,
+              py: 1.5,
+              borderRadius: "100px",
               textTransform: "none",
-              fontFamily: "Lato",
-              fontSize: { xs: "10px", sm: "14px" },
-              fontWeight: "700",
-              color: "var(--sec-color)",
-              borderRadius: "5px",
-              backgroundColor: "var(--sec-color-acc-1)",
-              padding: "10px",
-              minWidth: { xs: "100px", sm: "120px" },
-              height: { sm: "38px" },
+              fontSize: "14px",
+              fontWeight: 700,
+              bgcolor: isPaidCourseForUser ? "#22c55e" : "#3b82f6",
+              boxShadow: isPaidCourseForUser
+                ? "0 4px 12px rgba(34, 197, 94, 0.3)"
+                : "0 4px 12px rgba(59, 130, 246, 0.3)",
+              "&:hover": {
+                bgcolor: isPaidCourseForUser ? "#16a34a" : "#2563eb",
+              },
             }}
-            disabled={!isFree && !selectedPlan} // Disable if not free and no plan selected
           >
-            {isFree ? "Enroll Now" : "checkout"}
+            {isPaidCourseForUser ? "Open" : isFree ? "Enroll Now" : "Buy Now"}
           </Button>
         </Stack>
       </Stack>
-    </Stack>
+    </Box>
   );
 }

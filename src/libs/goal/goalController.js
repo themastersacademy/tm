@@ -20,6 +20,12 @@ export async function getGoalList() {
         id: item.pKey.split("#")[1],
         title: item.title,
         icon: item.icon,
+        tagline: item.tagline || "",
+        description: item.description || "",
+        coursesCount: item.coursesList?.length || 0,
+        subjectsCount: item.subjectList?.length || 0,
+        blogsCount: item.blogList?.length || 0,
+        updatedAt: item.updatedAt,
       })),
     };
   } catch (error) {

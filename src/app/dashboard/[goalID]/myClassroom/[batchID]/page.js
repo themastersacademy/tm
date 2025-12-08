@@ -1,6 +1,6 @@
 "use client";
 import { ArrowBackIosNewRounded } from "@mui/icons-material";
-import { Button, Skeleton, Stack, Typography } from "@mui/material";
+import { Button, Skeleton, Stack, Typography, Box } from "@mui/material";
 import Courses from "./Components/Courses";
 import Exams from "./Components/Exams";
 import { useParams, useRouter } from "next/navigation";
@@ -73,12 +73,14 @@ export default function Classroom() {
     () => [
       {
         label: "Exams",
-        content: <Exams scheduledExams={scheduledExams} batchID={batchID} examID={batchID} />,
+        content: (
+          <Exams
+            scheduledExams={scheduledExams}
+            batchID={batchID}
+            examID={batchID}
+          />
+        ),
       },
-      // {
-      //   label: "Courses",
-      //   content: <Courses />,
-      // },
     ],
     [scheduledExams, batchID]
   );
@@ -87,67 +89,136 @@ export default function Classroom() {
     <PageSkeleton />
   ) : (
     <Stack
-      padding="20px"
-      gap="20px"
+      padding={{ xs: 2, md: 4 }}
+      gap={4}
       minHeight="100vh"
-      sx={{ padding: { xs: "10px", md: "20px" }, marginBottom: "60px" }}
+      sx={{ marginBottom: "60px" }}
       width="100%"
       maxWidth="1200px"
       margin="0 auto"
     >
+      {/* Hero Header */}
       <Stack
-        flexDirection="row"
-        alignItems="center"
-        gap="15px"
         sx={{
-          backgroundColor: "var(--white)",
-          borderRadius: "10px",
-          height: "60px",
-          border: "1px solid var(--border-color)",
-          padding: "10px",
+          background:
+            "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%)",
+          borderRadius: "24px",
+          padding: { xs: "24px", md: "40px" },
+          color: "white",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 20px 40px rgba(37, 99, 235, 0.15)",
         }}
-        width="100%"
-        maxWidth="1200px"
       >
-        <ArrowBackIosNewRounded
-          fontSize="small"
-          onClick={() => router.back()}
-          sx={{ cursor: "pointer" }}
+        {/* Decorative Circles */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: "-50px",
+            right: "-50px",
+            width: "200px",
+            height: "200px",
+            borderRadius: "50%",
+            background: "rgba(255, 255, 255, 0.1)",
+          }}
         />
-        <Typography
+        <Box
           sx={{
-            fontFamily: "Lato",
-            fontSize: { xs: "14px", md: "18px" },
-            fontWeight: "700",
+            position: "absolute",
+            bottom: "-30px",
+            left: "20%",
+            width: "100px",
+            height: "100px",
+            borderRadius: "50%",
+            background: "rgba(255, 255, 255, 0.05)",
           }}
-        >
-          {batchData ? (
-            `${batchData.batchMeta?.title} (${batchData.batchMeta?.instituteMeta?.title})`
-          ) : (
-            <Skeleton variant="text" width="150px" height="40px" />
-          )}
-        </Typography>
-        <Button
-          variant="contained"
-          sx={{
-            textTransform: "none",
-            backgroundColor: "var(--delete-color)",
-            color: "var(--white)",
-            marginLeft: "auto",
-            fontSize: { xs: "10px", md: "14px" },
-            minWidth: { xs: "94px", md: "110px" },
-          }}
-          disableElevation
-          onClick={leaveGroupOpen}
-        >
-          Leave room
-        </Button>
+        />
+
+        <Stack gap={3} sx={{ position: "relative", zIndex: 1 }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+          >
+            <Button
+              onClick={() => router.back()}
+              startIcon={<ArrowBackIosNewRounded sx={{ fontSize: "16px" }} />}
+              sx={{
+                color: "white",
+                textTransform: "none",
+                fontFamily: "var(--font-geist-sans)",
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(10px)",
+                borderRadius: "12px",
+                padding: "8px 16px",
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.3)",
+                },
+              }}
+            >
+              Back
+            </Button>
+            <Button
+              variant="text"
+              onClick={leaveGroupOpen}
+              sx={{
+                color: "rgba(255, 255, 255, 0.8)",
+                textTransform: "none",
+                fontFamily: "var(--font-geist-sans)",
+                fontSize: "14px",
+                "&:hover": {
+                  color: "white",
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                },
+              }}
+            >
+              Leave Room
+            </Button>
+          </Stack>
+
+          <Stack gap={1}>
+            <Typography
+              variant="h3"
+              sx={{
+                fontFamily: "var(--font-geist-sans)",
+                fontWeight: 800,
+                fontSize: { xs: "28px", md: "40px" },
+                lineHeight: 1.2,
+              }}
+            >
+              {batchData ? (
+                batchData.batchMeta?.title
+              ) : (
+                <Skeleton
+                  variant="text"
+                  width="300px"
+                  sx={{ bgcolor: "rgba(255,255,255,0.2)" }}
+                />
+              )}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: "var(--font-geist-sans)",
+                fontSize: { xs: "16px", md: "18px" },
+                opacity: 0.9,
+                fontWeight: 500,
+              }}
+            >
+              {batchData ? (
+                batchData.batchMeta?.instituteMeta?.title
+              ) : (
+                <Skeleton
+                  variant="text"
+                  width="200px"
+                  sx={{ bgcolor: "rgba(255,255,255,0.2)" }}
+                />
+              )}
+            </Typography>
+          </Stack>
+        </Stack>
       </Stack>
 
-      <Stack>
-        {/* <CustomTabs tabs={tabs} customstyles={ {tabs: {width: "106px !important"}}} /> */}
-        {tabs[0].content}
-      </Stack>
+      <Stack>{tabs[0].content}</Stack>
 
       <LeaveGroupDialog
         open={isLeaveGroupDialogOpen}

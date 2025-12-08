@@ -31,7 +31,6 @@ export async function enrollInCourse({
   let couponDetails = null;
 
   const user = await getFullUserByID(userID);
-  console.log("user", user);
   if (!user) {
     throw new Error("User not found");
   }
@@ -47,6 +46,25 @@ export async function enrollInCourse({
       throw new Error(couponResult.message || "Coupon not found");
     }
     couponDetails = couponResult.data;
+
+    // Validate coupon applicability
+    if (couponDetails.couponClass === "COURSES") {
+      if (
+        couponDetails.applicableCourses &&
+        couponDetails.applicableCourses.length > 0 &&
+        !couponDetails.applicableCourses.includes(courseID)
+      ) {
+        throw new Error("Coupon is not applicable to this course");
+      }
+    } else if (couponDetails.couponClass === "GOALS") {
+      if (
+        couponDetails.applicableGoals &&
+        couponDetails.applicableGoals.length > 0 &&
+        !couponDetails.applicableGoals.includes(goalID)
+      ) {
+        throw new Error("Coupon is not applicable to this goal");
+      }
+    }
   }
 
   const courseResult = await getCourse({ courseID, goalID });
@@ -85,11 +103,12 @@ export async function enrollInCourse({
       pKey: pKey,
     },
     amount: priceBreakdown.totalPrice,
+    itemName: courseDetails.title,
   });
 
   const courseEnrollParams = {
     TableName: USER_TABLE,
-    Item: {
+    Item: removeUndefinedValues({
       pKey,
       sKey,
       "GSI1-pKey": gsi1pKey,
@@ -107,7 +126,7 @@ export async function enrollInCourse({
       createdAt: now,
       updatedAt: now,
       videoProgress: {},
-    },
+    }),
     // optionally guard against accidental overwrite:
     ConditionExpression: "attribute_not_exists(pKey)",
   };
@@ -123,6 +142,10 @@ export async function enrollInCourse({
       order: transaction.order,
     },
   };
+}
+
+function removeUndefinedValues(obj) {
+  return JSON.parse(JSON.stringify(obj));
 }
 
 export async function getValidCourseEnrollment(userID, courseID) {
@@ -172,7 +195,7 @@ export async function getValidCourseEnrollment(userID, courseID) {
   };
 }
 
-export async function verifyCourseEnrollment(enrollmentID) {
+export async function verifyCourseEnrollment(enrollmentID, userID) {
   if (!enrollmentID) return false;
 
   try {
@@ -186,14 +209,18 @@ export async function verifyCourseEnrollment(enrollmentID) {
         ExpressionAttributeNames: {
           "#status": "status",
           "#expiresAt": "expiresAt",
+          "#userID": "userID",
         },
-        ProjectionExpression: "#status, #expiresAt", // only fetch what we need
+        ProjectionExpression: "#status, #expiresAt, #userID", // only fetch what we need
       })
     );
 
-    // must exist, be active, and not yet expired
+    // must exist, be active, not yet expired, AND belong to the user (if userID is provided)
+    const isOwner = userID ? Item?.userID === userID : true;
+
     return Boolean(
       Item &&
+        isOwner &&
         Item.status?.toUpperCase() === "ACTIVE" &&
         typeof Item.expiresAt === "number" &&
         Item.expiresAt > Date.now()
@@ -202,6 +229,30 @@ export async function verifyCourseEnrollment(enrollmentID) {
     console.error("verifyCourseEnrollment error:", err);
     return false;
   }
+}
+
+export async function getUserEnrollmentsRaw(userID) {
+  const courseEnrollParams = {
+    TableName: USER_TABLE,
+    IndexName: USER_TABLE_INDEX,
+    KeyConditionExpression: "#gsi1pk = :pKey AND #gsi1sk = :sKey",
+    FilterExpression: "#status = :status AND #expiresAt > :now",
+    ExpressionAttributeNames: {
+      "#gsi1pk": "GSI1-pKey",
+      "#gsi1sk": "GSI1-sKey",
+      "#status": "status",
+      "#expiresAt": "expiresAt",
+    },
+    ExpressionAttributeValues: {
+      ":pKey": `COURSE_ENROLLMENT#${userID}`,
+      ":sKey": `COURSE_ENROLLMENTS`,
+      ":status": "active",
+      ":now": Date.now(),
+    },
+  };
+
+  const result = await dynamoDB.send(new QueryCommand(courseEnrollParams));
+  return result.Items || [];
 }
 
 export async function getAllEnrolledCourses(userID, goalID) {
@@ -367,13 +418,9 @@ export async function verifyAndEnrollFreeCourse({ userID, courseID, goalID }) {
     },
     ConditionExpression: "attribute_not_exists(pKey)",
   };
-  console.log("Enrolling free course with params:", courseEnrollParams);
 
   try {
     await dynamoDB.send(new PutCommand(courseEnrollParams));
-    console.log(
-      `Free course enrollment successful for courseID: ${courseID}, userID: ${userID}`
-    );
   } catch (error) {
     console.error("Error enrolling free course:", error);
     throw new Error("Failed to enroll free course");

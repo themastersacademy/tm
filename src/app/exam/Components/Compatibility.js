@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Verified, ErrorOutline } from "@mui/icons-material";
 import { CircularProgress, Stack } from "@mui/material";
-import { Typography } from "antd";
+import { Typography } from "@mui/material";
 
 export default function Compatibility() {
   const [browserCompatible, setBrowserCompatible] = useState(false);

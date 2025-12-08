@@ -23,6 +23,13 @@ const APP_DEFAULT_TITLE = "The Masters Academy";
 const APP_TITLE_TEMPLATE = "%s - TMA Learning Platform";
 const APP_DESCRIPTION = "The Masters Academy Learning Platform";
 
+export const viewport = {
+  themeColor: "#3367D6",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata = {
   applicationName: APP_NAME,
   title: {
@@ -30,7 +37,6 @@ export const metadata = {
     template: APP_TITLE_TEMPLATE,
   },
   description: APP_DESCRIPTION,
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -59,12 +65,16 @@ export const metadata = {
   },
 };
 
+import SWRegistration from "./SWRegistration";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <SWRegistration />
+          {children}
+        </Providers>
       </body>
     </html>
   );

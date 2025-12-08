@@ -134,6 +134,9 @@ export async function getScheduledExamByBatch(userID, batchID) {
     settings: ex.settings,
     createdAt: ex.createdAt,
     updatedAt: ex.updatedAt,
+    totalQuestions: ex.totalQuestions,
+    totalMarks: ex.totalMarks,
+    endTimeStamp: ex.endTimeStamp,
   }));
 
   return {
@@ -247,7 +250,7 @@ export async function startExam({ examID, userID }) {
       updatedAt: now,
     },
   };
-  console.log("examAttemptParams", examAttemptParams);
+  // console.log("examAttemptParams", examAttemptParams);
   try {
     await dynamoDB.send(new PutCommand(examAttemptParams));
     return {
@@ -285,6 +288,7 @@ export async function getExamAttemptByID(id, userID) {
       "attemptNumber",
       "totalSkippedAnswers",
       "totalAttemptedAnswers",
+      "violationCount",
     ].join(", "),
   };
 
@@ -335,6 +339,7 @@ export async function getExamAttemptByID(id, userID) {
       attemptNumber: Item.attemptNumber,
       totalSkippedAnswers: Item.totalSkippedAnswers,
       totalAttemptedAnswers: Item.totalAttemptedAnswers,
+      violationCount: Item.violationCount || 0,
     });
   }
 

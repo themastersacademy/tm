@@ -13,15 +13,39 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
   const params = useParams();
   const goalID = params.goalID;
+  /* 
+    User Request Interpretation:
+    - Root `/` is the main Dashboard. Map this to "Home".
+    - `/home` is the Discovery/Store page. Map this to "My Learning" (or just secondary tab).
+  */
   const routeMap = [
-    `/dashboard/${goalID}/home`,
-    `/dashboard/${goalID}`,
+    `/dashboard/${goalID}`, // Index 0: Home -> Root Dashboard
+    `/dashboard/${goalID}/home`, // Index 1: My Learning -> /home (Discovery)
     `/dashboard/${goalID}/exam`,
     `/dashboard/${goalID}/courses`,
     `/dashboard/${goalID}/profile`,
   ];
-  const currentIndex = routeMap.indexOf(pathname);
-  const value = currentIndex !== -1 ? currentIndex : 0;
+
+  const getActiveTab = () => {
+    // Check for specific sub-routes first
+    if (pathname.startsWith(`/dashboard/${goalID}/home`)) return 1; // Now My Learning
+    if (pathname.startsWith(`/dashboard/${goalID}/exam`)) return 2;
+    if (pathname.startsWith(`/dashboard/${goalID}/courses`)) return 3;
+    if (pathname.startsWith(`/dashboard/${goalID}/profile`)) return 4;
+
+    // Check for Root Dashboard and My Classroom (grouped under Home now? or still My Learning?)
+    // Let's assume My Classroom belongs to the "Home" flow if it's main activity,
+    // OR sticking to previous logic: Dashboard root is now Home (0).
+    if (
+      pathname === `/dashboard/${goalID}` ||
+      pathname.startsWith(`/dashboard/${goalID}/myClassroom`)
+    )
+      return 0;
+
+    return 0; // Default to Home
+  };
+
+  const value = getActiveTab();
 
   const handleNavigationChange = (event, newValue) => {
     if (newValue !== value) {
@@ -40,9 +64,11 @@ export default function MobileBottomNav() {
         bottom: 0,
         left: 0,
         width: "100%",
-        height: "60px",
+        height: "64px",
         bgcolor: "var(--white)",
-        zIndex: 1,
+        zIndex: 100,
+        borderTop: "1px solid var(--border-color)",
+        boxShadow: "0 -2px 10px rgba(0,0,0,0.05)",
       }}
     >
       {[
@@ -59,20 +85,30 @@ export default function MobileBottomNav() {
             <Image
               src={icon}
               alt={label}
-              width={16}
+              width={20}
               height={20}
-              style={{ opacity: value === index ? 1 : 0.6 }}
+              style={{
+                opacity: value === index ? 1 : 0.5,
+                filter:
+                  value === index
+                    ? "brightness(0) saturate(100%) invert(34%) sepia(16%) saturate(1939%) hue-rotate(128deg) brightness(98%) contrast(92%)"
+                    : "grayscale(100%)",
+                transition: "all 0.3s ease",
+              }}
             />
           }
           sx={{
             minWidth: "fit-content",
+            padding: "6px 0",
             "& .MuiBottomNavigationAction-label": {
-              fontSize: value === index ? "12px" : "10px",
-              color: value === index ? "var(--primary-color)" : "var(--text3)",
-              marginTop: "3px",
+              fontSize: value === index ? "11px" : "10px",
+              fontWeight: value === index ? 700 : 500,
+              color: value === index ? "var(--primary-color)" : "var(--text4)",
+              marginTop: "4px",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
+              transition: "all 0.3s ease",
             },
           }}
         />

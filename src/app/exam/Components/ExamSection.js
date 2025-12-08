@@ -1,6 +1,6 @@
 "use client";
 import { Bookmark } from "@mui/icons-material";
-import { Stack, Typography, Button, Badge } from "@mui/material";
+import { Stack, Typography, Button, Badge, Box } from "@mui/material";
 
 export default function ExamSection({
   title,
@@ -11,13 +11,26 @@ export default function ExamSection({
   userAnswers,
 }) {
   return (
-    <Stack gap="10px" width="100%" sx={{ backgroundColor: "var(--white)" }}>
+    <Stack gap="15px" width="100%" sx={{ backgroundColor: "var(--white)" }}>
       <Typography
-        sx={{ fontFamily: "Lato", fontSize: "16px", fontWeight: "700" }}
+        sx={{
+          fontFamily: "var(--font-geist-sans)",
+          fontSize: "14px",
+          fontWeight: 700,
+          color: "var(--text2)",
+          textTransform: "uppercase",
+          letterSpacing: "0.5px",
+        }}
       >
         {title}
       </Typography>
-      <Stack flexDirection="row" flexWrap="wrap" gap={2}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(40px, 1fr))",
+          gap: "10px",
+        }}
+      >
         {questions.questions.map((question, index) => {
           let questionNo = questionState?.sectionViseQuestionCount
             ?.slice(0, sectionIndex)
@@ -30,49 +43,64 @@ export default function ExamSection({
             userAnswer?.selectedOptions?.length > 0 ||
             userAnswer?.blankAnswers?.length > 0;
           const isMarked = userAnswer?.markedForReview;
+          const isCurrent =
+            questionState.selectedSectionIndex === sectionIndex &&
+            questionState.selectedQuestionIndex === index;
 
           return (
             <Badge
               key={question.questionID}
               invisible={!isMarked}
+              overlap="circular"
+              sx={{ justifySelf: "center" }}
               badgeContent={
                 <Bookmark
                   fontSize="small"
                   sx={{
                     color: "var(--sec-color)",
                     fontSize: "12px",
-                    padding: "4px",
-                    width: "18px",
-                    height: "18px",
+                    padding: "2px",
+                    width: "16px",
+                    height: "16px",
                     backgroundColor: "var(--sec-color-acc-1)",
                     borderRadius: "50%",
+                    border: "1px solid white",
                   }}
                 />
               }
-              // sx={{
-              //   // bgcolor: "var(--sec-color)",
-              //   borderRadius: "50%",
-              // }}
             >
               <Button
                 key={question.questionID}
-                variant="outlined"
+                variant={isAnswered ? "contained" : "outlined"}
+                disableElevation
                 sx={{
-                  width: 35,
-                  height: 35,
-                  minWidth: 35,
-                  borderRadius: !userAnswer ? "4px" : "50%",
+                  width: "40px",
+                  height: "40px",
+                  minWidth: "40px",
+                  borderRadius: isAnswered || isMarked ? "50%" : "4px", // Circle for Answered/Marked, Square for others
                   fontWeight: "bold",
                   fontSize: "14px",
-                  fontFamily: "Lato",
-                  borderColor: "var(--border-color)",
+                  fontFamily: "var(--font-geist-sans)",
+                  borderColor: isCurrent
+                    ? "var(--primary-color)"
+                    : "var(--border-color)",
+                  borderWidth: isCurrent ? "2px" : "1px",
                   backgroundColor: isAnswered
-                    ? "var(--primary-color-acc-1)"
-                    : questionState.selectedSectionIndex === sectionIndex &&
-                      questionState.selectedQuestionIndex === index
-                    ? "var(--border-color)"
+                    ? "var(--primary-color)"
+                    : isCurrent
+                    ? "white"
                     : "transparent",
-                  color: "var(--text2)",
+                  color: isAnswered
+                    ? "white"
+                    : isCurrent
+                    ? "var(--primary-color)"
+                    : "var(--text2)",
+                  "&:hover": {
+                    borderColor: "var(--primary-color)",
+                    backgroundColor: isAnswered
+                      ? "var(--primary-color-dark)"
+                      : "var(--primary-color-acc-2)",
+                  },
                 }}
                 onClick={() => {
                   handleQuestionSelection({
@@ -86,7 +114,7 @@ export default function ExamSection({
             </Badge>
           );
         })}
-      </Stack>
+      </Box>
     </Stack>
   );
 }

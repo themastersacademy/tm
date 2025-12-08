@@ -2,23 +2,32 @@
 "use client";
 import Image from "next/image";
 import StyledTextField from "@/src/Components/StyledTextField/StyledTextField";
-import { Button, Stack, Typography } from "@mui/material";
+import {
+  Button,
+  Stack,
+  Typography,
+  Box,
+  Fade,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { enqueueSnackbar } from "notistack";
 import { useSession } from "next-auth/react";
 import { CircularProgress } from "@mui/material";
 import StyledSelect from "@/src/Components/StyledSelect/StyledSelect";
-import gate_cse from "@/public/icons/gate_cse.svg";
-import placement from "@/public/icons/placements.svg";
-import Banking from "@/public/icons/banking.svg";
 import mastersLogo from "@/public/images/masters-logo.svg";
 import incrixLogo from "@/public/images/incrix-logo.svg";
+import GoalCard from "@/src/Components/GoalCard/GoalCard";
+import { ArrowForward } from "@mui/icons-material";
 
 export default function ProfileSetupPage({ isMobile }) {
   const router = useRouter();
   const { data: session, update } = useSession();
   const searchParams = useSearchParams();
+  const theme = useTheme();
+
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [gender, setGender] = useState("");
@@ -27,40 +36,39 @@ export default function ProfileSetupPage({ isMobile }) {
     icon: "",
     title: "",
   });
-  const [goals, setGoals] = useState([]); // Store API fetched goals
+  const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isProfileUpdated, setIsProfileUpdated] = useState(false);
 
-  // Check if goal query param is true
+  // Check if goal query param is true (meaning profile step is done)
   const isGoalSelection = searchParams.get("goal") === "true";
 
-  // Fetch goal list from API and set initial profile data
+  // Fetch goal list
   useEffect(() => {
     const fetchGoals = async () => {
       try {
         const response = await fetch("/api/goal/all");
         const result = await response.json();
         if (result.success) {
-          setGoals(result.data); // Store the array of goals
-        } else {
-          enqueueSnackbar("Failed to fetch goals", { variant: "error" });
+          setGoals(result.data);
         }
       } catch (error) {
-        enqueueSnackbar("An error occurred while fetching goals", {
-          variant: "error",
-        });
+        console.error("Error fetching goals", error);
       }
     };
     fetchGoals();
 
-    if (session) {
-      setName(session?.user?.name || "");
-      setPhoneNumber(session?.user?.phoneNumber || "");
-      setGender(session?.user?.gender || "");
+    if (session?.user) {
+      setName(session.user.name || "");
+      setPhoneNumber(session.user.phoneNumber || "");
+      setGender(session.user.gender || "");
+
+      // If user has all profile details and is NOT explicitly on goal step via URL,
+      // see if we should auto-skip to goal selection or dashboard
       if (
-        session?.user?.name &&
-        session?.user?.phoneNumber &&
-        session?.user?.gender &&
+        session.user.name &&
+        session.user.phoneNumber &&
+        session.user.gender &&
         !isGoalSelection
       ) {
         setIsProfileUpdated(true);
@@ -69,6 +77,8 @@ export default function ProfileSetupPage({ isMobile }) {
   }, [session, isGoalSelection]);
 
   const handleSubmit = async () => {
+    if (!name || !phoneNumber || !gender) return;
+
     setLoading(true);
     try {
       const response = await fetch("/api/user/profile-update", {
@@ -77,7 +87,9 @@ export default function ProfileSetupPage({ isMobile }) {
       });
       const data = await response.json();
       if (data.success) {
-        enqueueSnackbar("Profile updated successfully", { variant: "success" });
+        enqueueSnackbar("Details saved properly! Let's choose your goal.", {
+          variant: "success",
+        });
         await update();
         setIsProfileUpdated(true);
         router.push("/profile-setup?goal=true");
@@ -92,6 +104,8 @@ export default function ProfileSetupPage({ isMobile }) {
   };
 
   const handleGoalSubmit = async () => {
+    if (!selectedGoal.goalID) return;
+
     setLoading(true);
     try {
       const response = await fetch("/api/goal-enrollment/enroll", {
@@ -104,7 +118,9 @@ export default function ProfileSetupPage({ isMobile }) {
       });
       const data = await response.json();
       if (data.success) {
-        enqueueSnackbar("Goal set successfully", { variant: "success" });
+        enqueueSnackbar("Goal setup complete! Welcome to your dashboard.", {
+          variant: "success",
+        });
         await update();
         router.push("/dashboard");
       } else {
@@ -113,9 +129,7 @@ export default function ProfileSetupPage({ isMobile }) {
         });
       }
     } catch (error) {
-      enqueueSnackbar(error.message || "An error occurred", {
-        variant: "error",
-      });
+      enqueueSnackbar("An error occurred", { variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -123,304 +137,262 @@ export default function ProfileSetupPage({ isMobile }) {
 
   const handlePhoneNumberChange = (e) => {
     const value = e.target.value.replace("+91", "").replace(/[^0-9]/g, "");
-    if (value.length <= 10) {
-      setPhoneNumber(value);
-    }
+    if (value.length <= 10) setPhoneNumber(value);
   };
 
   const renderGoalSelection = () => (
-    <Stack gap="20px">
-      <Typography
+    <Stack gap="32px" width="100%" alignItems="center">
+      <Stack gap="8px" alignItems="center" textAlign="center">
+        <Typography
+          sx={{
+            fontSize: { xs: "24px", md: "32px" },
+            fontWeight: 800,
+            color: "var(--text1)",
+            letterSpacing: "-0.5px",
+          }}
+        >
+          Choose your learning goal 🎯
+        </Typography>
+        <Typography sx={{ color: "var(--text3)", maxWidth: "500px" }}>
+          Select the exam or domain you want to master. We&apos;ll personalize
+          your learning experience based on this.
+        </Typography>
+      </Stack>
+
+      {/* Goals Grid */}
+      <Box
         sx={{
-          fontFamily: "Lato",
-          fontSize: "20px",
-          fontWeight: "500",
-          color: "var(--text2)",
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(auto-fit, minmax(280px, 1fr))",
+          },
+          gap: "24px",
+          width: "100%",
+          maxWidth: "900px",
         }}
       >
-        Select goal
-      </Typography>
-      <Stack gap="25px" flexDirection="row">
-        {goals.map((goalItem) => (
-          <Stack
-            key={goalItem.id}
-            gap="10px"
+        {goals.map((goal) => (
+          <GoalCard
+            key={goal.id}
+            title={goal.title}
+            icon={goal.icon}
+            tagline="Official Course"
+            description={
+              goal.description ||
+              "Complete preparation package including video lectures, mock tests, and study material."
+            }
+            isSelected={selectedGoal.goalID === goal.id}
             onClick={() =>
               setSelectedGoal({
-                goalID: goalItem.id,
-                icon: goalItem.icon,
-                title: goalItem.title,
+                goalID: goal.id,
+                icon: goal.icon,
+                title: goal.title,
               })
             }
-          >
-            <Stack
-              sx={{
-                width: "62px",
-                height: "62px",
-                backgroundColor:
-                  selectedGoal.goalID === goalItem.id
-                    ? "var(--primary-color)"
-                    : "var(--sec-color-acc-2)",
-                borderRadius: "10px",
-                justifyContent: "center",
-                alignItems: "center",
-                cursor: "pointer",
-              }}
-            >
-              <Image
-                src={
-                  goalItem.icon === "castle"
-                    ? gate_cse
-                    : goalItem.icon === "org"
-                    ? placement
-                    : goalItem.icon === "institute"
-                    ? Banking
-                    : gate_cse // Default fallback
-                }
-                alt={goalItem.title}
-                width={22}
-                height={25}
-              />
-            </Stack>
-            <Typography sx={{ fontFamily: "Lato", fontSize: "12px" }}>
-              {goalItem.title}
-            </Typography>
-          </Stack>
+          />
         ))}
-      </Stack>
-      <Button
-        variant="contained"
-        sx={{
-          textTransform: "none",
-          backgroundColor: "var(--primary-color)",
-          borderRadius: "4px",
-          fontFamily: "Lato",
-          fontSize: "18px",
-          height: "40px",
-          width: "350px",
-        }}
-        disableElevation
-        disabled={
-          loading ||
-          !selectedGoal.goalID ||
-          !selectedGoal.icon ||
-          !selectedGoal.title
-        }
-        startIcon={
-          loading ? (
-            <CircularProgress
-              size={20}
-              sx={{ color: "var(--primary-color)" }}
-            />
-          ) : null
-        }
-        onClick={handleGoalSubmit}
+      </Box>
+
+      {/* Action Bar */}
+      <Stack
+        width="100%"
+        maxWidth="900px"
+        direction="row"
+        justifyContent="flex-end"
+        pt={2}
       >
-        Create
-      </Button>
+        <Button
+          variant="contained"
+          size="large"
+          endIcon={
+            loading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <ArrowForward />
+            )
+          }
+          disabled={loading || !selectedGoal.goalID}
+          onClick={handleGoalSubmit}
+          sx={{
+            minWidth: "200px",
+            height: "56px",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: 700,
+            textTransform: "none",
+            backgroundColor: "var(--primary-color)",
+            boxShadow: "0 8px 16px rgba(246, 128, 5, 0.25)",
+            "&:hover": {
+              backgroundColor: "#E67300",
+              boxShadow: "0 12px 20px rgba(246, 128, 5, 0.35)",
+            },
+          }}
+        >
+          {loading ? "Setting up..." : "Continue to Dashboard"}
+        </Button>
+      </Stack>
+    </Stack>
+  );
+
+  const renderProfileForm = () => (
+    <Stack gap="32px" width="100%" maxWidth="480px" alignItems="center">
+      <Stack gap="8px" alignItems="center" textAlign="center">
+        <Typography
+          sx={{
+            fontSize: { xs: "24px", md: "32px" },
+            fontWeight: 800,
+            color: "var(--text1)",
+            letterSpacing: "-0.5px",
+          }}
+        >
+          Let&apos;s get to know you 👋
+        </Typography>
+        <Typography sx={{ color: "var(--text3)" }}>
+          Please complete your profile to continue
+        </Typography>
+      </Stack>
+
+      <Stack width="100%" gap="24px">
+        <Stack gap="8px">
+          <Typography sx={{ fontWeight: 600, color: "var(--text2)" }}>
+            Full Name
+          </Typography>
+          <StyledTextField
+            placeholder="John Doe"
+            fullWidth
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Stack>
+
+        <Stack gap="8px">
+          <Typography sx={{ fontWeight: 600, color: "var(--text2)" }}>
+            Phone Number
+          </Typography>
+          <StyledTextField
+            placeholder="+91 99999 99999"
+            fullWidth
+            value={`+91 ${phoneNumber}`}
+            onChange={handlePhoneNumberChange}
+          />
+        </Stack>
+
+        <Stack gap="8px">
+          <Typography sx={{ fontWeight: 600, color: "var(--text2)" }}>
+            Gender
+          </Typography>
+          <StyledSelect
+            options={["Male", "Female", "Other"]}
+            title="Select Gender"
+            value={gender || ""}
+            onChange={(e) => setGender(e.target.value)}
+            getLabel={(option) => option}
+            getValue={(option) => option}
+            sx={{ width: "100%" }}
+          />
+        </Stack>
+
+        <Button
+          fullWidth
+          variant="contained"
+          size="large"
+          disabled={loading || !name || !phoneNumber || !gender}
+          onClick={handleSubmit}
+          sx={{
+            height: "56px",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: 700,
+            textTransform: "none",
+            backgroundColor: "var(--primary-color)",
+            mt: 2,
+            boxShadow: "0 8px 16px rgba(246, 128, 5, 0.2)",
+          }}
+        >
+          {loading ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            "Save & Continue"
+          )}
+        </Button>
+      </Stack>
     </Stack>
   );
 
   return (
     <Stack
-      width={isMobile ? "100%" : "50%"}
-      height="100vh"
-      justifyContent="center"
-      alignItems="center"
+      width={isMobile ? "100%" : "60%"} // Made slightly wider for better goal grid
+      height="100vh" // Use full viewport height
+      sx={{ overflowY: "auto" }} // Allow scroll if content is tall
     >
-      <Suspense
-        fallback={<CircularProgress sx={{ color: "var(--primary-color)" }} />}
-      >
+      <Box sx={{ p: { xs: 3, md: 6 }, minHeight: "100%" }}>
         <Stack
-          sx={{
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-          }}
+          minHeight="calc(100vh - 96px)" // Account for padding
+          justifyContent="space-between"
+          alignItems="center"
         >
-          <Stack
-            sx={{
-              width: isMobile ? "80px" : "110px",
-              height: isMobile ? "80px" : "110px",
-              backgroundColor: "var(--border-color)",
-              borderRadius: "50%",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Stack
+          {/* Logo Section */}
+          <Stack alignItems="center" gap={2} sx={{ mb: 6 }}>
+            <Box
               sx={{
-                width: isMobile ? "50px" : "70px",
-                height: isMobile ? "50px" : "70px",
-                backgroundColor: "var(--white)",
-                borderRadius: "50px",
+                width: "80px",
+                height: "80px",
+                borderRadius: "50%",
+                bgcolor: "#F5F5F7",
+                display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                border: "1px solid #EBEBEB",
               }}
             >
-              <Image
-                src={mastersLogo}
-                alt="logo"
-                width={isMobile ? 32 : 48}
-                height={isMobile ? 32 : 48}
-              />
-            </Stack>
+              <Image src={mastersLogo} alt="TMA" width={48} height={48} />
+            </Box>
           </Stack>
-          <Typography
-            sx={{
-              fontFamily: "Lato",
-              fontSize: isMobile ? "20px" : "24px",
-              fontWeight: "600",
-              color: "var(--text1)",
-              marginTop: "15px",
-              marginBottom: "35px",
-            }}
-          >
-            Profile Setup
-          </Typography>
+
+          {/* Main Content */}
           <Suspense
             fallback={
               <CircularProgress sx={{ color: "var(--primary-color)" }} />
             }
           >
-            <Stack
-              sx={{ width: "350px", gap: "20px", justifyContent: "center" }}
-            >
-              {isGoalSelection ? (
-                renderGoalSelection()
-              ) : !isProfileUpdated ? (
-                <>
-                  <Stack gap={1}>
-                    <Typography
-                      sx={{
-                        fontFamily: "Lato",
-                        fontSize: "20px",
-                        fontWeight: "500",
-                        color: "var(--text2)",
-                      }}
-                    >
-                      Name
-                    </Typography>
-                    <StyledTextField
-                      placeholder="Enter your full name"
-                      sx={{ width: "350px" }}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                    />
-                  </Stack>
-                  <Stack gap={1}>
-                    <Typography
-                      sx={{
-                        fontFamily: "Lato",
-                        fontSize: "20px",
-                        fontWeight: "500",
-                        color: "var(--text2)",
-                      }}
-                    >
-                      Phone Number
-                    </Typography>
-                    <StyledTextField
-                      placeholder="+91 1234567890"
-                      sx={{ width: "350px" }}
-                      value={`+91 ${phoneNumber}`}
-                      onChange={handlePhoneNumberChange}
-                      inputProps={{ maxLength: 14, inputMode: "numeric" }}
-                      type="tel"
-                    />
-                  </Stack>
-                  <Stack gap={1}>
-                    <Typography
-                      sx={{
-                        fontFamily: "Lato",
-                        fontSize: "20px",
-                        fontWeight: "500",
-                        color: "var(--text2)",
-                      }}
-                    >
-                      Gender
-                    </Typography>
-                    <StyledSelect
-                      options={["Male", "Female", "Other"]}
-                      title="Your Gender"
-                      getLabel={(option) => option}
-                      getValue={(option) => option}
-                      value={gender || ""}
-                      onChange={(e) => setGender(e.target.value)}
-                    />
-                  </Stack>
-                  <Button
-                    variant="contained"
-                    sx={{
-                      textTransform: "none",
-                      backgroundColor: "var(--primary-color)",
-                      borderRadius: "4px",
-                      fontFamily: "Lato",
-                      fontSize: "18px",
-                      height: "40px",
-                      width: "350px",
-                    }}
-                    disableElevation
-                    disabled={loading || !name || !phoneNumber || !gender}
-                    startIcon={
-                      loading ? (
-                        <CircularProgress
-                          size={20}
-                          sx={{ color: "var(--primary-color)" }}
-                        />
-                      ) : null
-                    }
-                    onClick={handleSubmit}
-                  >
-                    Update
-                  </Button>
-                </>
-              ) : (
-                renderGoalSelection()
-              )}
-            </Stack>
+            <Fade in={true} timeout={500}>
+              <Box width="100%" display="flex" justifyContent="center">
+                {isGoalSelection ? renderGoalSelection() : renderProfileForm()}
+              </Box>
+            </Fade>
           </Suspense>
-        </Stack>
-        <Stack
-          flexDirection={{ xs: "column", md: "row" }}
-          width="100%"
-          justifyContent={{ xs: "center", md: "space-between" }}
-          alignItems="center"
-          sx={{ fontFamily: "Lato", padding: "20px", marginTop: "auto" }}
-        >
-          <Stack>
+
+          {/* Footer */}
+          <Stack
+            width="100%"
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            alignItems="center"
+            pt={6}
+            gap={2}
+          >
             <Typography
-              sx={{
-                marginTop: "auto",
-                marginRight: "auto",
-                fontFamily: "Lato",
-                fontSize: isMobile ? "12px" : "16px",
-                fontWeight: "700",
-                color: "var(--text4)",
-              }}
+              sx={{ color: "var(--text4)", fontSize: "12px", fontWeight: 600 }}
             >
-              ©2025 @ The Masters Academy
+              © 2025 The Masters Academy
             </Typography>
-          </Stack>
-          <Stack flexDirection="row" alignItems="center" gap="10px">
-            <Typography
-              sx={{
-                fontFamily: "Lato",
-                fontSize: isMobile ? "12px" : "16px",
-                fontWeight: "700",
-                color: "var(--text4)",
-              }}
-            >
-              Designed By
-            </Typography>
-            <Image
-              src={incrixLogo}
-              alt="incrix"
-              width={isMobile ? 52 : 104}
-              height={isMobile ? 24 : 48}
-            />
+
+            <Stack direction="row" alignItems="center" gap={1}>
+              <Typography
+                sx={{
+                  color: "var(--text4)",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                }}
+              >
+                Designed by
+              </Typography>
+              <Image src={incrixLogo} alt="Incrix" width={70} height={20} />
+            </Stack>
           </Stack>
         </Stack>
-      </Suspense>
+      </Box>
     </Stack>
   );
 }

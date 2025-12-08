@@ -6,11 +6,12 @@ export const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-export async function createOrder(amount, receipt) {
+export async function createOrder(amount, receipt, notes = {}) {
   const options = {
     amount: amount * 100,
     currency: "INR",
     receipt,
+    notes,
   };
   const order = await razorpay.orders.create(options);
   return order;

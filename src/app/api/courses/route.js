@@ -1,6 +1,18 @@
 import { getCourse } from "@/src/libs/courses/courseController";
+import { getSession } from "@/src/utils/serverSession";
 
 export async function POST(req) {
+  const session = await getSession();
+  if (!session) {
+    return Response.json(
+      {
+        success: false,
+        message: "Unauthorized",
+      },
+      { status: 401 }
+    );
+  }
+
   const { goalID, courseID } = await req.json();
   if (!goalID && !courseID) {
     return Response.json({

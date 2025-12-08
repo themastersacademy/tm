@@ -1,13 +1,18 @@
 "use client";
-import { East } from "@mui/icons-material";
-import { Button, Stack, Typography } from "@mui/material";
+import {
+  East,
+  AccessTime,
+  Assignment,
+  EmojiEvents,
+  Close,
+} from "@mui/icons-material";
+import { Button, Stack, Typography, Box, Tabs, Tab, Chip } from "@mui/material";
 import mocks from "@/public/icons/mocks.svg";
 import PrimaryCard from "@/src/Components/PrimaryCard/PrimaryCard";
 import { useRouter } from "next/navigation";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import PrimaryCardSkeleton from "@/src/Components/SkeletonCards/PrimaryCardSkeleton";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import SecondaryCard from "@/src/Components/SecondaryCard/SecondaryCard";
 import SecondaryCardSkeleton from "@/src/Components/SkeletonCards/SecondaryCardSkeleton";
 import banking from "@/public/icons/banking.svg";
 import Image from "next/image";
@@ -16,6 +21,11 @@ export default function Exams({ scheduledExams, examID, batchID }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [examHistory, setExamHistory] = useState([]);
+  const [tabValue, setTabValue] = useState(0);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
 
   // Fetch history, memoized
   const fetchHistory = useCallback(async () => {
@@ -26,7 +36,6 @@ export default function Exams({ scheduledExams, examID, batchID }) {
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/my-classroom/${batchID}/get-scheduled-history`
       );
       const data = await res.json();
-      console.log(data);
       if (data.success) {
         setExamHistory(data.data || []);
         setIsLoading(false);
@@ -44,43 +53,105 @@ export default function Exams({ scheduledExams, examID, batchID }) {
     fetchHistory();
   }, [fetchHistory]);
 
-  // Memoize scheduled exam list items
-  const examList = useMemo(() => {
-    return Array.isArray(scheduledExams)
-      ? scheduledExams.map((exam) => {
-          const { id, title, startTimeStamp } = exam;
-          const subtitle = new Date(startTimeStamp).toLocaleString();
-          const handleStart = () => {
-            router.push(`/exam/${id}`);
-          };
-          return {
-            key: id,
-            title,
-            icon: mocks.src,
-            subtitle,
-            actionButton: (
-              <Button
-                variant="text"
-                endIcon={<East sx={{ width: 16, height: 16 }} />}
-                sx={{
-                  textTransform: "none",
-                  fontFamily: "Lato",
-                  color: "var(--primary-color)",
-                  fontSize: "12px",
-                }}
-                onClick={handleStart}
-              >
-                Start
-              </Button>
-            ),
-          };
-        })
-      : [];
-  }, [scheduledExams, router]);
+  // Split scheduledExams into active and expired
+  const { activeExams, expiredExams } = useMemo(() => {
+    if (!Array.isArray(scheduledExams))
+      return { activeExams: [], expiredExams: [] };
 
-  // Memoize history cards
+    const now = new Date();
+    const active = [];
+    const expired = [];
+
+    scheduledExams.forEach((exam) => {
+      const { startTimeStamp, duration, endTimeStamp } = exam;
+      const startDate = new Date(startTimeStamp);
+      const endDate = endTimeStamp
+        ? new Date(endTimeStamp)
+        : new Date(startDate.getTime() + (duration || 60) * 60000);
+
+      if (now > endDate) {
+        expired.push({ ...exam, endDate });
+      } else {
+        active.push(exam);
+      }
+    });
+
+    return { activeExams: active, expiredExams: expired };
+  }, [scheduledExams]);
+
+  // Memoize scheduled exam list items (Active Only)
+  const examList = useMemo(() => {
+    return activeExams.map((exam) => {
+      const {
+        id,
+        title,
+        startTimeStamp,
+        duration,
+        totalQuestions,
+        totalMarks,
+        endTimeStamp,
+      } = exam;
+      const startDate = new Date(startTimeStamp);
+      const endDate = endTimeStamp
+        ? new Date(endTimeStamp)
+        : new Date(startDate.getTime() + (duration || 60) * 60000);
+
+      const dateStr = startDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+      const startTimeStr = startDate.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const endTimeStr = endDate.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const handleStart = () => {
+        router.push(`/exam/${id}`);
+      };
+      return {
+        key: id,
+        title,
+        dateStr,
+        startTimeStr,
+        endTimeStr,
+        duration: duration || 60,
+        totalQuestions: totalQuestions || 0,
+        totalMarks: totalMarks || 0,
+        actionButton: (
+          <Button
+            variant="contained"
+            endIcon={<East />}
+            sx={{
+              textTransform: "none",
+              fontFamily: "var(--font-geist-sans)",
+              backgroundColor: "var(--primary-color)",
+              borderRadius: "10px",
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
+              padding: "8px 20px",
+              fontSize: "14px",
+              fontWeight: 600,
+              "&:hover": {
+                backgroundColor: "var(--primary-color)",
+                boxShadow: "0 6px 16px rgba(37, 99, 235, 0.3)",
+              },
+            }}
+            onClick={handleStart}
+            disableElevation
+          >
+            Start Exam
+          </Button>
+        ),
+      };
+    });
+  }, [activeExams, router]);
+
+  // Memoize history cards (History + Expired)
   const historyList = useMemo(() => {
-    return Array.isArray(examHistory) && examHistory.length > 0
+    const attempts = Array.isArray(examHistory)
       ? examHistory.map((exam) => {
           const {
             id: attemptId,
@@ -91,7 +162,15 @@ export default function Exams({ scheduledExams, examID, batchID }) {
             totalQuestions,
             duration,
             status,
+            startTimeStamp,
           } = exam;
+
+          const date = new Date(startTimeStamp || Date.now());
+          const dateStr = date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+
           const handleClick = () => {
             if (status === "COMPLETED") {
               router.push(`/exam/${exID}/${attemptId}/result`);
@@ -99,101 +178,571 @@ export default function Exams({ scheduledExams, examID, batchID }) {
               router.push(`/exam/${exID}/${attemptId}`);
             }
           };
+
           return {
             key: attemptId,
             title,
-            icon: <Image src={banking} alt="" width={22} height={22} />,
-            subTitle: (
-              <Stack direction="row" gap="10px">
-                <Typography sx={{ fontFamily: "Lato", fontSize: "12px" }}>
-                  {obtainedMarks} / {totalMarks} Marks
-                </Typography>
-                <Typography sx={{ fontFamily: "Lato", fontSize: "12px" }}>
-                  {totalQuestions} Questions
-                </Typography>
-                <Typography sx={{ fontFamily: "Lato", fontSize: "12px" }}>
-                  {duration} minutes
-                </Typography>
+            dateStr,
+            duration,
+            totalQuestions,
+            totalMarks,
+            status,
+            leftBlock: (
+              <Stack
+                alignItems="center"
+                justifyContent="center"
+                sx={{
+                  backgroundColor:
+                    status === "COMPLETED"
+                      ? "rgba(16, 185, 129, 0.1)"
+                      : "var(--primary-color-acc-2)",
+                  borderRadius: "16px",
+                  padding: "12px",
+                  minWidth: "80px",
+                  height: "80px",
+                }}
+              >
+                {status === "COMPLETED" ? (
+                  <>
+                    <Typography
+                      sx={{
+                        fontFamily: "var(--font-geist-sans)",
+                        fontWeight: 800,
+                        fontSize: "20px",
+                        color: "var(--success-color)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {obtainedMarks}
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "1px",
+                        backgroundColor: "var(--success-color)",
+                        opacity: 0.3,
+                        my: 0.5,
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        fontFamily: "var(--font-geist-sans)",
+                        fontWeight: 600,
+                        fontSize: "12px",
+                        color: "var(--success-color)",
+                      }}
+                    >
+                      {totalMarks}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography
+                    sx={{
+                      fontFamily: "var(--font-geist-sans)",
+                      fontWeight: 700,
+                      fontSize: "14px",
+                      color: "var(--primary-color)",
+                      textAlign: "center",
+                    }}
+                  >
+                    In Progress
+                  </Typography>
+                )}
               </Stack>
             ),
             actionButton: (
               <Button
-                variant="text"
+                variant={status === "COMPLETED" ? "outlined" : "contained"}
                 onClick={handleClick}
                 sx={{
                   textTransform: "none",
-                  color:
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-geist-sans)",
+                  borderRadius: "8px",
+                  padding: "8px 20px",
+                  backgroundColor:
                     status === "COMPLETED"
-                      ? "var(--sec-color)"
+                      ? "transparent"
                       : "var(--primary-color)",
-                  fontSize: "12px",
-                  padding: { xs: "0px", md: "4px" },
+                  color:
+                    status === "COMPLETED" ? "var(--primary-color)" : "white",
+                  borderColor: "var(--primary-color)",
+                  boxShadow:
+                    status === "COMPLETED"
+                      ? "none"
+                      : "0 4px 12px rgba(37, 99, 235, 0.2)",
+                  "&:hover": {
+                    backgroundColor:
+                      status === "COMPLETED"
+                        ? "var(--primary-color-acc-2)"
+                        : "var(--primary-color)",
+                    borderColor: "var(--primary-color)",
+                  },
                 }}
+                disableElevation
               >
-                {status === "COMPLETED" ? "View Result" : "Continue Test"}
+                {status === "COMPLETED" ? "View Result" : "Continue"}
               </Button>
             ),
           };
         })
       : [];
-  }, [examHistory, router]);
+
+    const missed = expiredExams.map((exam) => {
+      const { id, title, duration, totalQuestions, totalMarks, endTimeStamp } =
+        exam;
+      const date = endTimeStamp ? new Date(endTimeStamp) : new Date();
+      const dateStr = date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+
+      return {
+        key: `expired-${id}`,
+        title,
+        dateStr,
+        duration: duration || 60,
+        totalQuestions: totalQuestions || 0,
+        totalMarks: totalMarks || 0,
+        status: "EXPIRED",
+        leftBlock: (
+          <Stack
+            alignItems="center"
+            justifyContent="center"
+            sx={{
+              backgroundColor: "var(--bg-color)",
+              borderRadius: "16px",
+              padding: "12px",
+              minWidth: "80px",
+              height: "80px",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: "var(--font-geist-sans)",
+                fontWeight: 700,
+                fontSize: "12px",
+                color: "var(--text3)",
+                textTransform: "uppercase",
+              }}
+            >
+              Expired
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: "var(--font-geist-sans)",
+                fontWeight: 700,
+                fontSize: "16px",
+                color: "var(--text2)",
+                marginTop: "4px",
+              }}
+            >
+              {dateStr}
+            </Typography>
+          </Stack>
+        ),
+        actionButton: (
+          <Button
+            variant="outlined"
+            disabled
+            startIcon={<Close />}
+            sx={{
+              textTransform: "none",
+              fontSize: "13px",
+              fontWeight: 600,
+              fontFamily: "var(--font-geist-sans)",
+              borderRadius: "8px",
+              padding: "8px 20px",
+              borderColor: "var(--border-color)",
+              color: "var(--text3)",
+              "&.Mui-disabled": {
+                borderColor: "var(--border-color)",
+                color: "var(--text3)",
+              },
+            }}
+            disableElevation
+          >
+            Expired
+          </Button>
+        ),
+      };
+    });
+
+    return [...attempts, ...missed];
+  }, [examHistory, expiredExams, router]);
 
   return (
-    <Stack gap="20px">
-      {/* Scheduled Exams */}
-      <Stack gap="15px" sx={{ overflowY: "auto" }}>
-        <Typography
-          sx={{ fontFamily: "Lato", fontSize: "20px", fontWeight: 700 }}
+    <Stack gap={3}>
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          sx={{
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontFamily: "var(--font-geist-sans)",
+              fontSize: "16px",
+              fontWeight: 600,
+              color: "var(--text2)",
+              minHeight: "48px",
+            },
+            "& .Mui-selected": {
+              color: "var(--primary-color) !important",
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "var(--primary-color)",
+              height: "3px",
+              borderRadius: "3px 3px 0 0",
+            },
+          }}
         >
-          Exams
-        </Typography>
-        <Stack gap="10px" direction="row" flexWrap="wrap">
-          {!isLoading ? (
-            examList.length > 0 ? (
-              examList.map((item) => (
-                <PrimaryCard
-                  key={item.key}
-                  title={item.title}
-                  icon={item.icon}
-                  subtitle={item.subtitle}
-                  actionButton={item.actionButton}
-                />
-              ))
-            ) : (
-              <NoDataFound info="No scheduled exams available" />
-            )
-          ) : (
-            <PrimaryCardSkeleton />
-          )}
-        </Stack>
-      </Stack>
+          <Tab label={`Upcoming Exams (${activeExams.length})`} />
+          <Tab label={`History (${historyList.length})`} />
+        </Tabs>
+      </Box>
 
-      {/* Attempted Exams */}
-      <Typography
-        sx={{ fontFamily: "Lato", fontSize: "20px", fontWeight: 700 }}
-      >
-        Attempted
-      </Typography>
-      <Stack gap="10px" direction="row" flexWrap="wrap">
-        {!isLoading ? (
-          historyList.length > 0 ? (
-            historyList.map((item) => (
-              <SecondaryCard
-                key={item.key}
-                title={item.title}
-                icon={item.icon}
-                subTitle={item.subTitle}
-                button={item.actionButton}
-                cardWidth="500px"
-              />
-            ))
-          ) : (
-            <NoDataFound info="No exams attempted" />
-          )
-        ) : (
-          <SecondaryCardSkeleton />
+      {/* Upcoming Exams Tab */}
+      <div role="tabpanel" hidden={tabValue !== 0}>
+        {tabValue === 0 && (
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(auto-fill, minmax(400px, 1fr))",
+              },
+              gap: 3,
+            }}
+          >
+            {!isLoading ? (
+              examList.length > 0 ? (
+                examList.map((item) => (
+                  <Stack
+                    key={item.key}
+                    direction={{ xs: "column", sm: "row" }}
+                    alignItems={{ xs: "flex-start", sm: "center" }}
+                    justifyContent="space-between"
+                    gap={3}
+                    sx={{
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "20px",
+                      padding: "24px",
+                      backgroundColor: "var(--white)",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: "0 12px 24px rgba(0,0,0,0.05)",
+                        borderColor: "var(--primary-color)",
+                      },
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      gap={3}
+                      alignItems="center"
+                      width="100%"
+                    >
+                      {/* Date Block */}
+                      <Stack
+                        alignItems="center"
+                        justifyContent="center"
+                        sx={{
+                          backgroundColor: "var(--sec-color-acc-2)",
+                          borderRadius: "16px",
+                          padding: "12px",
+                          minWidth: "70px",
+                          height: "70px",
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontFamily: "var(--font-geist-sans)",
+                            fontWeight: 700,
+                            fontSize: "14px",
+                            color: "var(--primary-color)",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {item.dateStr.split(" ")[0]}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontFamily: "var(--font-geist-sans)",
+                            fontWeight: 800,
+                            fontSize: "24px",
+                            color: "var(--text1)",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {item.dateStr.split(" ")[1]}
+                        </Typography>
+                      </Stack>
+
+                      {/* Info Block */}
+                      <Stack gap={1} flex={1}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontFamily: "var(--font-geist-sans)",
+                            fontWeight: 700,
+                            fontSize: "18px",
+                            color: "var(--text1)",
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {item.title}
+                        </Typography>
+
+                        <Stack
+                          direction="row"
+                          flexWrap="wrap"
+                          gap={2}
+                          alignItems="center"
+                        >
+                          <Chip
+                            label={`${item.startTimeStr} - ${item.endTimeStr}`}
+                            size="small"
+                            icon={
+                              <AccessTime
+                                sx={{ fontSize: "14px !important" }}
+                              />
+                            }
+                            sx={{
+                              fontFamily: "var(--font-geist-sans)",
+                              backgroundColor: "var(--bg-color)",
+                              fontWeight: 600,
+                              color: "var(--text2)",
+                              borderRadius: "8px",
+                            }}
+                          />
+                          <Stack
+                            direction="row"
+                            gap={2}
+                            sx={{ display: { xs: "none", md: "flex" } }}
+                          >
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              gap={0.5}
+                            >
+                              <AccessTime
+                                sx={{ fontSize: 16, color: "var(--text2)" }}
+                              />
+                              <Typography
+                                sx={{
+                                  fontFamily: "var(--font-geist-sans)",
+                                  fontSize: "13px",
+                                  color: "var(--text2)",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {item.duration} mins
+                              </Typography>
+                            </Stack>
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              gap={0.5}
+                            >
+                              <Assignment
+                                sx={{ fontSize: 16, color: "var(--text2)" }}
+                              />
+                              <Typography
+                                sx={{
+                                  fontFamily: "var(--font-geist-sans)",
+                                  fontSize: "13px",
+                                  color: "var(--text2)",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {item.totalQuestions} Qs
+                              </Typography>
+                            </Stack>
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              gap={0.5}
+                            >
+                              <EmojiEvents
+                                sx={{ fontSize: 16, color: "var(--text2)" }}
+                              />
+                              <Typography
+                                sx={{
+                                  fontFamily: "var(--font-geist-sans)",
+                                  fontSize: "13px",
+                                  color: "var(--text2)",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {item.totalMarks} Marks
+                              </Typography>
+                            </Stack>
+                          </Stack>
+                        </Stack>
+                      </Stack>
+                    </Stack>
+
+                    {/* Action Button */}
+                    <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+                      {item.actionButton}
+                    </Box>
+                  </Stack>
+                ))
+              ) : (
+                <Stack
+                  gridColumn="1 / -1"
+                  alignItems="center"
+                  justifyContent="center"
+                  minHeight="300px"
+                >
+                  <NoDataFound info="No upcoming exams scheduled." />
+                </Stack>
+              )
+            ) : (
+              <PrimaryCardSkeleton />
+            )}
+          </Box>
         )}
-      </Stack>
+      </div>
+
+      {/* History Tab */}
+      <div role="tabpanel" hidden={tabValue !== 1}>
+        {tabValue === 1 && (
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(auto-fill, minmax(400px, 1fr))",
+              },
+              gap: 3,
+            }}
+          >
+            {!isLoading ? (
+              historyList.length > 0 ? (
+                historyList.map((item) => (
+                  <Stack
+                    key={item.key}
+                    direction={{ xs: "column", sm: "row" }}
+                    alignItems={{ xs: "flex-start", sm: "center" }}
+                    justifyContent="space-between"
+                    gap={3}
+                    sx={{
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "20px",
+                      padding: "24px",
+                      backgroundColor: "var(--white)",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: "0 12px 24px rgba(0,0,0,0.05)",
+                        borderColor: "var(--primary-color)",
+                      },
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      gap={3}
+                      alignItems="center"
+                      width="100%"
+                    >
+                      {/* Left Block (Score/Expired) */}
+                      {item.leftBlock}
+
+                      {/* Info Block */}
+                      <Stack gap={1} flex={1}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontFamily: "var(--font-geist-sans)",
+                            fontWeight: 700,
+                            fontSize: "18px",
+                            color: "var(--text1)",
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {item.title}
+                        </Typography>
+
+                        <Stack
+                          direction="row"
+                          flexWrap="wrap"
+                          gap={2}
+                          alignItems="center"
+                        >
+                          <Stack direction="row" alignItems="center" gap={0.5}>
+                            <AccessTime
+                              sx={{ fontSize: 16, color: "var(--text2)" }}
+                            />
+                            <Typography
+                              sx={{
+                                fontFamily: "var(--font-geist-sans)",
+                                fontSize: "13px",
+                                color: "var(--text2)",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {item.duration} mins
+                            </Typography>
+                          </Stack>
+                          <Stack direction="row" alignItems="center" gap={0.5}>
+                            <Assignment
+                              sx={{ fontSize: 16, color: "var(--text2)" }}
+                            />
+                            <Typography
+                              sx={{
+                                fontFamily: "var(--font-geist-sans)",
+                                fontSize: "13px",
+                                color: "var(--text2)",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {item.totalQuestions} Qs
+                            </Typography>
+                          </Stack>
+                          <Stack direction="row" alignItems="center" gap={0.5}>
+                            <EmojiEvents
+                              sx={{ fontSize: 16, color: "var(--text2)" }}
+                            />
+                            <Typography
+                              sx={{
+                                fontFamily: "var(--font-geist-sans)",
+                                fontSize: "13px",
+                                color: "var(--text2)",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {item.totalMarks} Marks
+                            </Typography>
+                          </Stack>
+                        </Stack>
+                      </Stack>
+                    </Stack>
+
+                    {/* Action Button */}
+                    <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+                      {item.actionButton}
+                    </Box>
+                  </Stack>
+                ))
+              ) : (
+                <Stack
+                  gridColumn="1 / -1"
+                  alignItems="center"
+                  justifyContent="center"
+                  minHeight="300px"
+                >
+                  <NoDataFound info="No exam history available." />
+                </Stack>
+              )
+            ) : (
+              <SecondaryCardSkeleton />
+            )}
+          </Box>
+        )}
+      </div>
     </Stack>
   );
 }

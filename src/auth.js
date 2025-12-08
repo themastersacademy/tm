@@ -31,9 +31,11 @@ export const authOptions = {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email and password required");
         }
+        const genericError = "Invalid email or password";
+
         const user = await getUserByEmail(credentials.email);
         if (!user) {
-          throw new Error("No user found with the given email");
+          throw new Error(genericError);
         }
         if (!user?.emailVerified) {
           throw new Error("Email not verified");
@@ -44,7 +46,7 @@ export const authOptions = {
             user.password
           );
           if (!isValid) {
-            throw new Error("Invalid password");
+            throw new Error(genericError);
           }
           return {
             id: user.pKey.split("#")[1],

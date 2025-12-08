@@ -7,7 +7,6 @@ export async function POST(req) {
     return session.unauthorized("Please log in to continue");
   }
   const { name, phoneNumber, gender } = await req.json();
-  console.log("session", session);
   try {
     const result = await userProfileSetup({
       userID: session.id,

@@ -67,27 +67,19 @@ export default function PracticeTest() {
   return (
     <Box
       sx={{
-        overflowX: { xs: "auto", md: "" },
-        whiteSpace: "nowrap",
-        scrollbarWidth: "none",
-        "&::-webkit-scrollbar": { display: "none" },
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "1fr",
+          sm: "repeat(auto-fill, minmax(280px, 1fr))",
+          md: "repeat(auto-fill, minmax(300px, 1fr))",
+        },
+        gap: "20px",
         width: "100%",
       }}
     >
-      <Stack
-        flexDirection="row"
-        flexWrap={{ xs: "wrap" }}
-        gap="10px"
-        sx={{
-          minWidth: { xs: "max-content", md: "100%" },
-        }}
-      >
-        {practiceTest.map((item, index) => (
-          <Box key={index} sx={{ flex: "0 0 auto", width: "150px" }}>
-            <PrimaryCard {...item} />
-          </Box>
-        ))}
-      </Stack>
+      {practiceTest.map((item, index) => (
+        <PrimaryCard key={index} {...item} />
+      ))}
     </Box>
   );
 }

@@ -9,7 +9,7 @@ const MASTER_TABLE = `${process.env.AWS_DB_NAME}master`;
 const MASTER_INDEX_TABLE = "masterTableIndex";
 const USER_TABLE = `${process.env.AWS_DB_NAME}users`;
 
-export async function enrollStudent(userID, batchCode) {
+export async function enrollStudent(userID, batchCode, rollNo) {
   const now = Date.now();
 
   // 1) Look up the batch by code via your GSI
@@ -72,6 +72,7 @@ export async function enrollStudent(userID, batchCode) {
             instituteID: batch.instituteID,
             instituteMeta: batch.instituteMeta,
           },
+          rollNo: rollNo || null,
           joinedAt: now,
         },
         ConditionExpression: "attribute_not_exists(pKey)",

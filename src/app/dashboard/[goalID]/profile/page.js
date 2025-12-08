@@ -1,31 +1,30 @@
 "use client";
 import MobileHeader from "@/src/Components/MobileHeader/MobileHeader";
-import { Edit, Logout } from "@mui/icons-material";
-import {
-  Button,
-  Stack,
-  Typography,
-  IconButton,
-  CircularProgress,
-} from "@mui/material";
+import { Logout } from "@mui/icons-material";
+import { Button, Stack, Typography, CircularProgress } from "@mui/material";
 import incrix_logo from "@/public/images/incrix-logo.svg";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
-import CloseIcon from "@mui/icons-material/Close";
 import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
-import VerticalTabs from "@/src/Components/VerticalTabs/VerticalTabs";
+import CustomTabs from "@/src/Components/CustomTabs/CustomTabs";
 import BasicInfo from "./Components/BasicInfo";
 import UserTransaction from "./Components/userTransaction";
+import ProfileHeader from "./Components/ProfileHeader";
+import QuickActions from "./Components/QuickActions";
+import Preferences from "./Components/Preferences";
+import AccountSecurity from "./Components/AccountSecurity";
 
-export default function Profile() {
+export default function Profile({ params }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [userProfileData, setUserProfileData] = useState(null);
+  const [activeTab, setActiveTab] = useState(0);
 
   const handlePlansDialogOpen = () => {
     setPlansDialogOpen(true);
@@ -36,12 +35,27 @@ export default function Profile() {
   };
 
   useEffect(() => {
-    console.log("Profile.js - Session Status:", status, "Session:", session);
     if (status === "unauthenticated") {
-      console.log("Profile.js - Redirecting to /signIn");
       router.push("/signIn");
     }
   }, [status, router]);
+
+  useEffect(() => {
+    const fetchUserProfileData = async () => {
+      try {
+        const response = await fetch("/api/user/profile-data");
+        const data = await response.json();
+        if (data.success) {
+          setUserProfileData(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+    if (status === "authenticated") {
+      fetchUserProfileData();
+    }
+  }, [status]);
 
   const handleLogout = async () => {
     try {
@@ -49,31 +63,42 @@ export default function Profile() {
       enqueueSnackbar("Successfully logged out", {
         variant: "success",
         autoHideDuration: 3000,
-        action: (key) => (
-          <IconButton
-            size="small"
-            onClick={() => closeSnackbar(key)}
-            sx={{ color: "white" }}
-          >
-            <CloseIcon />
-          </IconButton>
-        ),
       });
     } catch (error) {
-      console.error("Profile.js - Logout error:", error);
+      console.error("Logout error:", error);
       enqueueSnackbar("Failed to log out. Please try again.", {
         variant: "error",
         autoHideDuration: 3000,
-        action: (key) => (
-          <IconButton
-            size="small"
-            onClick={() => closeSnackbar(key)}
-            sx={{ color: "white" }}
-          >
-            <CloseIcon />
-          </IconButton>
-        ),
       });
+    }
+  };
+
+  const handleQuickAction = (actionId) => {
+    switch (actionId) {
+      case "certificates":
+        enqueueSnackbar("Certificates feature coming soon!", {
+          variant: "info",
+        });
+        break;
+      case "invoices":
+        setActiveTab(2); // Switch to Transactions tab (now index 2)
+        // Scroll to tabs section smoothly
+        const tabsElement = document.getElementById("profile-tabs");
+        if (tabsElement) {
+          tabsElement.scrollIntoView({ behavior: "smooth" });
+        }
+        break;
+      case "support":
+        window.location.href = "mailto:support@incrix.com";
+        break;
+      case "refer":
+        navigator.clipboard.writeText("https://incrix.com/join");
+        enqueueSnackbar("Referral link copied to clipboard", {
+          variant: "success",
+        });
+        break;
+      default:
+        break;
     }
   };
 
@@ -81,26 +106,36 @@ export default function Profile() {
     return (
       <Stack alignItems="center" justifyContent="center" minHeight="100vh">
         <CircularProgress />
-        <Typography sx={{ mt: 2, fontFamily: "Lato" }}>Loading...</Typography>
+        <Typography sx={{ mt: 2 }}>Loading...</Typography>
       </Stack>
     );
   }
 
   const tabsData = [
     {
-      label: "Basic Info",
+      label: "Personal Info",
       content: (
         <BasicInfo
           session={session}
           handleLogout={handleLogout}
           isEditMode={isEditMode}
           setIsEditMode={setIsEditMode}
+          userProfileData={userProfileData}
+          setUserProfileData={setUserProfileData}
         />
       ),
     },
     {
-      label: "Payment",
+      label: "Security",
+      content: <AccountSecurity />,
+    },
+    {
+      label: "Transactions",
       content: <UserTransaction userID={session?.user?.id} />,
+    },
+    {
+      label: "Preferences",
+      content: <Preferences />,
     },
   ];
 
@@ -109,94 +144,59 @@ export default function Profile() {
       <MobileHeader />
       <Stack
         padding={{ xs: "10px", md: "20px" }}
-        gap="20px"
-        sx={{ minHeight: "100vh", overflowY: "visible" }}
+        gap="24px"
+        sx={{
+          minHeight: "100vh",
+          backgroundColor: "var(--bg1)",
+        }}
         width="100%"
         alignItems="center"
-        justifyContent="center"
       >
-        <Stack width="100%" gap="20px" maxWidth="1200px" minHeight="100vh">
+        <Stack width="100%" gap="24px" maxWidth="1200px">
+          {/* Profile Header */}
+          <ProfileHeader session={session} userProfileData={userProfileData} />
+
+          {/* Quick Actions */}
+          <QuickActions onAction={handleQuickAction} />
+
+          {/* Main Content Area with Tabs */}
           <Stack
+            id="profile-tabs"
             sx={{
-              display: { xs: "none", md: "block" },
+              backgroundColor: "white",
+              borderRadius: "16px",
               border: "1px solid var(--border-color)",
-              backgroundColor: "var(--white)",
-              borderRadius: "10px",
-              padding: "15px 20px",
-              height: "60px",
-              width: "100%",
+              padding: { xs: "16px", md: "24px" },
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
             }}
           >
-            <Typography
-              sx={{ fontFamily: "Lato", fontSize: "20px", fontWeight: "700" }}
-            >
-              Profile
-            </Typography>
+            <CustomTabs
+              tabs={tabsData}
+              activeIndex={activeTab}
+              onTabChange={setActiveTab}
+            />
           </Stack>
+
+          {/* Mobile Actions */}
           <Stack
-            alignItems="center"
-            flexDirection="row"
+            direction="row"
+            gap="12px"
             justifyContent="space-between"
             sx={{ display: { xs: "flex", md: "none" } }}
           >
-            <Typography
-              sx={{
-                fontFamily: "Lato",
-                fontSize: "20px",
-                fontWeight: "700",
-              }}
-            >
-              Profile
-            </Typography>
-            <Button
-              variant="text"
-              endIcon={<Edit />}
-              sx={{
-                textTransform: "none",
-                fontFamily: "Lato",
-                fontSize: "16px",
-                color: "var(--primary-color)",
-                padding: "2px",
-                display: { xs: "flex", md: "none" },
-              }}
-            >
-              Edit
-            </Button>
-          </Stack>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            gap="20px"
-            width="100%"
-            justifyContent="space-between"
-          >
-            <Stack
-              sx={{
-                border: "1px solid var(--border-color)",
-                borderRadius: "10px",
-                width: "100%",
-                minHeight: "600px",
-                backgroundColor: "var(--white)",
-                padding: "20px",
-                gap: "15px",
-                maxWidth: "1200px",
-              }}
-            >
-              <VerticalTabs tabs={tabsData} />
-            </Stack>
-          </Stack>
-          <Stack direction="row" gap="8px" justifyContent="space-between">
             <Button
               variant="contained"
               startIcon={<Logout />}
               onClick={handleLogout}
               sx={{
                 textTransform: "none",
-                fontFamily: "Lato",
-                fontSize: "16px",
+                fontSize: "14px",
                 backgroundColor: "var(--delete-color)",
-                borderRadius: "6px",
-                width: "160px",
-                display: { xs: "flex", md: "none" },
+                borderRadius: "10px",
+                flex: 1,
+                "&:hover": {
+                  backgroundColor: "#D32F2F",
+                },
               }}
             >
               Logout
@@ -207,11 +207,13 @@ export default function Profile() {
                 onClick={handlePlansDialogOpen}
                 sx={{
                   textTransform: "none",
-                  fontFamily: "Lato",
                   fontSize: "14px",
                   backgroundColor: "var(--primary-color)",
-                  width: "150px",
-                  display: { xs: "flex", md: "none" },
+                  borderRadius: "10px",
+                  flex: 1,
+                  "&:hover": {
+                    backgroundColor: "var(--primary-color-dark)",
+                  },
                 }}
               >
                 Upgrade To Pro
@@ -219,28 +221,28 @@ export default function Profile() {
             )}
           </Stack>
 
+          {/* Footer */}
           <Stack
             sx={{
               marginTop: "auto",
-              gap: "5px",
-              paddingBottom: { xs: "80px", md: "0px" },
+              gap: "8px",
+              paddingBottom: { xs: "80px", md: "20px" },
+              alignItems: "center",
             }}
           >
-            <Image src={incrix_logo} alt="logo" style={{ color: "red" }} />
+            <Image src={incrix_logo} alt="logo" />
             <Typography
               sx={{
-                fontFamily: "Lato",
                 fontSize: "14px",
                 fontWeight: "700",
                 color: "var(--text3)",
+                textAlign: "center",
               }}
             >
               Crafted by Incrix Techlutions LLP, Tamil Nadu, India
             </Typography>
             <Typography
-              variant="body2"
               sx={{
-                fontFamily: "Lato",
                 fontSize: "12px",
                 color: "var(--text3)",
               }}

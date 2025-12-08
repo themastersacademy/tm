@@ -4,12 +4,25 @@ import {
   InputAdornment,
   Button,
   Typography,
-  FormControlLabel,
-  Checkbox,
+  Grid,
+  Box,
+  Divider,
+  Collapse,
 } from "@mui/material";
 import StyledTextField from "@/src/Components/StyledTextField/StyledTextField";
-import PaymentBadge from "@/public/images/paymentbadge.svg";
-import { Add, Update } from "@mui/icons-material";
+import {
+  Add,
+  Update,
+  Person,
+  Email,
+  Phone,
+  Home,
+  LocationCity,
+  PinDrop,
+  Public,
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+} from "@mui/icons-material";
 
 export default function BillingInformation({
   billingInfo,
@@ -54,140 +67,149 @@ export default function BillingInformation({
       ) && isPinValid
     );
   };
+
   return (
-    <Stack>
-      <Stack
+    <Stack gap={3}>
+      <Box
         sx={{
-          backgroundColor: "var(--white)",
-          padding: "20px",
-          borderRadius: "8px",
+          bgcolor: "var(--white)",
+          borderRadius: "16px",
+          border: "1px solid var(--border-color)",
+          overflow: "hidden",
         }}
       >
-        <Stack>
-          <Stack
-            flexDirection="row"
-            alignItems="center"
-            justifyContent="space-between"
-            backgroundColor="var(--white)"
-            padding="10px"
-            borderRadius="8px"
-          >
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={showBillingForm}
-                  onChange={(e) => setShowBillingForm(e.target.checked)}
-                  sx={{
-                    color: "var(--sec-color)",
-                    "&.Mui-checked": {
-                      color: "var(--sec-color)",
-                    },
-                  }}
-                />
-              }
-              label={
-                <Typography
-                  sx={{ fontSize: { xs: "10px", sm: "14px", md: "16px" } }}
-                >
-                  {editIndex !== null
-                    ? "Edit Billing Address"
-                    : "Add Billing Address"}
-                </Typography>
-              }
-            />
-
-            {showBillingForm && (
-              <Button
-                variant="contained"
-                startIcon={editIndex !== null ? <Update /> : <Add />}
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{
+            p: 3,
+            cursor: "pointer",
+            userSelect: "none",
+            bgcolor: showBillingForm ? "var(--library-expand)" : "var(--white)",
+            transition: "all 0.2s",
+            "&:hover": {
+              bgcolor: "var(--library-expand)",
+            },
+          }}
+          onClick={() => setShowBillingForm(!showBillingForm)}
+        >
+          <Stack direction="row" alignItems="center" gap={2}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                bgcolor: "var(--primary-color-acc-2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--primary-color)",
+              }}
+            >
+              {showBillingForm ? <KeyboardArrowUp /> : <Add />}
+            </Box>
+            <Stack>
+              <Typography
                 sx={{
-                  display: { xs: "none", md: "flex" },
-                  width: "fit-content",
-                  backgroundColor: "var(--sec-color)",
-                  textTransform: "none",
-                  borderRadius: "8px",
-                  height: "40px",
-                  opacity: isFormFilled() ? 1 : 0.6,
-                  fontSize: { xs: "10px", sm: "14px", md: "16px" },
+                  fontSize: "16px",
+                  fontWeight: 700,
+                  color: "var(--text1)",
                 }}
-                onClick={
-                  editIndex !== null
-                    ? handleUpdateBillingInfo
-                    : handleAddBillingInfo
-                }
-                disabled={!isFormFilled()}
               >
-                {editIndex !== null ? "Update" : "Save"}
-              </Button>
-            )}
+                {editIndex !== null
+                  ? "Edit Billing Address"
+                  : "Add New Billing Address"}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "13px",
+                  color: "var(--text3)",
+                }}
+              >
+                {showBillingForm
+                  ? "Fill in the details below"
+                  : "Click to add a new billing address"}
+              </Typography>
+            </Stack>
           </Stack>
         </Stack>
 
-        {showBillingForm && (
-          <>
-            <Stack
-              flexDirection={{ md: "column", lg: "row" }}
-              gap="30px"
-              width="100%"
-              marginTop="25px"
-            >
-              <Stack width="100%">
-                <label style={{ color: "var(--text3)" }}>First Name</label>
+        <Collapse in={showBillingForm}>
+          <Box p={3} pt={0}>
+            <Divider sx={{ mb: 3 }} />
+            <Grid container spacing={3}>
+              {/* Contact Details Section */}
+              <Grid item xs={12}>
+                <Typography
+                  sx={{
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: "var(--primary-color)",
+                    mb: 2,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  Contact Details
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
                 <StyledTextField
                   name="firstName"
                   value={billingInfo.firstName || ""}
                   onChange={handleInputChange}
-                  placeholder="eg. John"
-                  sx={{
-                    width: "100%",
-                    marginTop: "10px",
-                    backgroundColor: "var(--white)",
-                    "& .MuiInputBase-input::placeholder": {
-                      color: "var(--text4)",
-                      opacity: 1,
-                    },
+                  placeholder="First Name"
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Person sx={{ color: "var(--text4)" }} />
+                      </InputAdornment>
+                    ),
                   }}
+                  sx={{ bgcolor: "var(--white)" }}
                 />
-              </Stack>
-              <Stack width="100%">
-                <label style={{ color: "var(--text3)" }}>Last Name</label>
+              </Grid>
+              <Grid item xs={12} md={6}>
                 <StyledTextField
+                  name="lastName"
                   value={billingInfo.lastName || ""}
                   onChange={handleInputChange}
-                  name="lastName"
-                  placeholder="eg. Doe"
-                  sx={{
-                    width: "100%",
-                    marginTop: "10px",
-                    backgroundColor: "var(--white)",
+                  placeholder="Last Name"
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Person sx={{ color: "var(--text4)" }} />
+                      </InputAdornment>
+                    ),
                   }}
+                  sx={{ bgcolor: "var(--white)" }}
                 />
-              </Stack>
-            </Stack>
+              </Grid>
 
-            <Stack
-              flexDirection={{ md: "column", lg: "row" }}
-              gap="30px"
-              marginTop="25px"
-              width="100%"
-            >
-              <Stack width="100%">
-                <label style={{ color: "var(--text3)" }}>Email Address</label>
+              <Grid item xs={12} md={6}>
                 <StyledTextField
+                  name="email"
                   value={billingInfo.email || ""}
                   onChange={handleInputChange}
-                  name="email"
-                  placeholder="youremail@example.com"
-                  sx={{
-                    width: "100%",
-                    marginTop: "10px",
-                    backgroundColor: "var(--white)",
+                  placeholder="Email Address"
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email sx={{ color: "var(--text4)" }} />
+                      </InputAdornment>
+                    ),
                   }}
+                  sx={{ bgcolor: "var(--white)" }}
                 />
-              </Stack>
-              <Stack width="100%">
-                <label style={{ color: "var(--text3)" }}>Phone Number</label>
+              </Grid>
+              <Grid item xs={12} md={6}>
                 <StyledTextField
+                  name="phone"
                   value={billingInfo.phone || ""}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -195,112 +217,145 @@ export default function BillingInformation({
                       handleInputChange(e);
                     }
                   }}
-                  name="phone"
-                  placeholder="eg. 9999988888"
-                  inputProps={{ maxLength: 10 }}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">+91</InputAdornment>
-                      ),
-                    },
+                  placeholder="Phone Number"
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Stack direction="row" alignItems="center" gap={1}>
+                          <Phone sx={{ color: "var(--text4)" }} />
+                          <Typography
+                            sx={{
+                              color: "var(--text3)",
+                              fontWeight: 600,
+                              fontSize: "14px",
+                            }}
+                          >
+                            +91
+                          </Typography>
+                        </Stack>
+                      </InputAdornment>
+                    ),
                   }}
-                  sx={{
-                    width: "100%",
-                    marginTop: "10px",
-                    backgroundColor: "var(--white)",
-                  }}
+                  sx={{ bgcolor: "var(--white)" }}
                 />
-              </Stack>
-            </Stack>
+              </Grid>
 
-            <Stack marginTop="25px" width="100%">
-              <label style={{ color: "var(--text3)" }}>Address</label>
-              <StyledTextField
-                value={billingInfo.address || ""}
-                onChange={handleInputChange}
-                name="address"
-                placeholder="eg. 123 Main St, Kovilpatti, Tamil Nadu"
-                sx={{
-                  width: "100%",
-                  marginTop: "10px",
-                  backgroundColor: "var(--white)",
-                }}
-              />
-            </Stack>
+              {/* Address Details Section */}
+              <Grid item xs={12}>
+                <Typography
+                  sx={{
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: "var(--primary-color)",
+                    mb: 2,
+                    mt: 1,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  Address Details
+                </Typography>
+              </Grid>
 
-            <Stack marginTop="25px" width="100%">
-              <label style={{ color: "var(--text3)" }}>PIN Code</label>
-              <StyledTextField
-                name="pin"
-                value={billingInfo.pin || ""}
-                onChange={handlePinChange}
-                placeholder="eg. 628501"
-                inputProps={{ maxLength: 6, pattern: "[0-9]*" }}
-                sx={{
-                  width: "100%",
-                  marginTop: "10px",
-                  backgroundColor: "var(--white)",
-                }}
-              />
-            </Stack>
+              <Grid item xs={12}>
+                <StyledTextField
+                  name="address"
+                  value={billingInfo.address || ""}
+                  onChange={handleInputChange}
+                  placeholder="Street Address, Apartment, Suite, etc."
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Home sx={{ color: "var(--text4)" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ bgcolor: "var(--white)" }}
+                />
+              </Grid>
 
-            <Stack
-              flexDirection={{ md: "column", lg: "row" }}
-              gap="30px"
-              width="100%"
-              marginTop="25px"
-            >
-              <Stack width="100%">
-                <label style={{ color: "var(--text3)" }}>City</label>
+              <Grid item xs={12} md={4}>
+                <StyledTextField
+                  name="pin"
+                  value={billingInfo.pin || ""}
+                  onChange={handlePinChange}
+                  placeholder="PIN Code"
+                  fullWidth
+                  inputProps={{ maxLength: 6, pattern: "[0-9]*" }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PinDrop sx={{ color: "var(--text4)" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ bgcolor: "var(--white)" }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
                 <StyledTextField
                   name="city"
                   value={billingInfo.city || ""}
                   onChange={handleInputChange}
-                  placeholder="eg. Kovilpatti"
+                  placeholder="City"
+                  fullWidth
                   disabled
-                  sx={{
-                    width: "100%",
-                    marginTop: "10px",
-                    backgroundColor: "var(--white)",
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationCity sx={{ color: "var(--text4)" }} />
+                      </InputAdornment>
+                    ),
                   }}
+                  sx={{ bgcolor: "var(--library-expand)" }}
                 />
-              </Stack>
-              <Stack width="100%">
-                <label style={{ color: "var(--text3)" }}>State</label>
+              </Grid>
+              <Grid item xs={12} md={4}>
                 <StyledTextField
                   name="state"
                   value={billingInfo.state || ""}
                   onChange={handleInputChange}
-                  placeholder="eg. Tamil Nadu"
+                  placeholder="State"
+                  fullWidth
                   disabled
-                  sx={{
-                    width: "100%",
-                    marginTop: "10px",
-                    backgroundColor: "var(--white)",
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Public sx={{ color: "var(--text4)" }} />
+                      </InputAdornment>
+                    ),
                   }}
+                  sx={{ bgcolor: "var(--library-expand)" }}
                 />
-              </Stack>
-            </Stack>
+              </Grid>
+            </Grid>
 
-            {/* Mobile button below the form */}
-            <Stack
-              display={{ xs: "flex", md: "none" }}
-              marginTop="30px"
-              alignItems="left"
-            >
+            <Stack direction="row" justifyContent="flex-end" mt={4}>
               <Button
                 variant="contained"
                 startIcon={editIndex !== null ? <Update /> : <Add />}
                 sx={{
-                  width: "110px",
-                  maxWidth: "300px",
-                  backgroundColor: "var(--sec-color)",
+                  bgcolor: "var(--primary-color)",
                   textTransform: "none",
-                  borderRadius: "8px",
-                  height: "45px",
-                  opacity: isFormFilled() ? 1 : 0.6,
-                  fontSize: "14px",
+                  borderRadius: "100px",
+                  px: 4,
+                  py: 1.5,
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  boxShadow: "0px 4px 15px rgba(0,0,0,0.1)",
+                  "&:hover": {
+                    bgcolor: "var(--primary-color-dark)",
+                    transform: "translateY(-1px)",
+                    boxShadow: "0px 6px 20px rgba(0,0,0,0.15)",
+                  },
+                  "&.Mui-disabled": {
+                    bgcolor: "var(--border-color)",
+                    color: "var(--text4)",
+                  },
+                  transition: "all 0.2s ease",
+                  width: { xs: "100%", sm: "auto" },
                 }}
                 onClick={
                   editIndex !== null
@@ -309,20 +364,12 @@ export default function BillingInformation({
                 }
                 disabled={!isFormFilled()}
               >
-                {editIndex !== null ? "Update" : "Save"}
+                {editIndex !== null ? "Update Address" : "Save Address"}
               </Button>
             </Stack>
-          </>
-        )}
-      </Stack>
-
-      {/* <Stack marginTop="15px">
-        <img
-          src={PaymentBadge.src}
-          alt="Payment Badge"
-          style={{ width: "150px", height: "80px" }}
-        />
-      </Stack> */}
+          </Box>
+        </Collapse>
+      </Box>
     </Stack>
   );
 }

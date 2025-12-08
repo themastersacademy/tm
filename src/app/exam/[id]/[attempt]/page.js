@@ -1,19 +1,32 @@
 "use client";
-import { Badge, Box, Button, Divider, Stack, Typography } from "@mui/material";
+import {
+  Badge,
+  Box,
+  Button,
+  Divider,
+  Stack,
+  Typography,
+  Backdrop,
+  CircularProgress,
+} from "@mui/material";
+import { useDebouncedCallback } from "use-debounce"; // Check if this exists, otherwise use custom
+import _ from "lodash";
 import ExamQuestionCard from "../../Components/ExamQuestionCard";
 import ExamHeader from "../../Components/ExamHeader";
 import MobileSectionDraw from "../../Components/MobileSectionDraw";
 import ExamSection from "../../Components/ExamSection";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { usePreventNavigation } from "../../Components/use-prevent-navigation";
 import NavigationGuard from "../../Components/NavigationGuard";
 import { Bookmark, Fullscreen } from "@mui/icons-material";
 import LoadingComp from "../../Components/LoadingComp";
 import { enqueueSnackbar } from "notistack";
 import { seededShuffle } from "@/src/utils/seededShuffle";
+import AntiCheatToast from "../../Components/AntiCheatToast";
+import ViolationDialog from "../../Components/ViolationDialog";
 
-export default function Exam() {
+function ExamContent() {
   const router = useRouter();
   const params = useParams();
   const examID = params.id;
@@ -31,6 +44,9 @@ export default function Exam() {
     sectionViseQuestionCount: [],
   });
   const [userAnswers, setUserAnswers] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [isTimeUp, setIsTimeUp] = useState(false);
 
   const { showDialog, confirmNavigation, cancelNavigation } =
     usePreventNavigation(true);
@@ -40,24 +56,18 @@ export default function Exam() {
     return serverTimestamp + elapsed;
   };
 
-  const handleEndTest = useCallback(
-    (endedBy = "USER") => {
-      enqueueSnackbar("Submitting exam", {
-        variant: "loading",
-      });
-      console.log(endedBy);
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${examID}/${attemptID}/submit-exam`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            endedBy,
-          }),
-        }
-      )
+  const submitExam = useCallback(
+    (endedBy) => {
+      setIsSubmitting(true);
+      fetch(`/api/exams/${examID}/${attemptID}/submit-exam`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          endedBy,
+        }),
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
@@ -66,18 +76,33 @@ export default function Exam() {
               toggleFullScreen();
             }
           } else {
-            console.log("Exam submission failed");
+            setIsSubmitting(false);
+            enqueueSnackbar("Exam submission failed", { variant: "error" });
           }
+        })
+        .catch(() => {
+          setIsSubmitting(false);
+          enqueueSnackbar("Something went wrong", { variant: "error" });
         });
     },
     [examID, attemptID, router]
   );
 
+  const handleEndTest = useCallback(
+    (endedBy = "USER") => {
+      if (endedBy === "USER") {
+        setShowSubmitDialog(true);
+      } else {
+        setIsTimeUp(true);
+        submitExam(endedBy);
+      }
+    },
+    [submitExam]
+  );
+
   const fetchQuestion = useCallback(async () => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${examID}/${attemptID}`
-      );
+      const res = await fetch(`/api/exams/${examID}/${attemptID}`);
       const data = await res.json();
 
       if (data.success) {
@@ -87,17 +112,6 @@ export default function Exam() {
           setUserAnswers(attemptInfo.userAnswers);
           setServerTimestamp(attemptInfo.serverTimestamp);
           setClientPerfAtFetch(performance.now());
-          // await fetch(`${attemptInfo.blobSignedUrl}`).then((res) =>
-          //   res
-          //     .json()
-          //     .then((data) => {
-          //       setLoading(false);
-          //       setQuestions(data);
-          //     })
-          //     .catch(() => {
-          //       handleEndTest("AUTO");
-          //     })
-          // );
           await fetch(`${attemptInfo.blobSignedUrl}`)
             .then((res) => res.json())
             .then((data) => {
@@ -127,6 +141,88 @@ export default function Exam() {
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
+  // Anti-Cheat Implementation
+  const [violationCount, setViolationCount] = useState(0);
+  const [showViolationDialog, setShowViolationDialog] = useState(false);
+
+  // Initialize violation count from server
+  useEffect(() => {
+    if (examData?.violationCount) {
+      setViolationCount(examData.violationCount);
+      // Immediately enforce termination if limit passed
+      if (examData.violationCount >= 3) {
+        // Show specific message or just auto submit
+        setIsSubmitting(true); // Block UI
+        submitExam("AUTO");
+      }
+    }
+  }, [examData, submitExam]);
+
+  const reportViolation = useCallback(
+    async (newCount) => {
+      try {
+        await fetch(`/api/exams/${examID}/${attemptID}/report-violation`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ count: newCount }),
+        });
+      } catch (error) {
+        console.error("Failed to report violation:", error);
+      }
+    },
+    [examID, attemptID]
+  );
+
+  useEffect(() => {
+    if (!questions?.settings?.isAntiCheat) return;
+
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      enqueueSnackbar("Right-click is disabled during the exam.", {
+        variant: "warning",
+      });
+    };
+
+    const handleCopyCutPaste = (e) => {
+      e.preventDefault();
+      enqueueSnackbar("Copy/Paste is disabled during the exam.", {
+        variant: "warning",
+      });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setViolationCount((prev) => {
+          const newCount = prev + 1;
+          reportViolation(newCount);
+          return newCount;
+        });
+        setShowViolationDialog(true);
+      }
+    };
+
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("copy", handleCopyCutPaste);
+    document.addEventListener("cut", handleCopyCutPaste);
+    document.addEventListener("paste", handleCopyCutPaste);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("copy", handleCopyCutPaste);
+      document.removeEventListener("cut", handleCopyCutPaste);
+      document.removeEventListener("paste", handleCopyCutPaste);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [questions?.settings?.isAntiCheat, reportViolation]);
+
+  const handleViolationDialogClose = () => {
+    if (violationCount >= 3) {
+      handleEndTest("AUTO");
+    }
+    setShowViolationDialog(false);
+  };
+
   useEffect(() => {
     fetchQuestion();
   }, [fetchQuestion]);
@@ -153,17 +249,27 @@ export default function Exam() {
         questionState.selectedQuestionIndex
       ]?.questionID;
     if (!getUserAnswer(questionID) && questionID) {
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${examID}/${attemptID}/view-question`,
-        {
-          method: "POST",
-          body: JSON.stringify({ questionID }),
-        }
-      )
+      fetch(`/api/exams/${examID}/${attemptID}/view-question`, {
+        method: "POST",
+        body: JSON.stringify({ questionID }),
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
-            setUserAnswers(data.data);
+            setUserAnswers((prev) => {
+              const newQuestionData = data.data.find(
+                (q) => q.questionID === questionID
+              );
+              if (!newQuestionData) return prev;
+
+              const idx = prev.findIndex((q) => q.questionID === questionID);
+              if (idx !== -1) {
+                const newArr = [...prev];
+                newArr[idx] = newQuestionData;
+                return newArr;
+              }
+              return [...prev, newQuestionData];
+            });
             setClientPerfAtFetch(performance.now());
             setServerTimestamp(data.serverTimestamp);
           } else {
@@ -181,14 +287,46 @@ export default function Exam() {
     router,
   ]);
 
-  const updateUserAnswer = (questionID, job, userAnswer) => {
-    console.log(userAnswer);
-    const { selectedOptions, blankAnswers, timeSpentMs, markedForReview } =
-      userAnswer;
-    if (job === "blankAnswers" || job === "selectedOptions") {
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${examID}/${attemptID}/question-response`,
-        {
+  // Optimistic update helper
+  const updateLocalUserAnswer = (questionID, job, value) => {
+    setUserAnswers((prev) => {
+      const existingIndex = prev.findIndex(
+        (ans) => ans.questionID === questionID
+      );
+
+      // If not found, create a new entry locally
+      if (existingIndex === -1) {
+        const newAnswer = {
+          questionID,
+          selectedOptions: job === "selectedOptions" ? value : [],
+          blankAnswers: job === "blankAnswers" ? value : [],
+          markedForReview: job === "markedForReview" ? value : false,
+          timeSpentMs: 0,
+        };
+        return [...prev, newAnswer];
+      }
+
+      const newAnswers = [...prev];
+      const currentAnswer = { ...newAnswers[existingIndex] };
+
+      if (job === "selectedOptions") {
+        currentAnswer.selectedOptions = value;
+      } else if (job === "blankAnswers") {
+        currentAnswer.blankAnswers = value;
+      } else if (job === "markedForReview") {
+        currentAnswer.markedForReview = value;
+      }
+
+      newAnswers[existingIndex] = currentAnswer;
+      return newAnswers;
+    });
+  };
+
+  // Debounced Save Function
+  const debouncedSave = useCallback(
+    _.debounce(
+      (questionID, job, selectedOptions, blankAnswers, timeSpentMs) => {
+        fetch(`/api/exams/${examID}/${attemptID}/question-response`, {
           method: "POST",
           body: JSON.stringify({
             questionID,
@@ -197,30 +335,54 @@ export default function Exam() {
             blankAnswers: job === "blankAnswers" ? blankAnswers : undefined,
             timeSpentMs,
           }),
-        }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setUserAnswers(data.data);
-            setClientPerfAtFetch(performance.now());
-            setServerTimestamp(data.serverTimestamp);
-          } else {
-            router.push(`/exam/${examID}/${attemptID}/result`);
-          }
-        });
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              setClientPerfAtFetch(performance.now());
+              setServerTimestamp(data.serverTimestamp);
+            } else {
+              // Ideally revert optimistic update here if needed, or notify
+              // router.push(`/exam/${examID}/${attemptID}/result`); // Maybe too aggressive to kick out?
+            }
+          });
+      },
+      500
+    ), // 500ms debounce
+    [examID, attemptID]
+  );
+
+  const updateUserAnswer = (questionID, job, userAnswer) => {
+    const { selectedOptions, blankAnswers, timeSpentMs, markedForReview } =
+      userAnswer;
+
+    // Optimistic Update
+    if (job === "selectedOptions") {
+      updateLocalUserAnswer(questionID, job, selectedOptions);
+    } else if (job === "blankAnswers") {
+      updateLocalUserAnswer(questionID, job, blankAnswers);
     } else if (job === "markedForReview") {
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${examID}/${attemptID}/mark-unmark-question`,
-        {
-          method: "POST",
-          body: JSON.stringify({ questionID, bookmarked: markedForReview }),
-        }
-      )
+      updateLocalUserAnswer(questionID, job, markedForReview);
+    }
+
+    if (job === "blankAnswers" || job === "selectedOptions") {
+      debouncedSave(
+        questionID,
+        job,
+        selectedOptions,
+        blankAnswers,
+        timeSpentMs
+      );
+    } else if (job === "markedForReview") {
+      // Mark for review usually doesn't need heavy debouncing but good to be consistent?
+      // Existing logic was direct fetch. Let's keep it direct or maybe debounce slightly?
+      // Keeping direct for now as it's a toggle.
+      fetch(`/api/exams/${examID}/${attemptID}/mark-unmark-question`, {
+        method: "POST",
+        body: JSON.stringify({ questionID, bookmarked: markedForReview }),
+      })
         .then((res) => res.json())
         .then((data) => {
-          console.log(data);
-          setUserAnswers(data.data);
           setClientPerfAtFetch(performance.now());
           setServerTimestamp(data.serverTimestamp);
         });
@@ -244,14 +406,11 @@ export default function Exam() {
     }));
   };
 
-  const handleOnNextQuestion = () => {
+  const handleOnNextQuestion = useCallback(() => {
     const sections = questions?.sections || [];
     const sectionCount = sections.length;
-    const {
-      selectedSectionIndex: secIdx,
-      selectedQuestionIndex: qIdx,
-      questionNo,
-    } = questionState;
+    const { selectedSectionIndex: secIdx, selectedQuestionIndex: qIdx } =
+      questionState;
 
     const currentQuestions = sections[secIdx]?.questions || [];
     const questionCount = currentQuestions.length;
@@ -259,15 +418,12 @@ export default function Exam() {
     const isLastQuestionInSection = qIdx === questionCount - 1;
     const isLastSection = secIdx === sectionCount - 1;
 
-    // 1) Move within the same section
     if (!isLastQuestionInSection) {
       setQuestionState((prev) => ({
         ...prev,
         selectedQuestionIndex: prev.selectedQuestionIndex + 1,
         questionNo: prev.questionNo + 1,
       }));
-
-      // 2) Jump to first question of next section
     } else if (!isLastSection) {
       setQuestionState((prev) => ({
         ...prev,
@@ -276,27 +432,19 @@ export default function Exam() {
         questionNo: prev.questionNo + 1,
       }));
     }
+  }, [questions, questionState]);
 
-    // 3) else: you’re already on the very last question of the last section → no-op
-  };
-
-  const handleOnPreviousQuestion = () => {
+  const handleOnPreviousQuestion = useCallback(() => {
     const sections = questions?.sections || [];
-    const {
-      selectedSectionIndex: secIdx,
-      selectedQuestionIndex: qIdx,
-      questionNo,
-    } = questionState;
+    const { selectedSectionIndex: secIdx, selectedQuestionIndex: qIdx } =
+      questionState;
 
-    // 1) Move within the same section (if not at first question)
     if (qIdx > 0) {
       setQuestionState((prev) => ({
         ...prev,
         selectedQuestionIndex: prev.selectedQuestionIndex - 1,
         questionNo: prev.questionNo - 1,
       }));
-
-      // 2) Jump to last question of previous section
     } else if (secIdx > 0) {
       const prevSectionQuestions = sections[secIdx - 1]?.questions || [];
       const lastIndex = prevSectionQuestions.length - 1;
@@ -308,18 +456,29 @@ export default function Exam() {
         questionNo: prev.questionNo - 1,
       }));
     }
+  }, [questions, questionState]);
 
-    // 3) else: you’re at the very first question of the first section → no-op
-  };
+  // Keyboard Navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowRight") {
+        handleOnNextQuestion();
+      } else if (e.key === "ArrowLeft") {
+        handleOnPreviousQuestion();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleOnNextQuestion, handleOnPreviousQuestion]);
 
   function toggleFullScreen() {
-    // First, check if fullscreen is supported
     const docEl = document.documentElement;
     const fsEnabled =
       docEl.requestFullscreen ||
       document.fullscreenEnabled ||
-      docEl.webkitRequestFullscreen || // Safari
-      docEl.msRequestFullscreen; // IE/Edge
+      docEl.webkitRequestFullscreen ||
+      docEl.msRequestFullscreen;
 
     if (!fsEnabled) {
       console.warn("Fullscreen not enabled or supported by this browser");
@@ -327,7 +486,6 @@ export default function Exam() {
     }
 
     if (!document.fullscreenElement) {
-      // Enter fullscreen
       const request =
         docEl.requestFullscreen ||
         docEl.webkitRequestFullscreen ||
@@ -336,7 +494,6 @@ export default function Exam() {
         request.call(docEl);
       }
     } else {
-      // Exit fullscreen
       const exit =
         document.exitFullscreen ||
         document.webkitExitFullscreen ||
@@ -354,14 +511,22 @@ export default function Exam() {
   return (
     <Stack
       sx={{
-        backgroundColor: "var(--sec-color-acc-2)",
+        backgroundColor: "#f8fafc",
         minHeight: "100vh",
-        overflow: "auto",
-        pt: "60px",
+        height: "100vh",
+        overflow: "hidden",
+        userSelect: questions?.settings?.isAntiCheat ? "none" : "auto",
       }}
     >
-      <Stack
-        sx={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000 }}
+      {/* Header */}
+      <Box
+        sx={{
+          height: "60px",
+          flexShrink: 0,
+          zIndex: 1200,
+          bgcolor: "white",
+          borderBottom: "1px solid var(--border-color)",
+        }}
       >
         <ExamHeader
           examData={examData}
@@ -370,41 +535,203 @@ export default function Exam() {
           toggleFullScreen={toggleFullScreen}
           handleEndTest={handleEndTest}
         />
-      </Stack>
+      </Box>
+
       <NavigationGuard
         isOpen={showDialog}
         onConfirm={confirmNavigation}
         onCancel={cancelNavigation}
       />
-      <Stack flexDirection="row" position="relative" width="100%" height="100%">
-        {questions.settings.isFullScreenMode && !isFsEnabled && (
-          <FullscreenPrompt onEnable={toggleFullScreen} />
-        )}
-        <Stack
+
+      <ViolationDialog
+        open={showViolationDialog}
+        onClose={handleViolationDialogClose}
+        count={violationCount}
+        maxCount={3}
+        message={
+          violationCount >= 3
+            ? "Exam auto-submitted due to multiple security violations."
+            : "Tab switching is prohibited. Continued violations will result in exam termination."
+        }
+      />
+
+      {/* Submit Dialog */}
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 2 }}
+        open={isSubmitting && !isTimeUp}
+      >
+        <Stack alignItems="center" gap={2}>
+          <CircularProgress color="inherit" />
+          <Typography variant="h6">Submitting your exam...</Typography>
+        </Stack>
+      </Backdrop>
+
+      {/* Time Up Dialog */}
+      {isTimeUp && (
+        <TimeUpDialog
+          isSubmitting={isSubmitting}
+          onRetry={() => submitExam("AUTO")}
+        />
+      )}
+
+      {showSubmitDialog && (
+        <Box
           sx={{
-            padding: { xs: "12px", md: "30px" },
-            width: { xs: "100%", md: "70%" },
-            gap: "20px",
-            zIndex: 0,
+            position: "fixed",
+            inset: 0,
+            bgcolor: "rgba(0,0,0,0.5)",
+            zIndex: 1300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            p: 2,
+            backdropFilter: "blur(4px)",
           }}
         >
-          <ExamQuestionCard
-            questions={questions?.sections}
-            questionState={questionState}
-            pMark={
-              questions?.sections?.[questionState.selectedSectionIndex]?.pMark
-            }
-            nMark={
-              questions?.sections?.[questionState.selectedSectionIndex]?.nMark
-            }
-            userAnswer={getUserAnswer(
-              questions?.sections?.[questionState.selectedSectionIndex]
-                ?.questions?.[questionState.selectedQuestionIndex]?.questionID
-            )}
-            updateUserAnswer={updateUserAnswer}
-            handleOnNextQuestion={handleOnNextQuestion}
-            handleOnPreviousQuestion={handleOnPreviousQuestion}
-          />
+          <Box
+            sx={{
+              bgcolor: "white",
+              borderRadius: "20px",
+              p: 4,
+              maxWidth: "400px",
+              width: "100%",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+              textAlign: "center",
+            }}
+          >
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: 700, mb: 1, color: "var(--text1)" }}
+            >
+              Submit Exam?
+            </Typography>
+            <Typography sx={{ color: "var(--text3)", mb: 4 }}>
+              Are you sure you want to submit? You won&apos;t be able to change
+              your answers after this.
+            </Typography>
+
+            <Stack direction="row" gap={2}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={() => setShowSubmitDialog(false)}
+                sx={{
+                  borderRadius: "10px",
+                  height: "48px",
+                  borderColor: "var(--border-color)",
+                  color: "var(--text2)",
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => submitExam("USER")}
+                sx={{
+                  borderRadius: "10px",
+                  height: "48px",
+                  bgcolor: "var(--primary-color)",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  "&:hover": { bgcolor: "var(--primary-color-dark)" },
+                }}
+              >
+                Submit Now
+              </Button>
+            </Stack>
+          </Box>
+        </Box>
+      )}
+
+      {questions.settings.isFullScreenMode && !isFsEnabled && (
+        <FullscreenPrompt onEnable={toggleFullScreen} />
+      )}
+
+      {/* Main Content - Split Screen */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          flex: 1,
+          overflow: "hidden",
+          height: "calc(100vh - 60px)",
+          position: "relative",
+        }}
+      >
+        {/* Left: Question Area */}
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            overflowX: "hidden",
+            p: { xs: 2, md: 3 },
+            display: "flex",
+            justifyContent: "center",
+            bgcolor: "#f8fafc",
+            minWidth: 0, // Prevent flex item from overflowing
+          }}
+        >
+          <Box sx={{ width: "100%", maxWidth: "900px" }}>
+            <ExamQuestionCard
+              questions={questions?.sections}
+              questionState={questionState}
+              pMark={
+                questions?.sections?.[questionState.selectedSectionIndex]?.pMark
+              }
+              nMark={
+                questions?.sections?.[questionState.selectedSectionIndex]?.nMark
+              }
+              userAnswer={getUserAnswer(
+                questions?.sections?.[questionState.selectedSectionIndex]
+                  ?.questions?.[questionState.selectedQuestionIndex]?.questionID
+              )}
+              updateUserAnswer={updateUserAnswer}
+              handleOnNextQuestion={handleOnNextQuestion}
+              handleOnPreviousQuestion={handleOnPreviousQuestion}
+            />
+          </Box>
+        </Box>
+
+        {/* Right: Palette (Desktop) */}
+        <Box
+          sx={{
+            width: "320px",
+            minWidth: "320px", // Force width
+            borderLeft: "1px solid var(--border-color)",
+            bgcolor: "white",
+            display: { xs: "none", md: "flex" },
+            flexDirection: "column",
+            overflow: "hidden",
+            height: "100%",
+            zIndex: 10,
+          }}
+        >
+          <Box
+            sx={{
+              p: 2,
+              borderBottom: "1px solid var(--border-color)",
+              bgcolor: "var(--primary-color-acc-2)",
+            }}
+          >
+            <Typography sx={{ fontWeight: 700, color: "var(--primary-color)" }}>
+              Question Palette
+            </Typography>
+          </Box>
+          <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
+            <SectionComponent
+              questions={questions}
+              questionState={questionState}
+              handleQuestionSelection={handleQuestionSelection}
+              userAnswers={userAnswers}
+            />
+          </Box>
+        </Box>
+
+        {/* Mobile Drawer */}
+        <Box sx={{ display: { xs: "block", md: "none" } }}>
           <MobileSectionDraw
             handleOnNextQuestion={handleOnNextQuestion}
             handleOnPreviousQuestion={handleOnPreviousQuestion}
@@ -417,24 +744,17 @@ export default function Exam() {
               userAnswers={userAnswers}
             />
           </MobileSectionDraw>
-          <AsideComponent
-            questions={questions}
-            questionState={questionState}
-            handleQuestionSelection={handleQuestionSelection}
-            userAnswers={userAnswers}
-          >
-            <SectionComponent
-              questions={questions}
-              questionState={questionState}
-              handleQuestionSelection={handleQuestionSelection}
-              userAnswers={userAnswers}
-              handleOnNextQuestion={handleOnNextQuestion}
-              handleOnPreviousQuestion={handleOnPreviousQuestion}
-            />
-          </AsideComponent>
-        </Stack>
-      </Stack>
+        </Box>
+      </Box>
     </Stack>
+  );
+}
+
+export default function Exam() {
+  return (
+    <Suspense fallback={<LoadingComp />}>
+      <ExamContent />
+    </Suspense>
   );
 }
 
@@ -492,28 +812,6 @@ function FullscreenPrompt({ onEnable }) {
         </Button>
       </Box>
     </Box>
-  );
-}
-
-function AsideComponent({ children }) {
-  return (
-    <Stack
-      sx={{
-        padding: "20px",
-        width: "350px",
-        backgroundColor: "var(--white)",
-        display: { xs: "none", md: "block" },
-        marginLeft: "auto",
-        position: "fixed",
-        top: "60px",
-        right: "0",
-        height: "calc(100vh - 60px)",
-        zIndex: 0,
-        overflowY: "auto",
-      }}
-    >
-      {children}
-    </Stack>
   );
 }
 
@@ -643,7 +941,8 @@ function AnswerStateIndicator() {
               sx={{
                 width: 24,
                 height: 24,
-                bgcolor: "var(--primary-color-acc-1)",
+                bgcolor: "var(--white)",
+                border: "1px solid var(--border-color)",
                 borderRadius: "50%",
               }}
             ></Stack>
@@ -652,5 +951,81 @@ function AnswerStateIndicator() {
         </Stack>
       </Stack>
     </Stack>
+  );
+}
+
+function TimeUpDialog({ isSubmitting, onRetry }) {
+  return (
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        bgcolor: "rgba(0,0,0,0.8)",
+        zIndex: 1400,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        p: 2,
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      <Box
+        sx={{
+          bgcolor: "white",
+          borderRadius: "20px",
+          p: 4,
+          maxWidth: "400px",
+          width: "100%",
+          boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+          textAlign: "center",
+        }}
+      >
+        <Typography
+          variant="h5"
+          sx={{ fontWeight: 700, mb: 1, color: "var(--delete-color)" }}
+        >
+          Time&apos;s Up!
+        </Typography>
+        <Typography sx={{ color: "var(--text3)", mb: 4 }}>
+          Your exam time has ended. We are submitting your answers.
+        </Typography>
+
+        {isSubmitting ? (
+          <Stack alignItems="center" gap={2}>
+            <CircularProgress
+              size={30}
+              sx={{ color: "var(--primary-color)" }}
+            />
+            <Typography variant="body2" sx={{ color: "var(--text2)" }}>
+              Submitting...
+            </Typography>
+          </Stack>
+        ) : (
+          <Stack gap={2}>
+            <Typography
+              variant="body2"
+              sx={{ color: "var(--delete-color)", fontWeight: 600 }}
+            >
+              Submission Failed. Please retry.
+            </Typography>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={onRetry}
+              sx={{
+                borderRadius: "10px",
+                height: "48px",
+                bgcolor: "var(--primary-color)",
+                textTransform: "none",
+                fontWeight: 600,
+                "&:hover": { bgcolor: "var(--primary-color-dark)" },
+              }}
+            >
+              Retry Submission
+            </Button>
+          </Stack>
+        )}
+      </Box>
+    </Box>
   );
 }

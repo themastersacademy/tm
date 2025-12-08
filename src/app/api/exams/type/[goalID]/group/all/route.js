@@ -1,6 +1,17 @@
 import { getAllGroupExamsByGoalID } from "@/src/libs/exams/examTypeController";
+import { getSession } from "@/src/utils/serverSession";
 
 export async function GET(req, { params }) {
+  const session = await getSession();
+  if (!session) {
+    return Response.json(
+      {
+        success: false,
+        message: "Unauthorized",
+      },
+      { status: 401 }
+    );
+  }
   const { goalID } = await params;
   if (!goalID) {
     return Response.json(
@@ -15,7 +26,6 @@ export async function GET(req, { params }) {
     const response = await getAllGroupExamsByGoalID(goalID);
     return Response.json(response);
   } catch (error) {
-    console.log("error", error);
     return Response.json(
       {
         success: false,

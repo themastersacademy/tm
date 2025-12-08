@@ -94,6 +94,10 @@ export async function createProSubscription({
   const gsi1sKey = "PRO_SUBSCRIPTIONS";
   const now = Date.now();
 
+  const itemName = `Pro Subscription - ${plan.type} (${plan.duration} ${
+    plan.type === "MONTHLY" ? "Months" : "Years"
+  })`;
+
   const transaction = await createTransaction({
     userID,
     userMeta,
@@ -104,6 +108,7 @@ export async function createProSubscription({
       pKey,
     },
     amount: priceBreakdown.totalPrice,
+    itemName,
   });
 
   const params = {

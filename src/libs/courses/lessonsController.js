@@ -70,7 +70,12 @@ export async function getAllLessons({ courseID }) {
   }
 }
 
-export async function getLessonVideoURL({ lessonID, courseID, enrollmentID }) {
+export async function getLessonVideoURL({
+  lessonID,
+  courseID,
+  enrollmentID,
+  userID,
+}) {
   if (!lessonID || !courseID) {
     return { success: false, message: "Missing lessonID or courseID" };
   }
@@ -103,7 +108,7 @@ export async function getLessonVideoURL({ lessonID, courseID, enrollmentID }) {
       };
     }
 
-    const isEnrolled = await verifyCourseEnrollment(enrollmentID);
+    const isEnrolled = await verifyCourseEnrollment(enrollmentID, userID);
     // if (!isEnrolled) {
     //   return { success: false, message: "User is not enrolled in this course" };
     // }
@@ -133,7 +138,6 @@ export async function getLessonVideoURL({ lessonID, courseID, enrollmentID }) {
       })
     );
     const resource = resourceResp.Items?.[0];
-    console.log(resource);
     if (!resource) {
       return { success: false, message: "Resource not found" };
     }
@@ -151,7 +155,12 @@ export async function getLessonVideoURL({ lessonID, courseID, enrollmentID }) {
   }
 }
 
-export async function getLessonFileURL({ lessonID, courseID, enrollmentID }) {
+export async function getLessonFileURL({
+  lessonID,
+  courseID,
+  enrollmentID,
+  userID,
+}) {
   if (!lessonID || !courseID) {
     return {
       success: false,
@@ -186,7 +195,7 @@ export async function getLessonFileURL({ lessonID, courseID, enrollmentID }) {
       };
     }
 
-    const isEnrolled = await verifyCourseEnrollment(enrollmentID);
+    const isEnrolled = await verifyCourseEnrollment(enrollmentID, userID);
     // if (!isEnrolled) {
     //   return { success: false, message: "User is not enrolled in this course" };
     // }

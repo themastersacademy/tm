@@ -4,7 +4,17 @@ import { getSession } from "@/src/utils/serverSession";
 export async function GET(req, { params }) {
   const { examID } = await params;
   const session = await getSession();
-  console.log("session", session);
+
+  if (!session) {
+    return Response.json(
+      {
+        success: false,
+        message: "Unauthorized",
+      },
+      { status: 401 }
+    );
+  }
+
   if (!examID) {
     return Response.json(
       {

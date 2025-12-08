@@ -7,11 +7,14 @@ const StyledTabs = styled(Tabs)(({ customstyles }) => ({
   backgroundColor: "var(--white)",
   borderRadius: "10px",
   padding: "4px",
-  width: "208px",
+  width: "fit-content",
   minHeight: "40px",
   ...customstyles?.tabs,
   "& .MuiTabs-indicator": {
     display: "none",
+  },
+  "& .MuiTabs-flexContainer": {
+    gap: "8px",
   },
 }));
 
@@ -20,10 +23,10 @@ const StyledTab = styled(Tab)(({ customstyles }) => ({
   fontFamily: "Lato",
   fontWeight: 600,
   borderRadius: "8px",
-  width: "100px",
+  padding: "8px 16px",
+  minWidth: "auto",
   transition: "all 0.4s ease",
   minHeight: "32px",
-  padding: "0px",
   "&.Mui-selected": {
     color: "var(--sec-color)",
     backgroundColor: "var(--sec-color-acc-1)",
@@ -34,16 +37,28 @@ const StyledTab = styled(Tab)(({ customstyles }) => ({
 export default function CustomTabs({
   tabs,
   defaultIndex = 0,
+  activeIndex,
+  onTabChange,
   width,
   customstyles,
 }) {
-  const [activeTab, setActiveTab] = useState(defaultIndex);
+  const [localActiveTab, setLocalActiveTab] = useState(defaultIndex);
+
+  const currentTab = activeIndex !== undefined ? activeIndex : localActiveTab;
+
+  const handleTabChange = (e, newValue) => {
+    if (onTabChange) {
+      onTabChange(newValue);
+    } else {
+      setLocalActiveTab(newValue);
+    }
+  };
 
   return (
     <Box sx={{ width: "100%" }}>
       <StyledTabs
-        value={activeTab}
-        onChange={(e, newValue) => setActiveTab(newValue)}
+        value={currentTab}
+        onChange={handleTabChange}
         width={width}
         customstyles={customstyles}
       >
@@ -53,7 +68,7 @@ export default function CustomTabs({
       </StyledTabs>
 
       {tabs.map((tab, index) => (
-        <TabPanel key={index} value={activeTab} index={index}>
+        <TabPanel key={index} value={currentTab} index={index}>
           {tab.content}
         </TabPanel>
       ))}

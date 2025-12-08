@@ -1,10 +1,11 @@
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography, Box } from "@mui/material";
 import { useState } from "react";
 import Image from "next/image";
 import institute from "@/public/icons/institute1.svg";
 import agrade from "@/public/icons/aGrade.svg";
 import crackExamBanner from "@/public/images/crackExamBanner.svg";
 import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
+import { AutoAwesome, School, EmojiEvents } from "@mui/icons-material";
 
 export default function CrackTest() {
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
@@ -16,108 +17,125 @@ export default function CrackTest() {
     setPlansDialogOpen(false);
   };
 
+  const features = [
+    {
+      icon: <School sx={{ fontSize: 28, color: "white" }} />,
+      title: "Practice Tests",
+      description: "Unlimited access to daily practice tests",
+      color: "#4CAF50",
+    },
+    {
+      icon: <AutoAwesome sx={{ fontSize: 28, color: "white" }} />,
+      title: "Mock Tests",
+      description: "Full-length exams with real pattern",
+      color: "#2196F3",
+    },
+    {
+      icon: <EmojiEvents sx={{ fontSize: 28, color: "white" }} />,
+      title: "Learning Path",
+      description: "Structured guidance for success",
+      color: "#FF9800",
+    },
+  ];
+
   return (
     <Stack
       flexDirection={{ xs: "column", md: "row" }}
       sx={{
-        border: { md: "1px solid var(--border-color)" },
-        borderRadius: "13px",
-        backgroundColor: { md: "var(--white)" },
+        borderRadius: "24px",
+        background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)",
         width: "100%",
-        padding: { xs: "0px", md: "30px 40px" },
+        padding: { xs: "32px", md: "48px" },
         justifyContent: "space-between",
+        position: "relative",
+        overflow: "hidden",
+        boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
       }}
       width="100%"
       maxWidth="1200px"
     >
-      <Stack sx={{ gap: "25px", width: { xs: "100%", md: "50%" } }}>
-        <Stack
-          sx={{
-            borderBottom: { xs: "none", md: "1px solid var(--text4)" },
-            gap: "20px",
-            pb: "20px",
-          }}
-        >
+      {/* Background decoration */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: -100,
+          right: -100,
+          width: "400px",
+          height: "400px",
+          background:
+            "radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 70%)",
+          borderRadius: "50%",
+        }}
+      />
+
+      <Stack sx={{ gap: "32px", width: { xs: "100%", md: "55%" }, zIndex: 1 }}>
+        <Stack gap="16px">
           <Typography
             sx={{
               fontFamily: "Lato",
-              fontSize: { xs: "20px", md: "24px" },
-              fontWeight: "700",
-              color: "var(--text3)",
-              width: { xs: "100%", md: "80%" },
+              fontSize: { xs: "28px", md: "36px" },
+              fontWeight: "800",
+              color: "white",
+              lineHeight: 1.2,
             }}
           >
-            Crack GATE and other exams with our learning platform
+            Crack GATE and other exams with our{" "}
+            <span style={{ color: "#FFD700" }}>Premium</span> platform
           </Typography>
           <Typography
             sx={{
               fontFamily: "Lato",
-              fontSize: { xs: "14px", md: "18px" },
-              color: "var(--text3)",
-              width: { xs: "100%", md: "400px" },
+              fontSize: { xs: "16px", md: "18px" },
+              color: "rgba(255,255,255,0.7)",
+              maxWidth: "500px",
+              lineHeight: 1.6,
             }}
           >
-            Get a subscription and access unlimited exams and stream courses
-            from our experienced faculties.
+            Get a subscription and access unlimited exams, stream courses from
+            our experienced faculties, and track your progress.
           </Typography>
-          <Button
-            onClick={handlePlansDialogOpen}
-            variant="contained"
-            sx={{
-              textTransform: "none",
-              backgroundColor: "var(--primary-color)",
-              width: { xs: "100%", sm: "250px", md: "350px" },
-              marginTop: "auto",
-            }}
-            disableElevation
-          >
-            Subscribe
-          </Button>
         </Stack>
-        <PlansDialogBox
-          plansDialogOpen={plansDialogOpen}
-          handlePlansDialogClose={handlePlansDialogClose}
-        />
-        <Stack flexDirection="row" gap="4px" flexWrap="wrap">
-          {[
-            {
-              img: institute,
-              title: "Practice Tests",
-              description:
-                "Enhance your preparation with daily access to unlimited practice tests, helping you build confidence and improve your accuracy.",
-            },
-            {
-              img: agrade,
-              title: "Mock Tests",
-              description:
-                "Follow well-designed courses aligned with academic and competitive exam syllabi, ensuring focused and effective preparation.",
-            },
-            {
-              img: agrade,
-              title: "Learning Path",
-              description:
-                "Take regular mock tests to evaluate your preparation and receive detailed analytics to track progress and improve performance.",
-            },
-          ].map((item, index) => (
-            <Stack key={index} gap="10px" sx={{ maxWidth: "170px" }}>
-              <Stack
+
+        <Stack direction="row" gap="16px" flexWrap="wrap">
+          {features.map((item, index) => (
+            <Stack
+              key={index}
+              sx={{
+                bgcolor: "rgba(255,255,255,0.05)",
+                backdropFilter: "blur(10px)",
+                borderRadius: "16px",
+                p: "16px",
+                width: { xs: "100%", sm: "160px" },
+                border: "1px solid rgba(255,255,255,0.1)",
+                transition: "all 0.2s",
+                "&:hover": {
+                  bgcolor: "rgba(255,255,255,0.1)",
+                  transform: "translateY(-4px)",
+                },
+              }}
+            >
+              <Box
                 sx={{
-                  width: "60px",
-                  height: "60px",
-                  backgroundColor: "var(--sec-color-acc-1)",
-                  borderRadius: "15px",
-                  justifyContent: "center",
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "12px",
+                  bgcolor: item.color,
+                  display: "flex",
                   alignItems: "center",
+                  justifyContent: "center",
+                  mb: 2,
+                  boxShadow: `0 4px 12px ${item.color}40`,
                 }}
               >
-                <Image src={item.img} alt="" width={34} height={28} />
-              </Stack>
+                {item.icon}
+              </Box>
               <Typography
                 sx={{
                   fontFamily: "Lato",
                   fontSize: "16px",
                   fontWeight: "700",
-                  color: "var(--text3)",
+                  color: "white",
+                  mb: 0.5,
                 }}
               >
                 {item.title}
@@ -126,7 +144,7 @@ export default function CrackTest() {
                 sx={{
                   fontFamily: "Lato",
                   fontSize: "12px",
-                  color: "var(--text3)",
+                  color: "rgba(255,255,255,0.5)",
                 }}
               >
                 {item.description}
@@ -134,21 +152,58 @@ export default function CrackTest() {
             </Stack>
           ))}
         </Stack>
+
+        <Button
+          onClick={handlePlansDialogOpen}
+          variant="contained"
+          sx={{
+            textTransform: "none",
+            backgroundColor: "var(--primary-color)",
+            color: "white",
+            width: { xs: "100%", sm: "fit-content" },
+            px: "40px",
+            py: "12px",
+            fontSize: "16px",
+            fontWeight: "700",
+            borderRadius: "12px",
+            boxShadow: "0 8px 20px rgba(255, 152, 0, 0.3)",
+            "&:hover": {
+              backgroundColor: "#f57c00",
+              transform: "scale(1.02)",
+            },
+          }}
+        >
+          Get Premium Access
+        </Button>
       </Stack>
 
-      <Stack sx={{ width: { xs: "100%", md: "50%" }, alignItems: "center" }}>
+      <Stack
+        sx={{
+          width: { xs: "100%", md: "45%" },
+          alignItems: "center",
+          justifyContent: "center",
+          display: { xs: "none", md: "flex" },
+          zIndex: 1,
+        }}
+      >
         <Image
           src={crackExamBanner}
           alt="Exam Banner"
-          width={500}
-          height={500}
+          width={450}
+          height={450}
           style={{
             width: "100%",
-            maxWidth: "500px",
+            maxWidth: "450px",
             height: "auto",
+            filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.3))",
           }}
         />
       </Stack>
+
+      <PlansDialogBox
+        plansDialogOpen={plansDialogOpen}
+        handlePlansDialogClose={handlePlansDialogClose}
+      />
     </Stack>
   );
 }

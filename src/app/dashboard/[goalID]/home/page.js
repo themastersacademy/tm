@@ -2,7 +2,6 @@
 import { Box, Button, Stack, Typography } from "@mui/material";
 import Header from "@/src/Components/Header/Header";
 import CrackTest from "./Components/CrackTest";
-import InfoCard from "./Components/InfoCard";
 import gate_cse from "@/public/icons/gate_cse.svg";
 import banking from "@/public/icons/banking.svg";
 import placements from "@/public/icons/placements.svg";
@@ -10,7 +9,6 @@ import MobileHeader from "@/src/Components/MobileHeader/MobileHeader";
 import Store from "../courses/Components/Store";
 import { East } from "@mui/icons-material";
 import BannerCarousel from "@/src/Components/BannerCarousel/BannerCarousel";
-import HomeBannerSkeleton from "@/src/Components/SkeletonCards/HomeBannerSkeleton";
 import { useRouter, useParams } from "next/navigation";
 import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
@@ -26,6 +24,10 @@ import InsightCard from "./Components/InsightCard";
 import { useBanners } from "@/src/app/context/BannerProvider";
 import { useGoals } from "@/src/app/context/GoalProvider";
 import { useSession } from "next-auth/react";
+import HeroDashboard from "./Components/HeroDashboard";
+import AnnouncementBanner from "./Components/AnnouncementBanner";
+import FeaturedGoalCard from "./Components/FeaturedGoalCard";
+import { useState, useEffect } from "react";
 
 export default function HomePage() {
   const router = useRouter();
@@ -36,7 +38,48 @@ export default function HomePage() {
   const { banners, loading: bannerLoading } = useBanners();
   const { goals, loading: goalLoading } = useGoals();
 
+  const [announcements, setAnnouncements] = useState([]);
+  const [featuredGoals, setFeaturedGoals] = useState([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
+
   const isLoading = bannerLoading;
+
+  // Fetch announcements
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const response = await fetch("/api/homepage/announcements");
+        const data = await response.json();
+        if (data.success) {
+          setAnnouncements(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch announcements:", error);
+      } finally {
+        setLoadingAnnouncements(false);
+      }
+    };
+    fetchAnnouncements();
+  }, []);
+
+  // Fetch featured goals
+  useEffect(() => {
+    const fetchFeaturedGoals = async () => {
+      try {
+        const response = await fetch("/api/homepage/featured-goals");
+        const data = await response.json();
+        if (data.success) {
+          setFeaturedGoals(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch featured goals:", error);
+      } finally {
+        setLoadingFeatured(false);
+      }
+    };
+    fetchFeaturedGoals();
+  }, []);
 
   const handleGoalClick = (id) => {
     router.push(`/dashboard/${goalID}/home/${id}`);
@@ -44,6 +87,13 @@ export default function HomePage() {
 
   const renderGoalIcon = (type) =>
     type === "castle" ? gate_cse : type === "org" ? banking : placements;
+
+  // Calculate user stats
+  const userStats = {
+    coursesEnrolled: goals.filter((g) => g.enrolled).length,
+    hoursCompleted: 0, // TODO: Calculate from course progress
+    certificates: 0, // TODO: Calculate from completed courses
+  };
 
   return (
     <>
@@ -55,28 +105,99 @@ export default function HomePage() {
         margin="0 auto"
         sx={{ marginBottom: { xs: "80px", md: "0px" } }}
       >
-        <Stack padding={{ xs: "10px", md: "20px" }} gap="20px" width="100%">
+        <Stack padding={{ xs: "16px", md: "32px" }} gap="40px" width="100%">
           {/* Desktop Header */}
           <Box sx={{ display: { xs: "none", md: "block" } }}>
             {isLoading ? <HeaderSkeleton /> : <Header />}
           </Box>
 
-          {/* Banner */}
+          {/* Main Content */}
           {isLoading ? (
             <PageSkeleton />
           ) : (
             <>
+              {/* Hero Dashboard */}
+              <HeroDashboard userName={session?.user?.name} stats={userStats} />
+
+              {/* Announcements */}
+              {!loadingAnnouncements && announcements.length > 0 && (
+                <AnnouncementBanner announcements={announcements} />
+              )}
+
+              {/* Banner Carousel */}
               <Box width="100%">
-                {isLoading ? <HomeBannerSkeleton /> : <BannerCarousel banners={banners} />}
+                <BannerCarousel banners={banners} />
               </Box>
 
-              <InfoCard />
+              {/* Featured Goals Section */}
+              {!loadingFeatured && featuredGoals.length > 0 && (
+                <Stack gap="24px">
+                  <Stack gap="8px">
+                    <Typography
+                      sx={{
+                        fontSize: { xs: "24px", md: "28px" },
+                        fontWeight: 800,
+                        color: "var(--text1)",
+                        letterSpacing: "-0.5px",
+                      }}
+                    >
+                      🌟 Featured Learning Paths
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "14px",
+                        color: "var(--text3)",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Handpicked goals to accelerate your success
+                    </Typography>
+                  </Stack>
+                  <Stack
+                    direction="row"
+                    gap="20px"
+                    sx={{
+                      overflowX: "auto",
+                      scrollbarWidth: "none",
+                      "&::-webkit-scrollbar": { display: "none" },
+                    }}
+                  >
+                    {featuredGoals.map((goal) => (
+                      <FeaturedGoalCard
+                        key={goal.id}
+                        goal={goal}
+                        onExplore={() =>
+                          router.push(`/dashboard/${goal.id}/home`)
+                        }
+                      />
+                    ))}
+                  </Stack>
+                </Stack>
+              )}
 
-              {/* Goals Section */}
-              <Stack gap="20px">
-                <Typography variant="h6" fontWeight={700}>
-                  Goals
-                </Typography>
+              {/* Your Learning Goals */}
+              <Stack gap="24px">
+                <Stack gap="8px">
+                  <Typography
+                    sx={{
+                      fontSize: { xs: "24px", md: "28px" },
+                      fontWeight: 800,
+                      color: "var(--text1)",
+                      letterSpacing: "-0.5px",
+                    }}
+                  >
+                    Your Learning Goals
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "14px",
+                      color: "var(--text3)",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Track your progress and explore enrolled goals
+                  </Typography>
+                </Stack>
                 <Box
                   sx={{
                     overflowX: { xs: "auto", md: "initial" },
@@ -89,7 +210,7 @@ export default function HomePage() {
                   <Stack
                     direction="row"
                     flexWrap={{ xs: "wrap", md: "nowrap" }}
-                    gap="10px"
+                    gap="16px"
                     minWidth={{ xs: "max-content", md: "100%" }}
                   >
                     {goalLoading ? (
@@ -131,9 +252,16 @@ export default function HomePage() {
 
               {/* Store Section for Mobile */}
               <Stack sx={{ display: { xs: "flex", md: "none" } }}>
-                <Stack direction="row" justifyContent="space-between" mb={2}>
-                  <Typography variant="h6" fontWeight={700}>
-                    Store
+                <Stack direction="row" justifyContent="space-between" mb={3}>
+                  <Typography
+                    sx={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "var(--text1)",
+                      letterSpacing: "-0.5px",
+                    }}
+                  >
+                    Course Store
                   </Typography>
                   <Button
                     variant="text"
@@ -152,15 +280,33 @@ export default function HomePage() {
               </Stack>
 
               {/* How It Works */}
-              <Stack gap="20px">
-                <Typography variant="h6" fontWeight={700}>
-                  How does this work
-                </Typography>
+              <Stack gap="24px">
+                <Stack gap="8px">
+                  <Typography
+                    sx={{
+                      fontSize: { xs: "24px", md: "28px" },
+                      fontWeight: 800,
+                      color: "var(--text1)",
+                      letterSpacing: "-0.5px",
+                    }}
+                  >
+                    How It Works
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "14px",
+                      color: "var(--text3)",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Your journey to success in three simple steps
+                  </Typography>
+                </Stack>
                 <Stack
                   direction="row"
                   flexWrap="wrap"
-                  gap="20px"
-                  justifyContent={{ xs: "center", md: "flex-start" }}
+                  gap="24px"
+                  justifyContent={{ xs: "center", md: "space-between" }}
                 >
                   <HowDoes
                     image={enroll}

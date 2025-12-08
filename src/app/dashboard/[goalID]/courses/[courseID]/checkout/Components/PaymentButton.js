@@ -1,4 +1,5 @@
-import { Stack, Button, CircularProgress } from "@mui/material";
+import { Stack, Button, CircularProgress, Typography } from "@mui/material";
+import { Lock, ArrowForward } from "@mui/icons-material";
 
 export default function PaymentButton({
   isDisabled,
@@ -7,31 +8,49 @@ export default function PaymentButton({
   isFree,
 }) {
   return (
-    <Stack>
+    <Stack width="100%">
       <Button
         variant="contained"
         disabled={isDisabled || loading}
         onClick={onPaymentClick}
+        startIcon={
+          loading ? (
+            <CircularProgress size={20} color="inherit" />
+          ) : isFree ? (
+            <ArrowForward />
+          ) : (
+            <Lock />
+          )
+        }
         sx={{
-          backgroundColor:
-            isDisabled || loading ? "var(--sec-color)" : "var(--sec-color)",
+          bgcolor: "var(--primary-color)",
           color: "var(--white)",
           fontSize: "16px",
           fontFamily: "Lato",
           fontWeight: "700",
-          padding: "10px 20px",
-          borderRadius: "5px",
+          padding: "12px 24px",
+          borderRadius: "100px",
           textTransform: "none",
+          boxShadow: "0px 4px 15px rgba(0,0,0,0.1)",
+          transition: "all 0.3s ease",
           "&:hover": {
-            backgroundColor:
-              isDisabled || loading ? "var(--sec-color)" : "var(--sec-color)",
+            bgcolor: "var(--primary-color-dark)",
+            transform: "translateY(-2px)",
+            boxShadow: "0px 6px 20px rgba(0,0,0,0.15)",
           },
+          "&.Mui-disabled": {
+            bgcolor: "var(--border-color)",
+            color: "var(--text4)",
+            boxShadow: "none",
+            transform: "none",
+          },
+          width: "100%",
         }}
       >
         {loading ? (
-          <CircularProgress sx={{ color: "var(--primary-color)" }} size={24} />
+          <Typography sx={{ ml: 1, fontWeight: 600 }}>Processing...</Typography>
         ) : isFree ? (
-          "Enroll"
+          "Enroll Now"
         ) : (
           "Proceed to Payment"
         )}

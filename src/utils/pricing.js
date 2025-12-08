@@ -63,5 +63,9 @@ export function calculatePriceBreakdownWithCoupon(
     priceAfterCoupon,
     taxAmount,
     totalPrice,
+    isMinOrderMet: coupon
+      ? coupon.minOrderAmount == null || actualPriceRaw >= coupon.minOrderAmount
+      : true,
+    minOrderAmount: coupon?.minOrderAmount,
   };
 }

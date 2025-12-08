@@ -1,6 +1,6 @@
 "use client";
 import MDPreview from "@/src/Components/MarkdownPreview/MarkdownPreview";
-import { Button, IconButton, Stack, Typography } from "@mui/material";
+import { Button, IconButton, Stack, Typography, Box } from "@mui/material";
 import { FIBOptionsCard, OptionsCard } from "./OptionsCard";
 import { Bookmark, BookmarkBorder, East, West } from "@mui/icons-material";
 
@@ -14,6 +14,10 @@ export default function ExamQuestionCard({
   handleOnNextQuestion,
   handleOnPreviousQuestion,
 }) {
+  if (!questions || !questions[questionState?.selectedSectionIndex]) {
+    return <Box>Loading Question...</Box>;
+  }
+
   const question =
     questions[questionState?.selectedSectionIndex]?.questions[
       questionState?.selectedQuestionIndex
@@ -30,7 +34,7 @@ export default function ExamQuestionCard({
   };
 
   const handleSelectOption = (optionId) => {
-    let updatedSelectedOptions = userAnswer?.selectedOptions;
+    let updatedSelectedOptions = userAnswer?.selectedOptions || [];
     if (question?.type === "MCQ") {
       if (updatedSelectedOptions.includes(optionId)) {
         updatedSelectedOptions = updatedSelectedOptions.filter(
@@ -56,138 +60,94 @@ export default function ExamQuestionCard({
       ...userAnswer,
       markedForReview: !markedForReview,
     });
-    console.log({
-      ...userAnswer,
-      markedForReview: !markedForReview,
-    });
   };
 
   return (
     <Stack
       sx={{
         border: "1px solid var(--border-color)",
-        borderRadius: "10px",
-        minHeight: "350px",
-        minWidth: "300px",
-        width: {
-          xs: "100%",
-          sm: "100%",
-          md: "90%",
-          lg: "100%",
-        },
-        maxWidth: {
-          xs: "100%",
-          sm: "100%",
-          md: "1200px",
-          lg: "1200px",
-        },
+        borderRadius: "20px",
+        minHeight: "400px",
+        width: "100%",
         backgroundColor: "var(--white)",
-        padding: { xs: "10px", sm: "20px", md: "20px", lg: "30px" },
-        gap: "10px",
+        padding: { xs: "20px", md: "40px" },
+        gap: "20px",
+        boxShadow: "0px 4px 20px rgba(0,0,0,0.05)",
       }}
     >
-      <Stack flexDirection="row" alignItems="center" gap="10px" width="100%">
-        <Typography
-          sx={{ fontFamily: "Lato", fontSize: "14px", fontWeight: "700" }}
-        >
-          Q {questionState.questionNo}
-        </Typography>
-        <IconButton onClick={handleOnMark}>
-          {userAnswer?.markedForReview ? (
-            <Bookmark sx={{ color: "var(--sec-color)" }} />
-          ) : (
-            <BookmarkBorder sx={{ color: "var(--sec-color)" }} />
-          )}
-        </IconButton>
-        <Stack flexDirection="row" gap="10px">
+      {/* Header Row */}
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        width="100%"
+      >
+        <Stack direction="row" alignItems="center" gap={2}>
           <Typography
             sx={{
-              fontFamily: "Lato",
-              fontSize: "12px",
-              width: "auto",
-              height: "28px",
-              color: "var(--primary-color)",
-              backgroundColor: "var(--primary-color-acc-2)",
-              padding: "5px",
-              borderRadius: "4px",
-            }}
-          >
-            +{pMark || 0}
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: "Lato",
-              fontSize: "12px",
-              minWidth: "25px",
-              height: "28px",
-              color: "var(--sec-color)",
-              backgroundColor: "var(--sec-color-acc-1)",
-              padding: "5px",
-              borderRadius: "4px",
-            }}
-          >
-            -{nMark || 0}
-          </Typography>
-        </Stack>
-        <Stack
-          flexDirection="row"
-          gap="10px"
-          sx={{ marginLeft: "auto", display: { xs: "none", md: "flex" } }}
-        >
-          <Button
-            variant="contained"
-            startIcon={<West />}
-            disabled={
-              questionState.selectedQuestionIndex === 0 &&
-              questionState.selectedSectionIndex === 0
-            }
-            sx={{
-              fontFamily: "Lato",
-              fontSize: "12px",
-              width: "90px",
-              height: "28px",
+              fontFamily: "var(--font-geist-sans)",
+              fontSize: "18px",
+              fontWeight: 700,
               color: "var(--text1)",
-              backgroundColor: "var(--border-color)",
-              textTransform: "none",
             }}
-            disableElevation
-            onClick={handleOnPreviousQuestion}
           >
-            Previous
-          </Button>
-          <Button
-            variant="contained"
-            endIcon={<East />}
-            sx={{
-              fontFamily: "Lato",
-              fontSize: "12px",
-              width: "90px",
-              height: "28px",
-              color: "var(--primary-color)",
-              backgroundColor: "var(--primary-color-acc-2)",
-              textTransform: "none",
-            }}
-            disableElevation
-            disabled={
-              questionState?.sectionViseQuestionCount?.length ===
-                questionState?.selectedSectionIndex + 1 &&
-              questionState?.sectionViseQuestionCount[
-                questionState?.selectedSectionIndex
-              ] ===
-                questionState?.selectedQuestionIndex + 1
-            }
-            onClick={handleOnNextQuestion}
-          >
-            Next
-          </Button>
+            Question {questionState.questionNo}
+          </Typography>
+          <Stack direction="row" gap={1}>
+            <Typography
+              sx={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "var(--primary-color)",
+                bgcolor: "var(--primary-color-acc-2)",
+                px: 1.5,
+                py: 0.5,
+                borderRadius: "6px",
+              }}
+            >
+              +{pMark || 0}
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "var(--delete-color)",
+                bgcolor: "var(--delete-color-acc-2)",
+                px: 1.5,
+                py: 0.5,
+                borderRadius: "6px",
+              }}
+            >
+              -{nMark || 0}
+            </Typography>
+          </Stack>
         </Stack>
+
+        <IconButton
+          onClick={handleOnMark}
+          sx={{
+            color: userAnswer?.markedForReview
+              ? "var(--sec-color)"
+              : "var(--text3)",
+            bgcolor: userAnswer?.markedForReview
+              ? "var(--sec-color-acc-2)"
+              : "transparent",
+            "&:hover": {
+              bgcolor: "var(--sec-color-acc-2)",
+            },
+          }}
+        >
+          {userAnswer?.markedForReview ? <Bookmark /> : <BookmarkBorder />}
+        </IconButton>
       </Stack>
 
-      <Stack flexDirection="row" justifyContent="space-between">
+      {/* Question Content */}
+      <Box sx={{ flex: 1 }}>
         <MDPreview value={question?.title} />
-      </Stack>
+      </Box>
 
-      <Stack flexDirection="row" flexWrap="wrap" gap="20px">
+      {/* Options */}
+      <Box sx={{ mt: 2 }}>
         {question?.type === "FIB" ? (
           <FIBOptionsCard
             noOfBlanks={question?.noOfBlanks}
@@ -202,6 +162,39 @@ export default function ExamQuestionCard({
             onSelect={handleSelectOption}
           />
         )}
+      </Box>
+
+      {/* Navigation Footer */}
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        sx={{ display: "flex", mt: 4 }}
+      >
+        <Button
+          variant="outlined"
+          startIcon={<West />}
+          disabled={
+            questionState.selectedQuestionIndex === 0 &&
+            questionState.selectedSectionIndex === 0
+          }
+          onClick={handleOnPreviousQuestion}
+          sx={{ textTransform: "none", borderRadius: "10px" }}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="contained"
+          endIcon={<East />}
+          onClick={handleOnNextQuestion}
+          sx={{
+            textTransform: "none",
+            borderRadius: "10px",
+            background:
+              "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%)",
+          }}
+        >
+          Next
+        </Button>
       </Stack>
     </Stack>
   );

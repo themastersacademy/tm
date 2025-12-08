@@ -5,6 +5,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Box,
   Button,
   Chip,
   Radio,
@@ -18,8 +19,11 @@ export default function QuestionPreview({
   result,
   userAnswerList,
   answerList,
+  showAnswers = true,
 }) {
   const [expanded, setExpanded] = useState(false);
+
+  // ... (toggle logic) ...
 
   const handleToggle = (event) => {
     event.stopPropagation();
@@ -38,36 +42,48 @@ export default function QuestionPreview({
     <Stack
       sx={{
         border: "1px solid var(--border-color)",
-        borderRadius: "10px",
-        padding: "15px",
-        minHeight: "200px",
-        gap: "12px",
+        borderRadius: "12px",
+        padding: "12px",
+        gap: "10px",
         width: "100%",
+        bgcolor: "white",
       }}
     >
-      <Stack flexDirection="row" alignItems="center" gap="10px">
+      <Stack flexDirection="row" alignItems="center" gap="8px">
+        {/* ... (header logic mostly same, keeping brevity) ... */}
         <Typography
-          sx={{ fontFamily: "Lato", fontSize: "14px", fontWeight: "700" }}
+          sx={{
+            fontFamily: "var(--font-geist-sans)",
+            fontSize: "14px",
+            fontWeight: "700",
+          }}
         >
-          Q {qNum}
+          Q{qNum}.
         </Typography>
         <Button
-          variant="contained"
+          disableElevation
           sx={{
             backgroundColor: "var(--sec-color-acc-1)",
             color: "var(--sec-color)",
-            height: "22px",
+            height: "20px",
+            minWidth: "auto",
+            px: 1,
             textTransform: "none",
             fontSize: "10px",
-            fontFamily: "Lato",
-            gap: "10px",
+            fontFamily: "var(--font-geist-sans)",
+            fontWeight: 600,
           }}
-          disableElevation
         >
           {result.type}
         </Button>
 
-        <Stack flexDirection="row" gap="10px" sx={{ marginLeft: "auto" }}>
+        <Stack
+          flexDirection="row"
+          gap="6px"
+          sx={{ marginLeft: "auto" }}
+          alignItems="center"
+        >
+          {/* Status Chips - Keep these as they are about user's attempt */}
           {(() => {
             const isSkippedMCQMSQ =
               (result.type === "MCQ" || result.type === "MSQ") &&
@@ -87,7 +103,10 @@ export default function QuestionPreview({
                   sx={{
                     backgroundColor: "var(--delete-color)",
                     color: "var(--white)",
-                    borderRadius: "5px",
+                    borderRadius: "4px",
+                    height: "20px",
+                    fontSize: "10px",
+                    fontWeight: 600,
                   }}
                   label="Skipped"
                 />
@@ -101,7 +120,10 @@ export default function QuestionPreview({
                   sx={{
                     backgroundColor: "var(--delete-color)",
                     color: "var(--white)",
-                    borderRadius: "5px",
+                    borderRadius: "4px",
+                    height: "20px",
+                    fontSize: "10px",
+                    fontWeight: 600,
                   }}
                   label="Unattempted"
                 />
@@ -111,13 +133,17 @@ export default function QuestionPreview({
             return null;
           })()}
 
+          {/* Show marks only? Or marks reveal correctness? Usually marks are okay but maybe hide if very strict? Assuming marks are OK for now as user asked about "Question and Correct Answer". */}
           <Chip
             label={userAnswer?.pMarkObtained || 0}
             size="small"
             sx={{
               backgroundColor: "var(--primary-color-acc-2)",
               color: "var(--primary-color)",
-              borderRadius: "5px",
+              borderRadius: "4px",
+              height: "20px",
+              fontSize: "10px",
+              fontWeight: 600,
             }}
           />
           <Chip
@@ -126,176 +152,214 @@ export default function QuestionPreview({
             sx={{
               backgroundColor: "var(--sec-color-acc-1)",
               color: "var(--sec-color)",
-              borderRadius: "5px",
+              borderRadius: "4px",
+              height: "20px",
+              fontSize: "10px",
+              fontWeight: 600,
             }}
           />
         </Stack>
       </Stack>
-      <Stack flexDirection="row" justifyContent="space-between">
+
+      <Box sx={{ "& p": { m: 0, fontSize: "14px" } }}>
         <MDPreview value={result.title} />
-      </Stack>
-      <Stack
-        flexDirection="row"
-        flexWrap="wrap"
-        gap="20px"
-        padding={{ xs: "0px", md: "10px" }}
-      >
+      </Box>
+
+      <Stack gap="8px">
         {(result.type === "MCQ" || result.type === "MSQ") &&
           result.options.map((option, index) => {
             const isSelected = userAnswer?.selectedOptions?.includes(option.id);
             const correctOptionIds =
               answerInfo?.correct.map((opt) => opt.id) || [];
-            const isOptionCorrect = correctOptionIds.includes(option.id);
+
+            // If showAnswers is false, act as if no option is correct for display purposes
+            const isOptionCorrect = showAnswers
+              ? correctOptionIds.includes(option.id)
+              : false;
 
             let borderColor = "var(--border-color)";
             let label = "";
+            let labelColor = "text.secondary";
 
-            if (isSelected && isOptionCorrect) {
-              borderColor = "var(--primary-color)";
-              label = "Correct Answer";
-            } else if (isSelected && !isOptionCorrect) {
-              borderColor = "var(--delete-color)";
-              label = "Incorrect Answer";
-            } else if (!isSelected && isOptionCorrect) {
+            if (isSelected) {
+              // If selected, we want to know if it's correct/incorrect only if showAnswers is true
+              if (showAnswers) {
+                if (isOptionCorrect) {
+                  borderColor = "var(--primary-color)";
+                  label = "Correct Answer";
+                  labelColor = "var(--primary-color)";
+                } else {
+                  borderColor = "var(--delete-color)";
+                  label = "Incorrect Answer";
+                  labelColor = "var(--delete-color)";
+                }
+              } else {
+                // Just show it was selected
+                borderColor = "var(--primary-color)"; // Neutral or primary to show selection
+                label = "Your Answer";
+                labelColor = "var(--primary-color)";
+              }
+            } else if (isOptionCorrect && showAnswers) {
+              // Show missed correct answers ONLY if showAnswers is true
               borderColor = "var(--primary-color)";
               label = "Correct Answer (Missed)";
+              labelColor = "var(--primary-color)";
             }
 
             return (
               <Stack
                 key={index}
+                direction="row"
                 gap="10px"
                 sx={{
-                  border: `2px solid ${borderColor}`,
-                  padding: "10px",
-                  width: "520px",
-                  minHeight: "90px",
-                  borderRadius: "5px",
-                  justifyContent: "center",
+                  border: `1px solid ${borderColor}`,
+                  padding: "8px 12px",
+                  width: "100%",
+                  borderRadius: "8px",
+                  alignItems: "center",
+                  bgcolor: isSelected ? "#f8fafc" : "transparent",
                 }}
               >
-                <Stack flexDirection="row" alignItems="center" gap="10px">
-                  <Radio
-                    checked={isSelected}
-                    sx={{
-                      color: borderColor,
-                      padding: "0px",
-                      "&.Mui-checked": { color: borderColor },
-                    }}
-                  />
-                  <Stack gap="5px">
+                <Radio
+                  checked={isSelected}
+                  size="small"
+                  sx={{
+                    color: borderColor,
+                    padding: "0px",
+                    "&.Mui-checked": { color: borderColor },
+                  }}
+                />
+                <Stack sx={{ width: "100%" }}>
+                  <Box sx={{ "& p": { m: 0, fontSize: "13px" } }}>
                     <MDPreview value={option.text} />
-                    {label && (
-                      <Typography
-                        sx={{
-                          fontFamily: "Lato",
-                          fontSize: "12px",
-                          fontWeight: "700",
-                          color: borderColor,
-                        }}
-                      >
-                        {label}
-                      </Typography>
-                    )}
-                  </Stack>
+                  </Box>
+                  {label && (
+                    <Typography
+                      sx={{
+                        fontFamily: "var(--font-geist-sans)",
+                        fontSize: "10px",
+                        fontWeight: "700",
+                        color: labelColor,
+                        mt: 0.5,
+                      }}
+                    >
+                      {label}
+                    </Typography>
+                  )}
                 </Stack>
               </Stack>
             );
           })}
 
+        {/* FIB Logic similar update */}
         {result.type === "FIB" &&
           answerInfo?.blanks.map((blank, index) => {
             const userResponse = userAnswer?.blankAnswers?.[index] || "";
-            const isCorrect = userAnswer?.isCorrect;
+            // Only show correctness coloring if showAnswers is true
+            const isCorrect = showAnswers ? userAnswer?.isCorrect : true; // Default to neutral if hiding
 
             return (
               <Stack
                 key={index}
                 gap="4px"
                 sx={{
-                  border: `2px solid ${
-                    isCorrect ? "var(--primary-color)" : "var(--delete-color)"
+                  border: `1px solid ${
+                    showAnswers
+                      ? isCorrect
+                        ? "var(--primary-color)"
+                        : "var(--delete-color)"
+                      : "var(--border-color)"
                   }`,
-                  padding: "10px",
-                  width: "520px",
-                  minHeight: "80px",
-                  borderRadius: "5px",
-                  justifyContent: "center",
+                  padding: "8px 12px",
+                  width: "100%",
+                  borderRadius: "8px",
                   display: userResponse ? "flex" : "none",
                 }}
               >
                 <Typography
                   sx={{
-                    fontFamily: "Lato",
-                    fontSize: "12px",
+                    fontFamily: "var(--font-geist-sans)",
+                    fontSize: "11px",
                     fontWeight: "700",
+                    color: "text.secondary",
                   }}
                 >
                   Blank {index + 1}
                 </Typography>
-                <MDPreview value={`Your Answer : ${userResponse}`} />
+                <Typography sx={{ fontSize: "13px", fontWeight: 500 }}>
+                  Your Answer: {userResponse}
+                </Typography>
               </Stack>
             );
           })}
       </Stack>
-      <Stack
-        flexDirection="row"
-        alignItems="center"
-        gap="5px"
-        sx={{ cursor: "pointer" }}
-        onClick={() => {}}
-      >
+
+      {/* Only show solution accordion if showAnswers is true */}
+      {showAnswers && (
         <Accordion
           expanded={expanded}
+          onChange={handleToggle}
           sx={{
             boxShadow: "none",
             border: "none",
             "&::before": { display: "none" },
-            borderRadius: "10px",
-            overflow: "hidden",
-            width: "100%",
+            bgcolor: "transparent",
+            m: "0 !important",
           }}
         >
           <AccordionSummary
-            aria-controls="panel1bh-content"
-            id="panel1bh-header"
+            sx={{
+              minHeight: "auto",
+              p: 0,
+              "& .MuiAccordionSummary-content": { m: 0 },
+            }}
           >
             <Stack
-              flexDirection="row"
+              direction="row"
               alignItems="center"
-              gap="10px"
-              onClick={handleToggle}
-              sx={{ transition: "all 0.7s ease" }}
+              gap="6px"
+              sx={{
+                cursor: "pointer",
+                color: "var(--primary-color)",
+                "&:hover": { opacity: 0.8 },
+              }}
             >
               <Typography
                 sx={{
-                  fontFamily: "Lato",
-                  fontSize: "14px",
+                  fontFamily: "var(--font-geist-sans)",
+                  fontSize: "12px",
                   fontWeight: "700",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
                 }}
               >
-                View Solution
+                {expanded ? "Hide Solution" : "View Solution"}
               </Typography>
               {expanded ? (
-                <ExpandLess sx={{ color: "var(--text2)" }} />
+                <ExpandLess fontSize="small" color="inherit" />
               ) : (
-                <ExpandMore sx={{ color: "var(--text2)" }} />
+                <ExpandMore fontSize="small" color="inherit" />
               )}
             </Stack>
           </AccordionSummary>
-          <AccordionDetails>
-            <MDPreview
-              value={
-                answerList.find((ans) => ans.questionID === result.questionID)
-                  .solution
-              }
-            />
+          <AccordionDetails sx={{ p: 0, pt: 1 }}>
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: "#f1f5f9",
+                borderRadius: "8px",
+                fontSize: "13px",
+                "& p": { m: 0 },
+              }}
+            >
+              <MDPreview
+                value={
+                  answerList.find((ans) => ans.questionID === result.questionID)
+                    ?.solution || "No solution provided."
+                }
+              />
+            </Box>
           </AccordionDetails>
         </Accordion>
-      </Stack>
+      )}
     </Stack>
   );
 }

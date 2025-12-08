@@ -20,22 +20,26 @@ export default function Courses() {
   ];
 
   return (
-    <Stack width="100%" alignItems="center">
+    <Stack
+      width="100%"
+      alignItems="center"
+      sx={{ backgroundColor: "var(--bg1)" }}
+    >
       <MobileHeader />
       <Stack
         width="100%"
         maxWidth="1200px"
         alignItems={{ xs: "flex-start", md: "center" }}
-        padding={{ xs: "5px", md: "20px" }}
-        pb="30px"
-        gap="20px"
+        padding={{ xs: "12px", md: "24px" }}
+        pb={{ xs: "100px", md: "40px" }}
+        gap="24px"
         sx={{ mt: { xs: "10px", md: "0px" } }}
       >
         <Stack sx={{ display: { xs: "none", md: "block" }, width: "100%" }}>
           <Header />
         </Stack>
         <Stack
-          paddingX={{ xs: "0px", sm: "20px", md: "0px" }}
+          paddingX={{ xs: "8px", sm: "20px", md: "0px" }}
           sx={{ width: "100%" }}
         >
           <CustomTabs tabs={tabData} />

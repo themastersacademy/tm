@@ -3,6 +3,7 @@ import {
   ScanCommand,
   BatchGetCommand,
   PutCommand,
+  QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { randomUUID } from "crypto";
@@ -22,13 +23,22 @@ export async function getQuestions({ subjectID, difficultyLevel, count = 10 }) {
     throw new Error("subjectID is required");
   }
 
-  // 1) Scan only keys (pKey, sKey) for this subject (+ optional difficulty filter)
-  const prefix = `QUESTIONS@${subjectID}`;
-  const filterExprs = ["begins_with(sKey, :prefix)"];
-  const exprValues = { ":prefix": prefix };
+  // 1) Query keys (pKey, sKey) for this subject using the Main Table Schema
+  // PK: SUBJECT#<subjectID>
+  // SK: begins_with(QUESTION#)
+  const pKey = `SUBJECT#${subjectID}`;
+  const sKeyPrefix = "QUESTION#";
+
+  const keyCond = "pKey = :pk AND begins_with(sKey, :sk)";
+  const exprValues = {
+    ":pk": pKey,
+    ":sk": sKeyPrefix,
+  };
 
   if (difficultyLevel) {
-    filterExprs.push("difficultyLevel = :dl");
+    // We can filter by difficultyLevel if it's an attribute
+    // Note: This is a FilterExpression, not KeyCondition, so it happens after reading from disk but before returning.
+    // Since we are querying a specific subject, this is still reasonably efficient.
     exprValues[":dl"] = difficultyLevel;
   }
 
@@ -36,14 +46,20 @@ export async function getQuestions({ subjectID, difficultyLevel, count = 10 }) {
   let ExclusiveStartKey = undefined;
 
   do {
+    const commandInput = {
+      TableName: CONTENT_TABLE,
+      KeyConditionExpression: keyCond,
+      ProjectionExpression: "pKey, sKey", // We only need keys first for random selection
+      ExpressionAttributeValues: exprValues,
+      ExclusiveStartKey,
+    };
+
+    if (difficultyLevel) {
+      commandInput.FilterExpression = "difficultyLevel = :dl";
+    }
+
     const { Items, LastEvaluatedKey } = await dynamoDB.send(
-      new ScanCommand({
-        TableName: CONTENT_TABLE,
-        ProjectionExpression: "pKey, sKey",
-        FilterExpression: filterExprs.join(" AND "),
-        ExpressionAttributeValues: exprValues,
-        ExclusiveStartKey,
-      })
+      new QueryCommand(commandInput)
     );
 
     if (Items) {
@@ -90,8 +106,8 @@ export async function getQuestions({ subjectID, difficultyLevel, count = 10 }) {
 
   // 4) Map to client shape
   return detailed.map((it) => ({
-    id: it.pKey.split("#", 2)[1],
-    subjectID: it.sKey.split("@", 2)[1],
+    id: it.sKey.split("#", 2)[1], // Extract ID from QUESTION#<id>
+    subjectID: it.pKey.split("#", 2)[1], // Extract SubjectID from SUBJECT#<id>
     title: it.title,
     type: it.type,
     difficultyLevel: it.difficultyLevel,

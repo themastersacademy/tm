@@ -25,12 +25,8 @@ export async function POST(req) {
         couponCode,
         billingInfoIndex,
       });
-      console.log(result)
-
       return Response.json(result, { status: 200 });
     } catch (error) {
-      console.log(error);
-      
       return handleError(error);
     }
   });

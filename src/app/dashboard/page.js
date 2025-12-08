@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
 export default async function Dashboard({ searchParams }) {
-  const path = await searchParams?.path;
+  const { path } = await searchParams;
 
   // 1) Check auth
   const session = await getSession();
@@ -24,7 +24,8 @@ export default async function Dashboard({ searchParams }) {
     return redirect("/profile-setup?goal=true");
   }
 
-  const selectedGoalID = await cookies()?.get("selectedGoalID")?.value;
+  const cookieStore = await cookies();
+  const selectedGoalID = cookieStore.get("selectedGoalID")?.value;
 
   if (
     selectedGoalID &&

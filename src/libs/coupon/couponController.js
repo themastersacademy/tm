@@ -47,6 +47,9 @@ export async function fetchCouponByCode(code) {
         // totalRedemptionsPerUser: Number(c.totalRedemptionsPerUser),
         // startDate: c.startDate,
         // endDate: c.endDate,
+        couponClass: c.couponClass,
+        applicableCourses: c.applicableCourses || [],
+        applicableGoals: c.applicableGoals || [],
       },
     };
   } catch (err) {

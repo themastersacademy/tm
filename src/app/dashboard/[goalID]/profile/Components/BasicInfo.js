@@ -1,6 +1,14 @@
 import StyledTextField from "@/src/Components/StyledTextField/StyledTextField";
-import { Edit, Logout } from "@mui/icons-material";
-import { Avatar, Button, Skeleton, Stack, Typography } from "@mui/material";
+import StyledSelect from "@/src/Components/StyledSelect/StyledSelect";
+import { Edit, Person, Email, Phone, Wc, Logout } from "@mui/icons-material";
+import {
+  Avatar,
+  Button,
+  Skeleton,
+  Stack,
+  Typography,
+  Box,
+} from "@mui/material";
 import Image from "next/image";
 import { enqueueSnackbar } from "notistack";
 import { useState, useEffect } from "react";
@@ -10,26 +18,9 @@ export default function BasicInfo({
   isEditMode,
   setIsEditMode,
   session,
+  userProfileData,
+  setUserProfileData,
 }) {
-  const [userProfileData, setUserProfileData] = useState(null);
-
-  useEffect(() => {
-    const fetchUserProfileData = async () => {
-      try {
-        const response = await fetch("/api/user/profile-data");
-        const data = await response.json();
-        if (data.success) {
-          setUserProfileData(data.data);
-        } else {
-          console.log(data.message);
-        }
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-      }
-    };
-    fetchUserProfileData();
-  }, []);
-
   const handleSave = async () => {
     try {
       const response = await fetch("/api/user/update-profile-data", {
@@ -43,74 +34,112 @@ export default function BasicInfo({
       });
       const data = await response.json();
       if (data.success) {
-        // setUserProfileData(data.data);
-        enqueueSnackbar("Profile Saved", {
+        enqueueSnackbar("Profile Saved Successfully", {
           variant: "success",
         });
-        setIsEditMode((prev) => !prev);
+        setIsEditMode(false);
       } else {
-        console.log(data.message);
+        enqueueSnackbar(data.message || "Failed to save profile", {
+          variant: "error",
+        });
       }
     } catch (error) {
       console.error("Error updating user profile:", error);
+      enqueueSnackbar("Error updating profile", {
+        variant: "error",
+      });
     }
   };
 
   if (!userProfileData) {
     return (
-      <Stack gap="20px">
-        <Skeleton width="100px" />
-        <Skeleton variant="circular" width="100px" height="100px" />
-        <Skeleton width="200px" />
-        <Skeleton width="200px" />
-        <Skeleton width="200px" />
+      <Stack gap="20px" padding="20px">
+        <Skeleton width="100%" height="60px" />
+        <Skeleton width="100%" height="60px" />
+        <Skeleton width="100%" height="60px" />
+        <Skeleton width="100%" height="60px" />
       </Stack>
     );
   }
 
+  const formFields = [
+    {
+      label: "Full Name",
+      icon: Person,
+      name: "name",
+      value: userProfileData.name || "",
+      placeholder: "Enter your full name",
+    },
+    {
+      label: "Email Address",
+      icon: Email,
+      name: "email",
+      value: userProfileData.email || "",
+      placeholder: "Enter your email",
+    },
+    {
+      label: "Phone Number",
+      icon: Phone,
+      name: "phoneNumber",
+      value: userProfileData.phoneNumber || "",
+      placeholder: "Enter your phone number",
+    },
+    {
+      label: "Gender",
+      icon: Wc,
+      name: "gender",
+      value: userProfileData.gender || "",
+      placeholder: "Enter your gender",
+    },
+  ];
+
   return (
-    <Stack gap="20px">
+    <Stack gap="24px">
+      {/* Header with Edit/Save */}
       <Stack
-        flexDirection="row"
+        direction="row"
         justifyContent="space-between"
+        alignItems="center"
         sx={{ display: { xs: "none", md: "flex" } }}
       >
         <Typography
-          component="div"
           sx={{
-            fontFamily: "Lato",
             fontSize: "18px",
-            fontWeight: "700",
-            color: "var(--text3)",
+            fontWeight: 700,
+            color: "var(--text1)",
           }}
         >
-          Personal details
+          Personal Information
         </Typography>
-        <Stack direction="row" gap="10px">
+        <Stack direction="row" gap="12px">
           <Button
-            variant="text"
-            endIcon={isEditMode ? "" : <Edit />}
+            variant={isEditMode ? "outlined" : "text"}
+            startIcon={isEditMode ? null : <Edit />}
             onClick={() => setIsEditMode((prev) => !prev)}
             sx={{
               textTransform: "none",
-              fontFamily: "Lato",
-              fontSize: "16px",
+              fontSize: "14px",
               color: "var(--primary-color)",
-              padding: "2px",
+              borderColor: "var(--primary-color)",
+              "&:hover": {
+                borderColor: "var(--primary-color-dark)",
+                backgroundColor: "var(--sec-color-acc-2)",
+              },
             }}
           >
-            {isEditMode ? "Cancel" : "Edit"}
+            {isEditMode ? "Cancel" : "Edit Profile"}
           </Button>
           {isEditMode && (
             <Button
               variant="contained"
               onClick={handleSave}
               sx={{
-                width: "150px",
                 textTransform: "none",
-                fontFamily: "Lato",
-                fontWeight: "700",
+                fontSize: "14px",
                 backgroundColor: "var(--primary-color)",
+                "&:hover": {
+                  backgroundColor: "var(--primary-color-dark)",
+                },
               }}
             >
               Save Changes
@@ -122,116 +151,185 @@ export default function BasicInfo({
             onClick={handleLogout}
             sx={{
               textTransform: "none",
-              fontFamily: "Lato",
-              fontSize: "16px",
+              fontSize: "14px",
               backgroundColor: "var(--delete-color)",
-              borderRadius: "6px",
+              "&:hover": {
+                backgroundColor: "#D32F2F",
+              },
             }}
-            disableElevation
           >
             Logout
           </Button>
         </Stack>
       </Stack>
-      <Stack sx={{ alignItems: { xs: "center", md: "flex-start" } }}>
-        {userProfileData.image ? (
-          <Image
-            src={userProfileData.image}
-            alt="profile"
-            width={100}
-            height={100}
-            style={{ borderRadius: "50%" }}
-          />
-        ) : (
-          <Avatar sx={{ width: 100, height: 100 }} />
-        )}
-      </Stack>
-      <Stack gap="20px" width="100%">
-        <Stack gap="10px" flexDirection="row" alignItems="center">
-          <Typography component="div" sx={{ width: "100px" }}>
-            Name
-          </Typography>
-          <StyledTextField
-            name="name"
-            placeholder="Your Name"
-            sx={{ width: { xs: "100%", md: "45%" } }}
-            value={userProfileData.name || ""}
-            onChange={(e) =>
-              setUserProfileData({ ...userProfileData, name: e.target.value })
-            }
-            disabled={!isEditMode}
-          />
-        </Stack>
-        <Stack gap="10px" flexDirection="row" alignItems="center">
-          <Typography component="div" sx={{ width: "100px" }}>
-            Email
-          </Typography>
-          <StyledTextField
-            name="email"
-            placeholder="Your Email"
-            sx={{ width: { xs: "100%", md: "45%" } }}
-            value={userProfileData.email || ""}
-            onChange={(e) =>
-              setUserProfileData({ ...userProfileData, email: e.target.value })
-            }
-            disabled={!isEditMode}
-          />
-        </Stack>
-        <Stack gap="10px" flexDirection="row" alignItems="center">
-          <Typography component="div" sx={{ width: "100px" }}>
-            Phone
-          </Typography>
-          <StyledTextField
-            name="phoneNumber"
-            placeholder="Your Number"
-            sx={{ width: { xs: "100%", md: "45%" } }}
-            value={userProfileData.phoneNumber || ""}
-            onChange={(e) =>
-              setUserProfileData({
-                ...userProfileData,
-                phoneNumber: e.target.value,
-              })
-            }
-            disabled={!isEditMode}
-          />
-        </Stack>
-        <Stack gap="10px" flexDirection="row" alignItems="center">
-          <Typography component="div" sx={{ width: "100px" }}>
-            Gender
-          </Typography>
-          <StyledTextField
-            name="gender"
-            placeholder="Your Gender"
-            value={userProfileData.gender || ""}
-            sx={{ width: { xs: "100%", md: "45%" } }}
-            onChange={(e) =>
-              setUserProfileData({ ...userProfileData, gender: e.target.value })
-            }
-            disabled={!isEditMode}
-          />
-        </Stack>
-        <Stack gap="10px" flexDirection="row" alignItems="center">
-          <Typography component="div" sx={{ width: "100px" }}>
-            Account type
-          </Typography>
-          <Stack
+
+      {/* Form Fields */}
+      <Stack gap="20px">
+        {formFields.map((field) => {
+          const IconComponent = field.icon;
+
+          if (field.name === "gender") {
+            return (
+              <Stack key={field.name} gap="8px">
+                <Stack direction="row" alignItems="center" gap="8px">
+                  <IconComponent sx={{ fontSize: 18, color: "var(--text3)" }} />
+                  <Typography
+                    sx={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "var(--text2)",
+                    }}
+                  >
+                    {field.label}
+                  </Typography>
+                </Stack>
+                {isEditMode ? (
+                  <StyledSelect
+                    options={[
+                      { label: "Male", value: "Male" },
+                      { label: "Female", value: "Female" },
+                      { label: "Other", value: "Other" },
+                    ]}
+                    value={field.value}
+                    onChange={(e) =>
+                      setUserProfileData({
+                        ...userProfileData,
+                        [field.name]: e.target.value,
+                      })
+                    }
+                    getLabel={(option) => option.label}
+                    getValue={(option) => option.value}
+                    placeholder="Select Gender"
+                  />
+                ) : (
+                  <StyledTextField
+                    name={field.name}
+                    placeholder={field.placeholder}
+                    value={field.value}
+                    disabled={true}
+                    fullWidth
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        backgroundColor: "var(--bg1)",
+                      },
+                    }}
+                  />
+                )}
+              </Stack>
+            );
+          }
+
+          return (
+            <Stack key={field.name} gap="8px">
+              <Stack direction="row" alignItems="center" gap="8px">
+                <IconComponent sx={{ fontSize: 18, color: "var(--text3)" }} />
+                <Typography
+                  sx={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "var(--text2)",
+                  }}
+                >
+                  {field.label}
+                </Typography>
+              </Stack>
+              <StyledTextField
+                name={field.name}
+                placeholder={field.placeholder}
+                value={field.value}
+                onChange={(e) =>
+                  setUserProfileData({
+                    ...userProfileData,
+                    [field.name]: e.target.value,
+                  })
+                }
+                disabled={!isEditMode}
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: isEditMode ? "white" : "var(--bg1)",
+                  },
+                }}
+              />
+            </Stack>
+          );
+        })}
+
+        {/* Account Type Display */}
+        <Stack gap="8px">
+          <Stack direction="row" alignItems="center" gap="8px">
+            <Person sx={{ fontSize: 18, color: "var(--text3)" }} />
+            <Typography
+              sx={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "var(--text2)",
+              }}
+            >
+              Account Type
+            </Typography>
+          </Stack>
+          <Box
             sx={{
-              width: "100px",
-              height: "35px",
-              display: "flex",
-              justifyContent: "center",
+              display: "inline-flex",
+              alignSelf: "flex-start",
+              padding: "10px 24px",
               backgroundColor:
                 session?.user?.accountType === "PRO"
-                  ? "var(--delete-color)"
+                  ? "#FFD700"
                   : "var(--primary-color)",
-              color: "white",
-              alignItems: "center",
+              color: session?.user?.accountType === "PRO" ? "#000" : "white",
               borderRadius: "10px",
+              fontWeight: 700,
+              fontSize: "14px",
             }}
           >
-            {session?.user?.accountType}
-          </Stack>
+            {session?.user?.accountType || "FREE"}
+          </Box>
         </Stack>
+      </Stack>
+
+      {/* Mobile Edit Section */}
+      <Stack gap="12px" sx={{ display: { xs: "flex", md: "none" } }}>
+        <Button
+          variant={isEditMode ? "outlined" : "contained"}
+          fullWidth
+          startIcon={isEditMode ? null : <Edit />}
+          onClick={() => setIsEditMode((prev) => !prev)}
+          sx={{
+            textTransform: "none",
+            fontSize: "14px",
+            backgroundColor: isEditMode
+              ? "transparent"
+              : "var(--primary-color)",
+            color: isEditMode ? "var(--primary-color)" : "white",
+            borderColor: "var(--primary-color)",
+            "&:hover": {
+              backgroundColor: isEditMode
+                ? "var(--sec-color-acc-2)"
+                : "var(--primary-color-dark)",
+            },
+          }}
+        >
+          {isEditMode ? "Cancel Editing" : "Edit Profile"}
+        </Button>
+        {isEditMode && (
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={handleSave}
+            sx={{
+              textTransform: "none",
+              fontSize: "14px",
+              backgroundColor: "var(--primary-color)",
+              "&:hover": {
+                backgroundColor: "var(--primary-color-dark)",
+              },
+            }}
+          >
+            Save Changes
+          </Button>
+        )}
       </Stack>
     </Stack>
   );

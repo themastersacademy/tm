@@ -4,9 +4,11 @@ import {
   IconButton,
   Stack,
   Typography,
-  Select,
   DialogContent,
-  MenuItem,
+  Popover,
+  InputBase,
+  Badge,
+  Avatar,
 } from "@mui/material";
 import {
   ArrowBackIosRounded,
@@ -14,6 +16,9 @@ import {
   Add,
   Close,
   East,
+  Search,
+  KeyboardArrowDown,
+  ExpandMore,
 } from "@mui/icons-material";
 import Image from "next/image";
 import mCoins from "@/public/icons/mCoins.svg";
@@ -28,6 +33,7 @@ import { useSnackbar } from "notistack";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import HeaderSkeleton from "../SkeletonCards/HeaderSkeleton";
 import { useGoals } from "@/src/app/context/GoalProvider";
+import GoalCard from "../GoalCard/GoalCard";
 
 export default function Header({ button = [], back }) {
   const params = useParams();
@@ -46,6 +52,18 @@ export default function Header({ button = [], back }) {
     title: "",
   });
 
+  // Goal Selector Popover State
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openGoalSelector = Boolean(anchorEl);
+
+  const handleGoalClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleGoalClose = () => {
+    setAnchorEl(null);
+  };
+
   const handlePlansDialogOpen = () => {
     setPlansDialogOpen(true);
   };
@@ -53,17 +71,18 @@ export default function Header({ button = [], back }) {
     setPlansDialogOpen(false);
   };
 
-  const handleSelectChange = (event) => {
-    const newGoalId = event.target.value;
+  const handleGoalChange = (newGoalId) => {
     const newPath = pathname.replace(selectedGoalID, newGoalId);
     newGoalId && router.push(newPath);
     document.cookie = `selectedGoalID=${newGoalId}; path=/; expires=${new Date(
       Date.now() + 1000 * 60 * 60 * 24 * 30
     ).toUTCString()}`;
+    handleGoalClose();
   };
 
   const dialogOpen = () => {
     setGoalDialogOpen(true);
+    handleGoalClose();
   };
   const dialogClose = () => {
     setGoalDialogOpen(false);
@@ -125,6 +144,8 @@ export default function Header({ button = [], back }) {
     }
   };
 
+  const currentGoal = goals.find((g) => g.id === selectedGoalID);
+
   return (
     <>
       {loading ? (
@@ -139,149 +160,344 @@ export default function Header({ button = [], back }) {
             justifyContent: "space-between",
             alignItems: "center",
             flexDirection: "row",
-            border: "1px solid var(--border-color)",
             backgroundColor: "var(--white)",
-            padding: "0px 25px",
+            padding: "0 24px",
             borderRadius: { xs: "0px", md: "10px" },
-            height: "60px",
+            height: "70px",
+            gap: "20px",
           }}
         >
-          <Stack
-            flexDirection="row"
-            alignItems="center"
-            gap="15px"
-            width="100%"
-          >
+          {/* Left Section: Back Button & Goal Selector */}
+          <Stack flexDirection="row" alignItems="center" gap="15px">
             {back && (
-              <ArrowBackIosRounded
-                onClick={() => {
-                  window.history.back();
-                }}
+              <IconButton
+                onClick={() => window.history.back()}
                 sx={{
-                  fontSize: "20px",
-                  cursor: "pointer",
-                  fontWeight: "700",
+                  color: "var(--text1)",
+                  "&:hover": { backgroundColor: "var(--sec-color-acc-2)" },
                 }}
-              />
+              >
+                <ArrowBackIosRounded sx={{ fontSize: "20px" }} />
+              </IconButton>
             )}
-            <Select
-              value={selectedGoalID}
-              onChange={handleSelectChange}
-              displayEmpty
-              renderValue={(selected) => {
-                if (!selected) {
-                  return "Loading...";
-                }
-                const goal = goals.find(
-                  (option) => option.id === selectedGoalID
-                );
-                return goal ? goal.title : "Loading";
-              }}
-              variant="outlined"
-              MenuProps={{
-                disableScrollLock: true,
-                PaperProps: {
-                  sx: {
-                    padding: "8px",
-                    "& .MuiList-root": {
-                      paddingBottom: 0,
-                      borderColor: "var(--border-color)",
-                    },
-                  },
-                },
-              }}
+
+            <Stack
+              onClick={handleGoalClick}
+              direction="row"
+              alignItems="center"
+              gap="12px"
               sx={{
-                minWidth: "170px",
-                height: "40px",
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: selectedGoalID ? "var(--sec-color)" : "inherit",
-                },
+                cursor: "pointer",
+                padding: "6px 12px",
+                borderRadius: "12px",
+                transition: "all 0.2s ease",
                 "&:hover": {
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "var(--sec-color)",
-                  },
+                  backgroundColor: "var(--sec-color-acc-2)",
                 },
               }}
             >
-              {enrolledGoals.map((goalEnrolled) => (
-                <MenuItem key={goalEnrolled.goalID} value={goalEnrolled.goalID}>
-                  {goals.find((goal) => goal.id === goalEnrolled.goalID)?.title}
-                </MenuItem>
-              ))}
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={dialogOpen}
+              <Stack
                 sx={{
-                  backgroundColor: "var(--primary-color)",
-                  textTransform: "none",
-                  marginTop: "8px",
-                  width: "100%",
-                  justifyContent: "flex-start",
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  backgroundColor: "var(--primary-color-acc-2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                Add Goals
-              </Button>
-            </Select>
-          </Stack>
-          <Stack flexDirection="row" gap="15px" alignItems="center">
-            <Stack flexDirection="row" gap="10px" alignItems="center">
-              {button.map((buttons, index) => (
-                <Stack key={index}>{buttons}</Stack>
-              ))}
+                <Image
+                  src={
+                    currentGoal?.icon === "castle"
+                      ? gate_cse
+                      : currentGoal?.icon === "org"
+                      ? placement
+                      : currentGoal?.icon === "institute"
+                      ? Banking
+                      : gate_cse
+                  }
+                  alt="Goal Icon"
+                  width={24}
+                  height={24}
+                />
+              </Stack>
+              <Stack>
+                <Typography
+                  sx={{
+                    fontSize: "12px",
+                    color: "var(--text3)",
+                    fontWeight: 500,
+                  }}
+                >
+                  Selected Goal
+                </Typography>
+                <Stack direction="row" alignItems="center" gap="4px">
+                  <Typography
+                    sx={{
+                      fontSize: "14px",
+                      fontWeight: 700,
+                      color: "var(--text1)",
+                    }}
+                  >
+                    {currentGoal?.title || "Select Goal"}
+                  </Typography>
+                  <ExpandMore
+                    sx={{
+                      fontSize: "18px",
+                      color: "var(--text3)",
+                      transform: openGoalSelector
+                        ? "rotate(180deg)"
+                        : "rotate(0deg)",
+                      transition: "transform 0.2s",
+                    }}
+                  />
+                </Stack>
+              </Stack>
             </Stack>
+
+            {/* Goal Selector Popover */}
+            <Popover
+              open={openGoalSelector}
+              anchorEl={anchorEl}
+              onClose={handleGoalClose}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "left",
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "left",
+              }}
+              PaperProps={{
+                sx: {
+                  mt: 1.5,
+                  width: "240px",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  border: "1px solid var(--border-color)",
+                  padding: "8px",
+                },
+              }}
+              disableScrollLock
+            >
+              <Stack gap="4px">
+                {enrolledGoals.map((goalEnrolled) => {
+                  const goal = goals.find((g) => g.id === goalEnrolled.goalID);
+                  const isSelected = goal?.id === selectedGoalID;
+                  return (
+                    <Stack
+                      key={goalEnrolled.goalID}
+                      onClick={() => handleGoalChange(goalEnrolled.goalID)}
+                      direction="row"
+                      alignItems="center"
+                      gap="12px"
+                      sx={{
+                        padding: "10px",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        backgroundColor: isSelected
+                          ? "var(--primary-color-acc-2)"
+                          : "transparent",
+                        "&:hover": {
+                          backgroundColor: isSelected
+                            ? "var(--primary-color-acc-2)"
+                            : "var(--sec-color-acc-2)",
+                        },
+                      }}
+                    >
+                      <Image
+                        src={
+                          goal?.icon === "castle"
+                            ? gate_cse
+                            : goal?.icon === "org"
+                            ? placement
+                            : goal?.icon === "institute"
+                            ? Banking
+                            : gate_cse
+                        }
+                        alt={goal?.title}
+                        width={20}
+                        height={20}
+                      />
+                      <Typography
+                        sx={{
+                          fontSize: "14px",
+                          fontWeight: isSelected ? 700 : 500,
+                          color: isSelected
+                            ? "var(--primary-color)"
+                            : "var(--text1)",
+                        }}
+                      >
+                        {goal?.title}
+                      </Typography>
+                    </Stack>
+                  );
+                })}
+                <Button
+                  startIcon={<Add />}
+                  onClick={dialogOpen}
+                  sx={{
+                    mt: 1,
+                    textTransform: "none",
+                    color: "var(--primary-color)",
+                    justifyContent: "flex-start",
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    "&:hover": {
+                      backgroundColor: "var(--primary-color-acc-2)",
+                    },
+                  }}
+                >
+                  Add New Goal
+                </Button>
+              </Stack>
+            </Popover>
+          </Stack>
+          {/* Center Section: Search Bar - HIDDEN */}
+          {/* <Stack
+            sx={{
+              flex: 1,
+              maxWidth: "400px",
+              display: { xs: "none", md: "flex" },
+            }}
+          >
             <Stack
-              flexDirection="row"
+              direction="row"
               alignItems="center"
               sx={{
-                marginLeft: "auto",
-                gap: "8px",
+                backgroundColor: "var(--sec-color-acc-2)",
+                borderRadius: "12px",
+                padding: "8px 16px",
+                border: "1px solid transparent",
+                transition: "all 0.2s",
+                "&:focus-within": {
+                  backgroundColor: "var(--white)",
+                  borderColor: "var(--primary-color)",
+                  boxShadow: "0 0 0 3px var(--primary-color-acc-2)",
+                },
               }}
             >
-              {/* <Stack
-                flexDirection="row"
-                alignItems="center"
-                gap="8px"
-                sx={{ display: { xs: "none", md: "flex" } }}
-              >
-                <IconButton sx={{ padding: "0px" }}>
-                  <Notifications sx={{ color: "var(--primary-color)" }} />
-                </IconButton>
-                <Image src={mCoins} alt="mCoins" />
-                <Typography>100</Typography>
-              </Stack> */}
-              <Button
-                variant="contained"
-                onClick={handlePlansDialogOpen}
+              <Search sx={{ color: "var(--text3)", mr: 1 }} />
+              <InputBase
+                placeholder="Search for courses, exams..."
                 sx={{
-                  textTransform: "none",
-                  borderRadius: "50px",
+                  width: "100%",
+                  fontSize: "14px",
+                  color: "var(--text1)",
+                  "& input::placeholder": {
+                    color: "var(--text3)",
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Stack>
+          </Stack> */}
+          {/* Right Section: Actions */}
+          <Stack flexDirection="row" alignItems="center" gap="20px">
+            {/* Additional Buttons */}
+            {button.length > 0 && (
+              <Stack flexDirection="row" gap="10px">
+                {button.map((btn, index) => (
+                  <Stack key={index}>{btn}</Stack>
+                ))}
+              </Stack>
+            )}
+
+            {/* Gamification & Notifications - HIDDEN */}
+            {/* <Stack
+              direction="row"
+              alignItems="center"
+              gap="16px"
+              sx={{ display: { xs: "none", md: "flex" } }}
+            >
+              <Stack
+                direction="row"
+                alignItems="center"
+                gap="6px"
+                sx={{
+                  backgroundColor: "var(--sec-color-acc-1)",
+                  padding: "6px 12px",
+                  borderRadius: "20px",
+                  border: "1px solid var(--sec-color-acc-2)",
+                }}
+              >
+                <Image src={mCoins} alt="Coins" width={20} height={20} />
+                <Typography
+                  sx={{
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: "var(--sec-color)",
+                  }}
+                >
+                  100
+                </Typography>
+              </Stack>
+
+              <IconButton
+                sx={{
+                  color: "var(--text2)",
+                  "&:hover": { color: "var(--primary-color)" },
+                }}
+              >
+                <Badge color="error" variant="dot">
+                  <Notifications />
+                </Badge>
+              </IconButton>
+            </Stack> */}
+
+            {/* Plan Status */}
+            <Button
+              onClick={handlePlansDialogOpen}
+              variant={
+                session?.user?.accountType === "PRO" ? "contained" : "outlined"
+              }
+              sx={{
+                textTransform: "none",
+                borderRadius: "10px",
+                padding: "6px 16px",
+                height: "36px",
+                fontSize: "13px",
+                fontWeight: 700,
+                boxShadow: "none",
+                backgroundColor:
+                  session?.user?.accountType === "PRO"
+                    ? "var(--primary-color)"
+                    : "transparent",
+                borderColor:
+                  session?.user?.accountType === "PRO"
+                    ? "transparent"
+                    : "var(--primary-color)",
+                color:
+                  session?.user?.accountType === "PRO"
+                    ? "var(--white)"
+                    : "var(--primary-color)",
+                "&:hover": {
                   backgroundColor:
                     session?.user?.accountType === "PRO"
-                      ? "var( --delete-color-acc-1)"
+                      ? "var(--primary-color-dark)"
                       : "var(--primary-color-acc-2)",
-                  color:
+                  borderColor:
                     session?.user?.accountType === "PRO"
-                      ? "red"
+                      ? "transparent"
                       : "var(--primary-color)",
-                  fontFamily: "Lato",
-                  fontWeight: "700",
-                  height: "30px",
-                }}
-                disableElevation
-              >
-                {session?.user?.accountType}
-              </Button>
-            </Stack>
+                  boxShadow: "none",
+                },
+              }}
+            >
+              {session?.user?.accountType === "PRO" ? "PRO Plan" : "Upgrade"}
+            </Button>
+
             <PlansDialogBox
               plansDialogOpen={plansDialogOpen}
               handlePlansDialogClose={handlePlansDialogClose}
             />
           </Stack>
 
+          {/* Goal Enrollment Dialog */}
           <DialogBox
             isOpen={goalDialogOpen}
-            title="Select Goal"
+            title="Select a Goal"
             icon={
               <IconButton
                 sx={{ marginLeft: "auto", padding: "4px", borderRadius: "8px" }}
@@ -292,69 +508,87 @@ export default function Header({ button = [], back }) {
             }
             actionButton={
               <Button
-                variant="text"
+                variant="contained"
                 endIcon={<East />}
-                sx={{ textTransform: "none", color: "var(--primary-color)" }}
+                sx={{
+                  textTransform: "none",
+                  backgroundColor: "var(--primary-color)",
+                  color: "white",
+                  borderRadius: "8px",
+                  padding: "8px 24px",
+                  "&:hover": {
+                    backgroundColor: "var(--primary-color-dark)",
+                  },
+                }}
                 onClick={handleEnrollGoal}
               >
-                Enroll Goal
+                Enroll Now
               </Button>
             }
+            sx={{
+              "& .MuiDialog-paper": {
+                width: "1200px",
+                maxWidth: { xs: "95%", md: "1200px" },
+                borderRadius: "20px",
+                boxShadow: "0 24px 48px rgba(0,0,0,0.12)",
+              },
+            }}
           >
-            <DialogContent>
+            <DialogContent
+              sx={{
+                padding: "32px",
+                background:
+                  "linear-gradient(to bottom, #FAFBFC 0%, #FFFFFF 100%)",
+              }}
+            >
+              <Stack gap="12px" mb="32px" alignItems="center">
+                <Typography
+                  sx={{
+                    fontSize: "15px",
+                    color: "var(--text2)",
+                    textAlign: "center",
+                    lineHeight: 1.6,
+                    maxWidth: "600px",
+                  }}
+                >
+                  Choose a goal to start your learning journey. You can switch
+                  between goals anytime from your dashboard.
+                </Typography>
+              </Stack>
               <Stack
-                gap="25px"
-                flexDirection="row"
-                alignItems="center"
-                justifyContent="center"
+                display="grid"
+                gridTemplateColumns={{
+                  xs: "repeat(1, 1fr)",
+                  md: "repeat(2, 1fr)",
+                }}
+                gap="20px"
               >
-                {goals.map((goalItem) => (
-                  <Stack
-                    key={goalItem.id}
-                    gap="10px"
-                    onClick={() =>
-                      setSelectedGoal({
-                        goalID: goalItem.id,
-                        icon: goalItem.icon,
-                        title: goalItem.title,
-                      })
-                    }
-                    alignItems="center"
-                  >
-                    <Stack
-                      sx={{
-                        width: "62px",
-                        height: "62px",
-                        backgroundColor:
-                          selectedGoal.goalID === goalItem.id
-                            ? "var(--primary-color)"
-                            : "var(--sec-color-acc-2)",
-                        borderRadius: "10px",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <Image
-                        src={
-                          goalItem.icon === "castle"
-                            ? gate_cse
-                            : goalItem.icon === "org"
-                            ? placement
-                            : goalItem.icon === "institute"
-                            ? Banking
-                            : gate_cse
-                        }
-                        alt={goalItem.title}
-                        width={22}
-                        height={25}
-                      />
-                    </Stack>
-                    <Typography sx={{ fontFamily: "Lato", fontSize: "12px" }}>
-                      {goalItem.title}
-                    </Typography>
-                  </Stack>
-                ))}
+                {goals.map((goalItem) => {
+                  const isEnrolled = enrolledGoals.some(
+                    (eg) => eg.goalID === goalItem.id
+                  );
+                  return (
+                    <GoalCard
+                      key={goalItem.id}
+                      title={goalItem.title}
+                      icon={goalItem.icon}
+                      tagline={goalItem.tagline}
+                      description={goalItem.description}
+                      coursesCount={goalItem.coursesCount}
+                      subjectsCount={goalItem.subjectsCount}
+                      blogsCount={goalItem.blogsCount}
+                      isSelected={selectedGoal.goalID === goalItem.id}
+                      isEnrolled={isEnrolled}
+                      onClick={() =>
+                        setSelectedGoal({
+                          goalID: goalItem.id,
+                          icon: goalItem.icon,
+                          title: goalItem.title,
+                        })
+                      }
+                    />
+                  );
+                })}
               </Stack>
             </DialogContent>
           </DialogBox>

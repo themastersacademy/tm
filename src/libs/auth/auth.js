@@ -48,7 +48,6 @@ export async function getUserByEmail(email) {
 
     const updatedResult = await dynamoDB.send(new QueryCommand(params));
     const updatedUser = updatedResult.Items[0];
-    console.log("updatedUser", updatedUser);
     return updatedUser;
   } catch (error) {
     console.error("Error fetching user by email:", error);
@@ -430,5 +429,67 @@ export async function updateUserPassword({ password, token }) {
   } catch (error) {
     console.error("Error updating user password:", error);
     throw new Error("Failed to update user password");
+  }
+}
+
+export async function changePassword({ userID, oldPassword, newPassword }) {
+  const TableName = `${process.env.AWS_DB_NAME}users`;
+  const Key = {
+    pKey: `USER#${userID}`,
+    sKey: `USER#${userID}`,
+  };
+
+  // Fetch user to verify old password
+  const { Item: user } = await dynamoDB.send(
+    new GetCommand({ TableName, Key })
+  );
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // If user has no password (e.g. Google auth only), they can't change it this way
+  // Unless we allow setting a password for the first time without old password?
+  // For security, let's require old password if one exists.
+
+  if (user.password) {
+    const isMatch = await verifyPassword(oldPassword, user.password);
+    if (!isMatch) {
+      throw new Error("Incorrect old password");
+    }
+
+    // Check if new password is same as old
+    const isSame = await verifyPassword(newPassword, user.password);
+    if (isSame) {
+      throw new Error("New password cannot be the same as the old password");
+    }
+  } else {
+    // If no password exists (Google login), we might want to allow setting one
+    // But usually we'd want some verification. For now, let's assume this flow is for password users.
+    // Or we can allow it if they are logged in (which they are).
+    // Let's allow it.
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+
+  try {
+    await dynamoDB.send(
+      new UpdateCommand({
+        TableName,
+        Key,
+        UpdateExpression: "set password = :password, updatedAt = :updatedAt",
+        ExpressionAttributeValues: {
+          ":password": hashedPassword,
+          ":updatedAt": Date.now(),
+        },
+      })
+    );
+    return {
+      success: true,
+      message: "Password changed successfully",
+    };
+  } catch (error) {
+    console.error("Error changing password:", error);
+    throw new Error("Failed to change password");
   }
 }
