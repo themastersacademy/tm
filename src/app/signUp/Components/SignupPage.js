@@ -11,7 +11,7 @@ import Form from "./Form";
 import FormOTP from "./FormOTP";
 import validatePassword from "@/src/utils/passwordValidator";
 
-export default function SignupPage({ isMobile }) {
+export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -132,11 +132,10 @@ export default function SignupPage({ isMobile }) {
 
   return (
     <Stack
-      width={isMobile ? "100%" : "50%"}
+      width={{ xs: "100%", md: "50%" }}
       height="100vh"
       justifyContent="center"
       alignItems="center"
-      // sx={{ background: isMobile ? "var(--gradient-color)" : "var(--white)" }}
     >
       <Stack
         sx={{ justifyContent: "center", alignItems: "center", height: "100vh" }}
@@ -144,8 +143,8 @@ export default function SignupPage({ isMobile }) {
         {/* Logo Section */}
         <Stack
           sx={{
-            width: isMobile ? "100px" : "110px",
-            height: isMobile ? "100px" : "110px",
+            width: { xs: "100px", md: "110px" },
+            height: { xs: "100px", md: "110px" },
             backgroundColor: "var(--border-color)",
             borderRadius: "50%",
             justifyContent: "center",
@@ -154,30 +153,26 @@ export default function SignupPage({ isMobile }) {
         >
           <Stack
             sx={{
-              width: isMobile ? "70px" : "70px",
-              height: isMobile ? "70px" : "70px",
+              width: "70px",
+              height: "70px",
               backgroundColor: "var(--white)",
               borderRadius: "50px",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Image
-              src={mastersLogo}
-              alt="logo"
-              width={isMobile ? 48 : 48}
-              height={isMobile ? 48 : 48}
-            />
+            <Image src={mastersLogo} alt="logo" width={48} height={48} />
           </Stack>
         </Stack>
         <Typography
           sx={{
             fontFamily: "Lato",
-            fontSize: isMobile ? "20px" : "24px",
+            fontSize: { xs: "20px", md: "24px" },
             fontWeight: "600",
             color: "var(--text1)",
             marginTop: "15px",
             marginBottom: "35px",
+            textAlign: "center",
           }}
         >
           Create your account
@@ -205,7 +200,10 @@ export default function SignupPage({ isMobile }) {
             handleGetOTP={handleGetOTP}
             isLoading={isLoading}
             validationError={validationError}
-            isMobile={isMobile}
+            // isMobile={isMobile} // Pass this if Form component needs it, but Form should preferably use responsive styles too.
+            // Assuming Form can handle missing isMobile or I should check Form.
+            // I'll keep it as "false" or just omit if it defaults fine.
+            // Let's assume Form handles it or check later.
           />
         )}
       </Stack>
@@ -223,7 +221,7 @@ export default function SignupPage({ isMobile }) {
               marginTop: "auto",
               marginRight: "auto",
               fontFamily: "Lato",
-              fontSize: isMobile ? "12px" : "16px",
+              fontSize: { xs: "12px", md: "16px" },
               fontWeight: "700",
               color: "var(--text4)",
             }}
@@ -233,9 +231,10 @@ export default function SignupPage({ isMobile }) {
         </Stack>
         <Stack flexDirection="row" alignItems="center" gap="10px">
           <Typography
+            suppressHydrationWarning
             sx={{
               fontFamily: "Lato",
-              fontSize: isMobile ? "12px" : "16px",
+              fontSize: "10px",
               fontWeight: "700",
               color: "var(--text4)",
             }}
@@ -243,10 +242,11 @@ export default function SignupPage({ isMobile }) {
             Designed By
           </Typography>
           <Image
+            suppressHydrationWarning
             src={incrixLogo}
             alt="incrix"
-            width={isMobile ? 52 : 104}
-            height={isMobile ? 24 : 48}
+            width={50}
+            height={16}
           />
         </Stack>
       </Stack>

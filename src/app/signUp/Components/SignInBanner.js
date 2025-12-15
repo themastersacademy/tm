@@ -9,7 +9,7 @@ export default function SignInBanner() {
       justifyContent="center"
       alignItems="center"
       sx={{
-        width: "50%",
+        width: "100%",
         height: "100vh",
         background: "linear-gradient(45deg, #ff3c00, #7a00ff)",
       }}

@@ -5,10 +5,10 @@ import FormSignIn from "./FormSignIn";
 import mastersLogo from "@/public/images/masters-logo.svg";
 import incrixLogo from "@/public/images/incrix-logo.svg";
 
-export default function SignInPage({ isMobile }) {
+export default function SignInPage() {
   return (
     <Stack
-      width={isMobile ? "100%" : "50%"}
+      width={{ xs: "100%", md: "50%" }}
       height="100vh"
       justifyContent="center"
       alignItems="center"
@@ -23,16 +23,16 @@ export default function SignInPage({ isMobile }) {
           alignItems: "center",
           width: "100%",
           maxWidth: "450px",
-          padding: isMobile ? "20px" : "40px",
-          backgroundColor: isMobile ? "transparent" : "white",
-          borderRadius: isMobile ? "0" : "16px",
-          boxShadow: isMobile ? "none" : "0px 4px 20px rgba(0, 0, 0, 0.05)",
+          padding: { xs: "20px", md: "40px" },
+          backgroundColor: { xs: "transparent", md: "white" },
+          borderRadius: { xs: "0", md: "16px" },
+          boxShadow: { xs: "none", md: "0px 4px 20px rgba(0, 0, 0, 0.05)" },
         }}
       >
         <Stack
           sx={{
-            width: isMobile ? "80px" : "100px",
-            height: isMobile ? "80px" : "100px",
+            width: { xs: "80px", md: "100px" },
+            height: { xs: "80px", md: "100px" },
             backgroundColor: "var(--border-color)",
             borderRadius: "50%",
             justifyContent: "center",
@@ -42,8 +42,8 @@ export default function SignInPage({ isMobile }) {
         >
           <Stack
             sx={{
-              width: isMobile ? "50px" : "64px",
-              height: isMobile ? "50px" : "64px",
+              width: { xs: "50px", md: "64px" },
+              height: { xs: "50px", md: "64px" },
               backgroundColor: "var(--white)",
               borderRadius: "50%",
               alignItems: "center",
@@ -54,15 +54,16 @@ export default function SignInPage({ isMobile }) {
             <Image
               src={mastersLogo}
               alt="logo"
-              width={isMobile ? 32 : 40}
-              height={isMobile ? 32 : 40}
+              width={40}
+              height={40}
+              style={{ width: "auto", height: "auto", maxWidth: "60%" }}
             />
           </Stack>
         </Stack>
         <Typography
           sx={{
             fontFamily: "Lato",
-            fontSize: isMobile ? "24px" : "28px",
+            fontSize: { xs: "24px", md: "28px" },
             fontWeight: "700",
             color: "var(--text1)",
             marginBottom: "8px",
@@ -99,8 +100,9 @@ export default function SignInPage({ isMobile }) {
         }}
       >
         <Typography
+          suppressHydrationWarning
           sx={{
-            fontSize: "12px",
+            fontSize: "10px",
             fontWeight: "500",
             color: "var(--text4)",
           }}
@@ -108,10 +110,11 @@ export default function SignInPage({ isMobile }) {
           Powered by
         </Typography>
         <Image
+          suppressHydrationWarning
           src={incrixLogo}
           alt="incrix"
-          width={60}
-          height={20}
+          width={50}
+          height={16}
           style={{ opacity: 0.7 }}
         />
       </Stack>

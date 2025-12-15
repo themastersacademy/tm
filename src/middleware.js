@@ -41,6 +41,6 @@ export async function middleware(req) {
 export const config = {
   matcher: [
     "/dashboard",
-    "/((?!api/public/*|api/auth/*|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api/public/.*|api/auth/.*|_next/static|_next/image|favicon.ico|sw.js|workbox|manifest.json).*)",
   ],
 };

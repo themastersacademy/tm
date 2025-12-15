@@ -4,13 +4,17 @@ import SignInPage from "./Components/SignInPage";
 import SignInBanner from "../signUp/Components/SignInBanner";
 
 export default function SignIn() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("900")); // Detects mobile screens (below 600px)
-
   return (
     <Stack flexDirection="row" width="100%">
-      <SignInPage isMobile={isMobile} />
-      {!isMobile && <SignInBanner />}
+      <SignInPage />
+      <Stack
+        sx={{
+          display: { xs: "none", md: "flex" },
+          width: "50%",
+        }}
+      >
+        <SignInBanner />
+      </Stack>
     </Stack>
   );
 }

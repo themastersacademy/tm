@@ -230,10 +230,17 @@ export default function Profile({ params }) {
               alignItems: "center",
             }}
           >
-            <Image src={incrix_logo} alt="logo" />
+            <Image
+              src={incrix_logo}
+              alt="logo"
+              width={50}
+              height={16}
+              suppressHydrationWarning
+            />
             <Typography
+              suppressHydrationWarning
               sx={{
-                fontSize: "14px",
+                fontSize: "10px",
                 fontWeight: "700",
                 color: "var(--text3)",
                 textAlign: "center",
@@ -242,8 +249,9 @@ export default function Profile({ params }) {
               Crafted by Incrix Techlutions LLP, Tamil Nadu, India
             </Typography>
             <Typography
+              suppressHydrationWarning
               sx={{
-                fontSize: "12px",
+                fontSize: "10px",
                 color: "var(--text3)",
               }}
             >

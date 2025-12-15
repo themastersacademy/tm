@@ -188,6 +188,7 @@ const NavComp = ({
           <Link
             href={href || "#"}
             passHref
+            suppressHydrationWarning
             style={{ width: "100%", textDecoration: "none" }}
           >
             <Stack
@@ -283,6 +284,7 @@ const NavComp = ({
                     href={item.href}
                     key={index}
                     passHref
+                    suppressHydrationWarning
                     style={{ textDecoration: "none" }}
                   >
                     <Stack

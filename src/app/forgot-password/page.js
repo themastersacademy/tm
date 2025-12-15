@@ -42,12 +42,7 @@ export default function ForgotPassword() {
                   justifyContent: "center",
                 }}
               >
-                <Image
-                  src={mastersLogo}
-                  alt="logo"
-                  width={48}
-                  height={48}
-                />
+                <Image src={mastersLogo} alt="logo" width={48} height={48} />
               </Stack>
             </Stack>
             <Typography
@@ -85,9 +80,10 @@ export default function ForgotPassword() {
             </Typography>
             <Stack flexDirection="row" alignItems="flex-end" gap="10px">
               <Typography
+                suppressHydrationWarning
                 sx={{
                   fontFamily: "Lato",
-                  fontSize: "12px",
+                  fontSize: "10px",
                   fontWeight: "700",
                   color: "var(--text4)",
                 }}
@@ -95,10 +91,11 @@ export default function ForgotPassword() {
                 Designed By
               </Typography>
               <Image
+                suppressHydrationWarning
                 src={incrixLogo}
                 alt="incrix"
-                width={104}
-                height={24}
+                width={50}
+                height={16}
               />
             </Stack>
           </Stack>

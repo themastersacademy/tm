@@ -380,15 +380,22 @@ export default function ProfileSetupPage({ isMobile }) {
 
             <Stack direction="row" alignItems="center" gap={1}>
               <Typography
+                suppressHydrationWarning
                 sx={{
                   color: "var(--text4)",
-                  fontSize: "12px",
+                  fontSize: "10px",
                   fontWeight: 600,
                 }}
               >
                 Designed by
               </Typography>
-              <Image src={incrixLogo} alt="Incrix" width={70} height={20} />
+              <Image
+                suppressHydrationWarning
+                src={incrixLogo}
+                alt="Incrix"
+                width={50}
+                height={16}
+              />
             </Stack>
           </Stack>
         </Stack>

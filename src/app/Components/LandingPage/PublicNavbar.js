@@ -1,6 +1,4 @@
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
-import Image from "next/image";
-import logo from "@/public/images/masters-logo.svg"; // Assuming logo exists
 import Link from "next/link";
 
 export default function PublicNavbar() {
@@ -72,6 +70,7 @@ export default function PublicNavbar() {
               component={Link}
               href="/signIn"
               variant="text"
+              suppressHydrationWarning
               sx={{
                 textTransform: "none",
                 color: "var(--text1)",
@@ -85,6 +84,7 @@ export default function PublicNavbar() {
               component={Link}
               href="/signUp"
               variant="contained"
+              suppressHydrationWarning
               sx={{
                 textTransform: "none",
                 bgcolor: "var(--primary-color)",

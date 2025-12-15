@@ -6,7 +6,7 @@
     "dev": "next dev -p 1338 --turbopack",
     "dev:turbo": "next dev --turbopack",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 1338",
     "lint": "next lint"
   },
   "dependencies": {
@@ -16,6 +16,7 @@
     "@aws-sdk/lib-dynamodb": "^3.767.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@ducanh2912/next-pwa": "^10.2.9",
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.4.5",
@@ -28,7 +29,7 @@
     "katex": "^0.16.22",
     "lottie-react": "^2.4.1",
     "mui-one-time-password-input": "^4.0.1",
-    "next": "^15.3.0",
+    "next": "15.5.9",
     "next-auth": "^4.24.7",
     "nodemailer": "^7.0.11",
     "notistack": "^3.0.2",

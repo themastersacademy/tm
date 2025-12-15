@@ -8,7 +8,7 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig = {
-  trailingSlash: true,
+  trailingSlash: false,
   images: {
     remotePatterns: [
       {

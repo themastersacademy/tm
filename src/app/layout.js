@@ -67,14 +67,20 @@ export const metadata = {
 
 import SWRegistration from "./SWRegistration";
 
+import ThemeRegistry from "./ThemeRegistry";
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Providers>
-          <SWRegistration />
-          {children}
-        </Providers>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${lato.variable}`}
+      >
+        <ThemeRegistry>
+          <Providers>
+            <SWRegistration />
+            {children}
+          </Providers>
+        </ThemeRegistry>
       </body>
     </html>
   );

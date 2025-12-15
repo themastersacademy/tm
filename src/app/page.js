@@ -3,39 +3,40 @@
 import { Box, Container, Stack, Typography } from "@mui/material";
 import PublicNavbar from "./Components/LandingPage/PublicNavbar";
 import HeroLanding from "./Components/LandingPage/HeroLanding";
+import JoinTeam from "./Components/LandingPage/JoinTeam";
+import PromotionalBanner from "./Components/LandingPage/PromotionalBanner";
+import FeaturesSection from "./Components/LandingPage/FeaturesSection";
+import WhyChooseUs from "./Components/LandingPage/WhyChooseUs";
+import AppDownload from "./Components/LandingPage/AppDownload";
 import Instructors from "./Components/LandingPage/Instructors";
 import Testimonials from "./Components/LandingPage/Testimonials";
 import Partners from "./Components/LandingPage/Partners";
 
 // Reusing existing components
 import HowDoes from "./dashboard/[goalID]/home/Components/HowDoes";
-import InsightCard from "./dashboard/[goalID]/home/Components/InsightCard";
-import CrackTest from "./dashboard/[goalID]/home/Components/CrackTest";
 import FAQSect from "./dashboard/[goalID]/home/Components/FAQSect";
 
-// Import icons for HowDoes
+// Import icons/images
 import enrollIcon from "@/public/images/enrollCourse.svg";
 import learningIcon from "@/public/images/graduate.svg";
 import certificateIcon from "@/public/images/achieve.svg";
 
-// Placeholder icons if imports fail (we'll use generic ones for now to be safe)
 const howItWorksData = [
   {
-    title: "01. Enroll Course",
+    title: "01. Self-Check",
     description:
-      "Choose from our wide range of structured courses and enroll to start your journey.",
+      "Assess your skills and identify areas for improvement before starting.",
     image: enrollIcon,
   },
   {
-    title: "02. Start Learning",
+    title: "02. Taking Classes",
     description:
-      "Access high-quality video lectures, study materials, and practice tests anytime.",
+      "Attend interactive live classes and watch recorded video lessons.",
     image: learningIcon,
   },
   {
-    title: "03. Get Certified",
-    description:
-      "Complete the course, ace the exams, and earn a certificate to showcase your skills.",
+    title: "03. Take offline & online Test",
+    description: "Practice with rigorous tests to ensure you are exam-ready.",
     image: certificateIcon,
   },
 ];
@@ -48,9 +49,10 @@ export default function LandingPage() {
       <main>
         <HeroLanding />
 
-        <Box id="how-it-works" sx={{ py: 8, bgcolor: "var(--bg-color)" }}>
+        {/* Process Section */}
+        <Box id="how-it-works" sx={{ py: 10, bgcolor: "var(--white)" }}>
           <Container maxWidth="lg">
-            <Stack gap={2} alignItems="center" textAlign="center" mb={6}>
+            <Stack gap={2} alignItems="flex-start" mb={6}>
               <Typography
                 sx={{
                   fontFamily: "Lato",
@@ -61,7 +63,7 @@ export default function LandingPage() {
                   textTransform: "uppercase",
                 }}
               >
-                Process
+                How It Works - 3 Easy Steps
               </Typography>
               <Typography
                 sx={{
@@ -71,8 +73,7 @@ export default function LandingPage() {
                   color: "var(--text1)",
                 }}
               >
-                Your Track To{" "}
-                <span style={{ color: "var(--primary-color)" }}>Success</span>
+                Your Track To Success
               </Typography>
             </Stack>
 
@@ -80,7 +81,7 @@ export default function LandingPage() {
               direction={{ xs: "column", md: "row" }}
               gap={4}
               justifyContent="center"
-              alignItems="center"
+              alignItems="stretch"
             >
               {howItWorksData.map((item, index) => (
                 <HowDoes
@@ -94,51 +95,162 @@ export default function LandingPage() {
           </Container>
         </Box>
 
-        <Box id="features" sx={{ py: 8 }}>
-          <Container maxWidth="lg">
-            <InsightCard />
-          </Container>
-        </Box>
+        <JoinTeam />
 
-        <Box id="instructors">
-          <Instructors />
-        </Box>
+        <PromotionalBanner />
+
+        <FeaturesSection />
+
+        <WhyChooseUs />
 
         <Box id="testimonials">
+          <Typography
+            sx={{
+              fontFamily: "Lato",
+              fontSize: "48px",
+              fontWeight: 900,
+              textAlign: "center",
+              color: "rgba(0,0,0,0.05)",
+              mb: -4,
+              zIndex: 0,
+              textTransform: "uppercase",
+            }}
+          >
+            Success Stories
+          </Typography>
           <Testimonials />
+        </Box>
+
+        <Box id="instructors" sx={{ py: 8 }}>
+          <Typography
+            sx={{
+              fontFamily: "Lato",
+              fontSize: "32px",
+              fontWeight: 800,
+              textAlign: "center",
+              mb: 4,
+              color: "var(--text1)",
+            }}
+          >
+            Guided by the Best to{" "}
+            <span style={{ color: "var(--primary-color)" }}>
+              Become the Best
+            </span>
+          </Typography>
+          <Instructors />
         </Box>
 
         <Partners />
 
-        <Box sx={{ py: 8 }}>
-          <Container maxWidth="lg">
-            <CrackTest />
-          </Container>
+        <Box sx={{ py: 4, textAlign: "center" }}>
+          <Typography
+            sx={{
+              fontFamily: "Lato",
+              fontSize: "24px",
+              fontWeight: 700,
+              mb: 1,
+            }}
+          >
+            We&apos;ve got lots of friends.
+          </Typography>
+          <Typography
+            sx={{ fontFamily: "Lato", fontSize: "24px", fontWeight: 700 }}
+          >
+            and we&apos;re always{" "}
+            <span style={{ color: "var(--primary-color)" }}>
+              looking for more
+            </span>
+          </Typography>
         </Box>
+
+        {/* Reusing Testimonials Component again as placeholder for "What our Users Say" section at bottom of design if needed, 
+            but design shows "Success Stories" then Instructors then Partners. 
+            The design ends with App Download and Footer. */}
+
+        {/* <AppDownload /> */}
 
         <Box sx={{ py: 8, bgcolor: "var(--bg-color)" }}>
           <FAQSect />
         </Box>
       </main>
 
-      {/* Footer Placeholder - or reuse existing if available */}
-      <Box
-        sx={{ bgcolor: "#1a1a1a", color: "white", py: 6, textAlign: "center" }}
-      >
-        <Stack gap={2}>
-          <Box
-            sx={{
-              fontWeight: 900,
-              fontSize: "24px",
-              color: "var(--primary-color)",
-            }}
+      {/* Footer Reuse */}
+      <Box sx={{ bgcolor: "#222", color: "white", py: 8 }}>
+        <Container maxWidth="lg">
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            justifyContent="space-between"
+            gap={4}
           >
-            One Academy
-          </Box>
-          <Box sx={{ opacity: 0.7, fontSize: "14px" }}>
-            © 2024 The Masters Academy. All rights reserved.
-          </Box>
-        </Stack>
+            <Stack gap={2} maxWidth="300px">
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  fontSize: "24px",
+                  color: "var(--primary-color)",
+                }}
+              >
+                One Academy
+              </Typography>
+              <Typography
+                sx={{ opacity: 0.7, fontSize: "14px", lineHeight: 1.6 }}
+              >
+                Empowering students with knowledge and skills for a better
+                future. Join us on this journey to success.
+              </Typography>
+            </Stack>
+
+            <Stack gap={2}>
+              <Typography sx={{ fontWeight: 700, fontSize: "18px" }}>
+                Quick Links
+              </Typography>
+              <Typography sx={{ opacity: 0.7, fontSize: "14px" }}>
+                About Us
+              </Typography>
+              <Typography sx={{ opacity: 0.7, fontSize: "14px" }}>
+                Courses
+              </Typography>
+              <Typography sx={{ opacity: 0.7, fontSize: "14px" }}>
+                Instructors
+              </Typography>
+            </Stack>
+
+            <Stack gap={2}>
+              <Typography sx={{ fontWeight: 700, fontSize: "18px" }}>
+                Support
+              </Typography>
+              <Typography sx={{ opacity: 0.7, fontSize: "14px" }}>
+                Help Center
+              </Typography>
+              <Typography sx={{ opacity: 0.7, fontSize: "14px" }}>
+                Privacy Policy
+              </Typography>
+              <Typography sx={{ opacity: 0.7, fontSize: "14px" }}>
+                Terms of Service
+              </Typography>
+            </Stack>
+
+            <Stack gap={2}>
+              <Typography sx={{ fontWeight: 700, fontSize: "18px" }}>
+                Contact
+              </Typography>
+              <Typography sx={{ opacity: 0.7, fontSize: "14px" }}>
+                +91 98765 43210
+              </Typography>
+              <Typography sx={{ opacity: 0.7, fontSize: "14px" }}>
+                support@tma.com
+              </Typography>
+            </Stack>
+          </Stack>
+          <Box
+            sx={{ height: "1px", bgcolor: "rgba(255,255,255,0.1)", my: 4 }}
+          />
+          <Typography
+            sx={{ textAlign: "center", opacity: 0.5, fontSize: "14px" }}
+          >
+            © 2025 The Masters Academy. All rights reserved.
+          </Typography>
+        </Container>
       </Box>
     </Box>
   );
