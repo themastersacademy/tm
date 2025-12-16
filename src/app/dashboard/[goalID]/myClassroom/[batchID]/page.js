@@ -10,13 +10,14 @@ import DeleteDialogBox from "@/src/Components/DeleteDialogBox/DeleteDialogBox";
 import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
 
 export default function Classroom() {
-  const { batchID } = useParams();
+  const { batchID, goalID } = useParams();
   const router = useRouter();
 
   const [batchData, setBatchData] = useState(null);
   const [scheduledExams, setScheduledExams] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLeaveGroupDialogOpen, setIsLeaveGroupDialogOpen] = useState(false);
+  const [leavingLoading, setLeavingLoading] = useState(false);
 
   // Handlers memoized
   const leaveGroupOpen = useCallback(() => {
@@ -26,6 +27,38 @@ export default function Classroom() {
   const leaveGroupClose = useCallback(() => {
     setIsLeaveGroupDialogOpen(false);
   }, []);
+
+  const handleLeaveGroup = async () => {
+    if (!batchID) return;
+    setLeavingLoading(true);
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/my-classroom/leave-batch`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ batchID }),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        // Refresh data to update the list view
+        router.refresh();
+        // Redirect to classrooms
+        router.push(`/dashboard/${goalID}/myClassroom`);
+      } else {
+        alert(data.message);
+        setLeavingLoading(false);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to leave group");
+      setLeavingLoading(false);
+    }
+  };
 
   // Combined fetch for batch data and scheduled exams
   const fetchData = useCallback(async () => {
@@ -223,12 +256,14 @@ export default function Classroom() {
       <LeaveGroupDialog
         open={isLeaveGroupDialogOpen}
         onClose={leaveGroupClose}
+        onConfirm={handleLeaveGroup}
+        isLoading={leavingLoading}
       />
     </Stack>
   );
 }
 
-const LeaveGroupDialog = ({ open, onClose }) => {
+const LeaveGroupDialog = ({ open, onClose, onConfirm, isLoading }) => {
   // Memoize action buttons maybe, but simple enough
   return (
     <DeleteDialogBox
@@ -239,14 +274,16 @@ const LeaveGroupDialog = ({ open, onClose }) => {
           <Button
             variant="contained"
             sx={{ backgroundColor: "var(--delete-color)" }}
-            // You may add onClick handler here to actually perform leave action
+            onClick={onConfirm}
+            disabled={isLoading}
           >
-            Confirm
+            {isLoading ? "Leaving..." : "Confirm"}
           </Button>
           <Button
             variant="outlined"
             sx={{ color: "var(--text2)", borderColor: "var(--text2)" }}
             onClick={onClose}
+            disabled={isLoading}
           >
             Cancel
           </Button>

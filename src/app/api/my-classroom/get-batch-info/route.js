@@ -1,4 +1,4 @@
-import { enrollStudent } from "@/src/libs/myClassroom/batchController";
+import { getBatchByCode } from "@/src/libs/myClassroom/batchController";
 import { getSession } from "@/src/utils/serverSession";
 
 // Shared auth wrapper
@@ -12,7 +12,7 @@ async function withAuth(handler) {
 
 // Consistent error handler
 function handleError(error) {
-  console.error("Exam History API Error:", error);
+  console.error("Batch Info API Error:", error);
   return Response.json({
     success: false,
     message: error.message || "An unexpected error occurred",
@@ -20,15 +20,10 @@ function handleError(error) {
 }
 
 export async function POST(req) {
-  const { batchCode, rollNo, tag } = await req.json();
+  const { batchCode } = await req.json();
   return withAuth(async (session) => {
     try {
-      const response = await enrollStudent(
-        session.user.id,
-        batchCode,
-        rollNo,
-        tag
-      );
+      const response = await getBatchByCode(batchCode);
       return Response.json(response);
     } catch (error) {
       return handleError(error);

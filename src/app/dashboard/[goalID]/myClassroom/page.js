@@ -397,35 +397,92 @@ const JoinClassroomDialog = ({
 }) => {
   const [batchCode, setBatchCode] = useState("");
   const [rollNo, setRollNo] = useState("");
+  const [step, setStep] = useState(1);
+  const [batchDetails, setBatchDetails] = useState(null);
+  const [selectedTag, setSelectedTag] = useState("");
   const { enqueueSnackbar } = useSnackbar();
 
-  const joinClassroom = async () => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/my-classroom/batch-enroll`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          batchCode: batchCode,
-          rollNo: rollNo,
-        }),
-      }
-    );
-    const data = await response.json();
-    if (data.success) {
-      refetchClassrooms();
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!isDialogOpen) {
       setBatchCode("");
       setRollNo("");
-      dialogClose();
+      setStep(1);
+      setBatchDetails(null);
+      setSelectedTag("");
       setLocalLoading(false);
-    } else {
-      setLocalLoading(false);
-      enqueueSnackbar(data.message, {
+    }
+  }, [isDialogOpen, setLocalLoading]);
+
+  const fetchBatchInfo = async () => {
+    setLocalLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/my-classroom/get-batch-info`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ batchCode }),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setBatchDetails(data.data);
+        setStep(2);
+      } else {
+        enqueueSnackbar(data.message, {
+          variant: "error",
+          autoHideDuration: 3000,
+        });
+      }
+    } catch (error) {
+      enqueueSnackbar("Failed to fetch batch info", {
         variant: "error",
         autoHideDuration: 3000,
       });
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  const joinClassroom = async () => {
+    setLocalLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/my-classroom/batch-enroll`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            batchCode: batchCode,
+            rollNo: rollNo,
+            tag: selectedTag || null,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        refetchClassrooms();
+        dialogClose();
+        enqueueSnackbar("Successfully joined the batch!", {
+          variant: "success",
+          autoHideDuration: 3000,
+        });
+      } else {
+        enqueueSnackbar(data.message, {
+          variant: "error",
+          autoHideDuration: 3000,
+        });
+      }
+    } catch (error) {
+      enqueueSnackbar("Failed to join batch", {
+        variant: "error",
+        autoHideDuration: 3000,
+      });
+    } finally {
+      setLocalLoading(false);
     }
   };
 
@@ -450,12 +507,19 @@ const JoinClassroomDialog = ({
       actionButton={
         <Button
           variant="contained"
-          endIcon={<East />}
+          endIcon={step === 1 ? <East /> : <Add />}
           onClick={() => {
-            setLocalLoading(true);
-            joinClassroom();
+            if (step === 1) {
+              fetchBatchInfo();
+            } else {
+              joinClassroom();
+            }
           }}
-          disabled={batchCode === "" || localLoading}
+          disabled={
+            localLoading ||
+            (step === 1 && !batchCode) ||
+            (step === 2 && batchDetails?.tags?.length > 0 && !selectedTag)
+          }
           fullWidth
           sx={{
             textTransform: "none",
@@ -476,33 +540,116 @@ const JoinClassroomDialog = ({
             },
           }}
         >
-          Join Batch
+          {localLoading
+            ? "Processing..."
+            : step === 1
+            ? "Verify Code"
+            : "Join Batch"}
         </Button>
       }
     >
       <Stack gap={3}>
-        <StyledTextField
-          placeholder="Enter Batch Code"
-          value={batchCode}
-          onChange={(e) => setBatchCode(e.target.value)}
-          sx={{
-            "& .MuiInputBase-root": {
-              fontFamily: "var(--font-geist-sans)",
-              borderRadius: "10px",
-            },
-          }}
-        />
-        <StyledTextField
-          placeholder="Enter Roll No (Optional)"
-          value={rollNo}
-          onChange={(e) => setRollNo(e.target.value)}
-          sx={{
-            "& .MuiInputBase-root": {
-              fontFamily: "var(--font-geist-sans)",
-              borderRadius: "10px",
-            },
-          }}
-        />
+        {step === 1 && (
+          <StyledTextField
+            placeholder="Enter Batch Code"
+            value={batchCode}
+            onChange={(e) => setBatchCode(e.target.value)}
+            sx={{
+              "& .MuiInputBase-root": {
+                fontFamily: "var(--font-geist-sans)",
+                borderRadius: "10px",
+              },
+            }}
+          />
+        )}
+
+        {step === 2 && batchDetails && (
+          <Stack gap={2}>
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: "var(--bg-color)",
+                borderRadius: "12px",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                color="var(--text2)"
+                sx={{ mb: 0.5, fontSize: "12px" }}
+              >
+                INSTITUTE
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontFamily: "var(--font-geist-sans)",
+                  fontWeight: 700,
+                  fontSize: "16px",
+                }}
+              >
+                {batchDetails.instituteMeta.title}
+              </Typography>
+              <Typography
+                variant="subtitle2"
+                color="var(--text2)"
+                sx={{ mt: 1.5, mb: 0.5, fontSize: "12px" }}
+              >
+                BATCH
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontFamily: "var(--font-geist-sans)",
+                  fontWeight: 700,
+                  fontSize: "16px",
+                  color: "var(--primary-color)",
+                }}
+              >
+                {batchDetails.title}
+              </Typography>
+            </Box>
+
+            {batchDetails.tags && batchDetails.tags.length > 0 && (
+              <TextField
+                select
+                label="Select Department"
+                value={selectedTag}
+                onChange={(e) => setSelectedTag(e.target.value)}
+                SelectProps={{
+                  native: true,
+                }}
+                sx={{
+                  "& .MuiInputBase-root": {
+                    borderRadius: "10px",
+                    fontFamily: "var(--font-geist-sans)",
+                  },
+                }}
+              >
+                <option value="" disabled>
+                  Select Department
+                </option>
+                {batchDetails.tags.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
+              </TextField>
+            )}
+
+            <StyledTextField
+              placeholder="Enter Roll No (Optional)"
+              value={rollNo}
+              onChange={(e) => setRollNo(e.target.value)}
+              sx={{
+                "& .MuiInputBase-root": {
+                  fontFamily: "var(--font-geist-sans)",
+                  borderRadius: "10px",
+                },
+              }}
+            />
+          </Stack>
+        )}
       </Stack>
     </DialogBox>
   );

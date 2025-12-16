@@ -150,7 +150,7 @@ export default function ExamQuestionCard({
       <Box sx={{ mt: 2 }}>
         {question?.type === "FIB" ? (
           <FIBOptionsCard
-            noOfBlanks={question?.noOfBlanks}
+            noOfBlanks={question?.blanks?.length}
             onChange={handleChangeFIB}
             value={userAnswer?.blankAnswers}
           />

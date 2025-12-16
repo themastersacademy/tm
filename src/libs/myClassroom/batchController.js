@@ -9,7 +9,38 @@ const MASTER_TABLE = `${process.env.AWS_DB_NAME}master`;
 const MASTER_INDEX_TABLE = "masterTableIndex";
 const USER_TABLE = `${process.env.AWS_DB_NAME}users`;
 
-export async function enrollStudent(userID, batchCode, rollNo) {
+export async function getBatchByCode(batchCode) {
+  const batchResponse = await dynamoDB.send(
+    new QueryCommand({
+      TableName: MASTER_TABLE,
+      IndexName: MASTER_INDEX_TABLE,
+      KeyConditionExpression: "#gsi1pk = :pk",
+      FilterExpression: "batchCode = :batchCode",
+      ExpressionAttributeNames: { "#gsi1pk": "GSI1-pKey" },
+      ExpressionAttributeValues: {
+        ":pk": "BATCHES",
+        ":batchCode": batchCode,
+      },
+    })
+  );
+
+  const batch = batchResponse.Items?.[0];
+  if (!batch) {
+    return { success: false, message: "Batch not found" };
+  }
+
+  return {
+    success: true,
+    message: "Batch fetched successfully",
+    data: {
+      title: batch.title,
+      tags: batch.tags || [],
+      instituteMeta: batch.instituteMeta,
+    },
+  };
+}
+
+export async function enrollStudent(userID, batchCode, rollNo, tag) {
   const now = Date.now();
 
   // 1) Look up the batch by code via your GSI
@@ -73,6 +104,7 @@ export async function enrollStudent(userID, batchCode, rollNo) {
             instituteMeta: batch.instituteMeta,
           },
           rollNo: rollNo || null,
+          tag: tag || null, // Store selected tag
           joinedAt: now,
         },
         ConditionExpression: "attribute_not_exists(pKey)",
@@ -176,4 +208,66 @@ export async function getTotalClassroomJoins(userID) {
       count: response.Count || 0,
     },
   };
+}
+
+export async function leaveBatch(userID, batchID) {
+  try {
+    await dynamoDB.send(
+      new TransactWriteCommand({
+        TransactItems: [
+          // 1) Delete the join record
+          {
+            Delete: {
+              TableName: MASTER_TABLE,
+              Key: {
+                pKey: `STUDENT_BATCH#${userID}`,
+                sKey: `STUDENT_BATCH@${batchID}`,
+              },
+              ConditionExpression:
+                "attribute_exists(pKey) AND attribute_exists(sKey)",
+            },
+          },
+          // 2) Decrement enrolledStudentCount, but only if > 0
+          {
+            Update: {
+              TableName: MASTER_TABLE,
+              Key: {
+                pKey: `BATCH#${batchID}`,
+                sKey: "BATCHES",
+              },
+              UpdateExpression:
+                "SET enrolledStudentCount = enrolledStudentCount - :dec, updatedAt = :u",
+              ConditionExpression:
+                "attribute_exists(pKey) AND enrolledStudentCount > :zero",
+              ExpressionAttributeValues: {
+                ":dec": 1,
+                ":u": Date.now(),
+                ":zero": 0,
+              },
+            },
+          },
+        ],
+      })
+    );
+
+    return { success: true, message: "Successfully left the batch" };
+  } catch (err) {
+    console.error("Error in leaveBatch:", err);
+    if (
+      err.message.includes("ConditionalCheckFailed") ||
+      (err.CancellationReasons &&
+        err.CancellationReasons.some(
+          (r) => r.Code === "ConditionalCheckFailed"
+        ))
+    ) {
+      // determine which one failed?
+      // Index 0 failed: User wasn't in batch
+      // Index 1 failed: Count was 0? (Unlikely if user was in batch)
+      return {
+        success: false,
+        message: "You are not enrolled in this batch or the batch is invalid.",
+      };
+    }
+    return { success: false, message: "Error leaving batch" };
+  }
 }
