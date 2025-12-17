@@ -53,8 +53,8 @@
       "type": "image/png"
     }
   ],
-  "start_url": "/",
-  "orientation": "landscape",
+  "start_url": "/dashboard",
+  "orientation": "portrait",
   "display": "standalone",
   "background_color": "#FFF8EB",
   "theme_color": "#187163"
