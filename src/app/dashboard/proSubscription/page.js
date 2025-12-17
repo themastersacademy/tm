@@ -141,7 +141,6 @@ export default function ProSubscription() {
 
     if (pin.length === 6) {
       try {
-        console.log("Fetching PIN:", pin);
         const response = await fetch(
           `https://api.postalpincode.in/pincode/${pin}`
         );

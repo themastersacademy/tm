@@ -8,8 +8,6 @@ import seedrandom from "seedrandom";
  * @returns {Array} A new shuffled array
  */
 export function seededShuffle(array, seed) {
-  console.log("seedddddd",array,seed);
-  
   const rng = seedrandom(seed.toString());
   const a = array.slice(); // copy
   for (let i = a.length - 1; i > 0; i--) {

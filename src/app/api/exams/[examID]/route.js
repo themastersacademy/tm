@@ -1,4 +1,7 @@
-import { getExamByID } from "@/src/libs/exams/examController";
+import {
+  getExamByID,
+  getPreviousAttempt,
+} from "@/src/libs/exams/examController";
 import { getSession } from "@/src/utils/serverSession";
 
 export async function GET(req, { params }) {
@@ -26,6 +29,18 @@ export async function GET(req, { params }) {
   }
   try {
     const response = await getExamByID(examID);
+
+    // Check for active attempt
+    try {
+      const previousAttempt = await getPreviousAttempt(session.id, examID);
+      if (previousAttempt && previousAttempt.status === "IN_PROGRESS") {
+        response.data.activeAttempt = previousAttempt;
+      }
+    } catch (err) {
+      console.error("Error fetching previous attempt:", err);
+      // Don't fail the whole request if this optional check fails
+    }
+
     return Response.json(response);
   } catch (error) {
     return Response.json(

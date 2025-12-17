@@ -16,7 +16,6 @@ export default function FileDownloadDialog({
   lessonID,
   courseID,
 }) {
-  console.log(lessonID);
   return (
     <Dialog
       open={isOpen}

@@ -42,22 +42,19 @@ export default function ExamInstruction() {
     const elapsed = performance.now() - clientPerfAtFetch;
     return instruction.serverTimestamp + elapsed;
   };
-  console.log(instruction);
 
   const fetchInstruction = async () => {
     setIsLoading(true);
     try {
       await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${id}`).then(
         (res) =>
-        res.json().then((data) => {
-          setClientPerfAtFetch(performance.now());
-          if (data.success) {
-            console.log(data.data);
-
-            setInstruction(data.data);
-            setIsLoading(false);
-          }
-        })
+          res.json().then((data) => {
+            setClientPerfAtFetch(performance.now());
+            if (data.success) {
+              setInstruction(data.data);
+              setIsLoading(false);
+            }
+          })
       );
     } catch (error) {
       console.error("Error fetching instruction:", error);
@@ -69,6 +66,10 @@ export default function ExamInstruction() {
   }, []);
 
   const startExam = async () => {
+    if (instruction.activeAttempt) {
+      router.push(`/exam/${id}/${instruction.activeAttempt.id}`);
+      return;
+    }
     setIsStarting(true);
     try {
       const res = await fetch(
@@ -405,6 +406,8 @@ export default function ExamInstruction() {
           >
             {isStarting
               ? "Preparing Exam..."
+              : instruction.activeAttempt
+              ? "Continue Test"
               : instruction.settings?.isProTest
               ? isPro
                 ? "Start Test Now"

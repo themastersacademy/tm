@@ -33,7 +33,6 @@ export default function TestSeries({ subjectOptions, isPro }) {
     if (data.success) {
       router.push(`/exam/${data.data.examID}/${data.data.attemptID}`);
     } else {
-      console.log(data.message);
     }
   };
 

@@ -198,7 +198,6 @@ export async function createUser({ email, name, password }) {
       message: "OTP sent to email",
     };
   } catch (error) {
-    console.log(error);
     throw new Error("Failed to create user");
   }
 }

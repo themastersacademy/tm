@@ -83,13 +83,14 @@ export default function HeroLanding() {
                   maxWidth: "500px",
                 }}
               >
-                Get unlimited access to structured courses, mock tests, and
-                personalized guidance to crack your dream exam.
+                From GATE and Banking to in-demand career skills, our
+                expert-led, flexible courses are built to fuel your ambition and
+                deliver results.
               </Typography>
             </Stack>
 
             {/* Search Bar */}
-            <Box
+            {/* <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
@@ -121,7 +122,7 @@ export default function HeroLanding() {
               >
                 Search
               </Button>
-            </Box>
+            </Box> */}
 
             <Stack direction="row" gap={4} alignItems="center">
               <Stack direction="row" alignItems="center" gap={1}>

@@ -34,9 +34,7 @@ export default function Account({ isSideNavOpen }) {
 
   // Debug session state and redirect on unauthenticated
   useEffect(() => {
-    console.log("Account.js - Session Status:", status, "Session:", session);
     if (status === "unauthenticated") {
-      console.log("Account.js - Redirecting to /signIn");
       router.push("/signIn");
     }
   }, [status, session, router]);

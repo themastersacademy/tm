@@ -111,7 +111,6 @@ const VerifyOTP = memo(
         }}
         autoFocus
         onComplete={(value) => {
-          console.log(value);
           // Use the complete value from the callback instead of the state
           setOtp(value);
           // Call handleVerifyOTP with the complete value

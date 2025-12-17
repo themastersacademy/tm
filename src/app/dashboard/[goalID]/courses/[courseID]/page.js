@@ -78,7 +78,6 @@ const MyCourse = () => {
       );
       const data = await response.json();
       if (data.success) {
-        console.log("Progress saved successfully");
       } else {
         console.error("Failed to save progress:", data.message);
       }

@@ -35,7 +35,6 @@ export default function SignupPage() {
   }, []);
 
   useEffect(() => {
-    console.log(status);
     if (status === "authenticated") {
       router.push("/dashboard");
     }

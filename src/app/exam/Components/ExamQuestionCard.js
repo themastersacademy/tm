@@ -26,7 +26,7 @@ export default function ExamQuestionCard({
   const handleChangeFIB = ({ value, blankIndex }) => {
     const updatedBlankAnswers = userAnswer?.blankAnswers;
     updatedBlankAnswers[blankIndex] = value || "";
-    console.log(updatedBlankAnswers);
+
     updateUserAnswer(question?.questionID, "blankAnswers", {
       ...userAnswer,
       blankAnswers: updatedBlankAnswers,

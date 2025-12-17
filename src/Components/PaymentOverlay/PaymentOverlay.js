@@ -29,7 +29,6 @@ export default function PaymentOverlay({
     // });
 
     if (error) {
-      console.log("Error occurred:", error);
       enqueueSnackbar(error, { variant: "error" });
       onClose && onClose();
       return;
@@ -41,7 +40,6 @@ export default function PaymentOverlay({
         ? priceDetails
         : priceDetails?.totalPrice;
     if (!order?.id || !amount) {
-      console.log("Invalid props", { order, priceDetails, amount });
       setError("Invalid order or price details");
       return;
     }
@@ -189,7 +187,6 @@ export default function PaymentOverlay({
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
           onLoad={() => {
-            console.log("Razorpay script loaded");
             setScriptLoaded(true);
           }}
           onError={(err) => {

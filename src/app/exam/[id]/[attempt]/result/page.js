@@ -37,10 +37,8 @@ export default function Result() {
         setAnswerList(data.data.answerList);
         setUserAnswerList(data.data.userAnswers);
       } else {
-        console.log("Error fetching result");
       }
     } catch (error) {
-      console.log(error);
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +48,7 @@ export default function Result() {
     fetchResult();
   }, [fetchResult]);
 
-  const viewResult = result?.settings?.viewResult ?? true;
+  const viewResult = result?.settings?.isShowResult ?? true;
   const showAnswers = result?.settings?.showAnswers ?? true;
 
   return (
@@ -137,7 +135,10 @@ export default function Result() {
                     p: 2,
                     borderRadius: "12px",
                     width: { xs: "100%", md: "auto" },
-                    justifyContent: { xs: "space-around", md: "flex-start" },
+                    justifyContent: {
+                      xs: "space-around",
+                      md: "flex-start",
+                    },
                   }}
                 >
                   <Box textAlign="center">

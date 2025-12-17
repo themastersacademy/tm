@@ -191,7 +191,6 @@ export default function Checkout() {
   };
 
   const handlePlanChange = (index) => {
-    console.log("index", index);
     setSelectedPlan(courseDetails?.subscription.plans[index]);
   };
 
@@ -236,7 +235,6 @@ export default function Checkout() {
 
     if (pin.length === 6) {
       try {
-        console.log("Fetching PIN:", pin);
         const response = await fetch(
           `https://api.postalpincode.in/pincode/${pin}`
         );

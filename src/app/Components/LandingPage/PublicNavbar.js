@@ -1,5 +1,7 @@
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import Link from "next/link";
+import Image from "next/image";
+import mastersLogo from "@/public/images/masters-logo.svg";
 
 export default function PublicNavbar() {
   return (
@@ -23,15 +25,22 @@ export default function PublicNavbar() {
           <Link href="/" style={{ textDecoration: "none" }}>
             <Stack direction="row" alignItems="center" gap={1}>
               {/* Use a text logo if image fails or just the name */}
+              <Image
+                src={mastersLogo}
+                alt="Logo"
+                width={50}
+                height={50}
+                style={{ objectFit: "contain" }}
+              />
               <Typography
                 sx={{
                   fontFamily: "Lato",
-                  fontSize: "24px",
+                  fontSize: "20px",
                   fontWeight: 900,
                   color: "var(--primary-color)",
                 }}
               >
-                One Academy
+                The Masters Academy
               </Typography>
             </Stack>
           </Link>
