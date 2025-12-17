@@ -367,6 +367,10 @@ export default function ExamInstruction() {
             endIcon={
               isStarting ? (
                 <CircularProgress size={20} color="inherit" />
+              ) : instruction.activeAttempt ? (
+                <East />
+              ) : instruction.completedAttempt ? (
+                <Lock /> // Or any other icon indicating completion/locked
               ) : instruction.settings?.isProTest ? (
                 isPro ? (
                   <East />
@@ -379,7 +383,12 @@ export default function ExamInstruction() {
             }
             disabled={
               isStarting ||
-              (instruction.settings?.isProTest ? (isPro ? false : true) : false)
+              (instruction.settings?.isProTest
+                ? isPro
+                  ? false
+                  : true
+                : false) ||
+              !!instruction.completedAttempt
             }
             onClick={startExam}
             sx={{
@@ -408,6 +417,8 @@ export default function ExamInstruction() {
               ? "Preparing Exam..."
               : instruction.activeAttempt
               ? "Continue Test"
+              : instruction.completedAttempt
+              ? "Already Attended"
               : instruction.settings?.isProTest
               ? isPro
                 ? "Start Test Now"

@@ -33,8 +33,12 @@ export async function GET(req, { params }) {
     // Check for active attempt
     try {
       const previousAttempt = await getPreviousAttempt(session.id, examID);
-      if (previousAttempt && previousAttempt.status === "IN_PROGRESS") {
-        response.data.activeAttempt = previousAttempt;
+      if (previousAttempt) {
+        if (previousAttempt.status === "IN_PROGRESS") {
+          response.data.activeAttempt = previousAttempt;
+        } else if (previousAttempt.status === "COMPLETED") {
+          response.data.completedAttempt = previousAttempt;
+        }
       }
     } catch (err) {
       console.error("Error fetching previous attempt:", err);
