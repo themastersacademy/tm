@@ -24,7 +24,7 @@ const APP_TITLE_TEMPLATE = "%s - TMA Learning Platform";
 const APP_DESCRIPTION = "The Masters Academy Learning Platform";
 
 export const viewport = {
-  themeColor: "#3367D6",
+  themeColor: "#187163",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

@@ -5,8 +5,8 @@ export default function manifest() {
     description: "The Masters Academy Learning Platform",
     start_url: "/dashboard",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#3367D6",
+    background_color: "#FFF8EB",
+    theme_color: "#187163",
     icons: [
       {
         src: "/icons/tma-48x48.png",
