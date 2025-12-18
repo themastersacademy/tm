@@ -29,6 +29,7 @@ import { useSession } from "next-auth/react";
 import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import ExamInstructionDialog from "@/src/Components/ExamInstruction/ExamInstructionDialog";
+import ClassroomView from "../myClassroom/Components/ClassroomView";
 
 export default function Exams() {
   const { data: session } = useSession();
@@ -127,11 +128,7 @@ export default function Exams() {
         <PageSkeleton />
       ) : (
         <Stack width="100%" maxWidth="1200px">
-          <Stack
-            spacing={3}
-            padding={{ xs: 2, md: 4 }}
-            sx={{ display: { xs: "none", md: "block" } }}
-          >
+          <Stack spacing={3} padding={{ xs: 2, md: 4 }}>
             <Header />
 
             {/* Tabs Header */}
@@ -144,13 +141,17 @@ export default function Exams() {
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
+                variant="scrollable"
+                scrollButtons
+                allowScrollButtonsMobile
                 sx={{
                   "& .MuiTab-root": {
                     textTransform: "none",
-                    fontSize: "16px",
+                    fontSize: { xs: "14px", md: "16px" },
                     fontWeight: 600,
                     fontFamily: "var(--font-geist-sans)",
-                    minWidth: "120px",
+                    minWidth: { xs: "auto", md: "120px" },
+                    padding: { xs: "12px 16px", md: "12px 16px" },
                     color: "var(--text2)",
                   },
                   "& .Mui-selected": {
@@ -161,27 +162,31 @@ export default function Exams() {
                     height: "3px",
                     borderRadius: "3px 3px 0 0",
                   },
+                  "& .MuiTabs-scrollButtons": {
+                    "&.Mui-disabled": {
+                      opacity: 0.3,
+                    },
+                  },
                 }}
               >
                 <Tab label="Available Exams" />
                 <Tab label="Exam History" />
+                <Tab label="My Classrooms" />
               </Tabs>
             </Stack>
 
             {/* Tab 1: Available Exams */}
             <Box role="tabpanel" hidden={tabValue !== 0}>
               {tabValue === 0 && (
-                <Stack gap={5}>
-                  <Stack
-                    spacing={3}
-                    sx={{ display: { xs: "none", md: "block" } }}
-                  >
+                <Stack gap={{ xs: 3, md: 5 }}>
+                  <Stack spacing={3}>
                     <Typography
                       variant="h5"
                       sx={{
                         fontFamily: "var(--font-geist-sans)",
                         fontWeight: 700,
                         color: "var(--text1)",
+                        fontSize: { xs: "18px", md: "24px" },
                       }}
                     >
                       Practice Test
@@ -197,6 +202,7 @@ export default function Exams() {
                         fontFamily: "var(--font-geist-sans)",
                         fontWeight: 700,
                         color: "var(--text1)",
+                        fontSize: { xs: "18px", md: "24px" },
                       }}
                     >
                       Test Series
@@ -268,6 +274,7 @@ export default function Exams() {
                         fontFamily: "var(--font-geist-sans)",
                         fontWeight: 700,
                         color: "var(--text1)",
+                        fontSize: { xs: "18px", md: "24px" },
                       }}
                     >
                       Exam Groups
@@ -449,16 +456,12 @@ export default function Exams() {
                 </Stack>
               )}
             </Box>
-          </Stack>
 
-          {/* Mobile View */}
-          <Box sx={{ display: { xs: "block", md: "none" } }}>
-            <ResponsiveTestSeries
-              testSeries={mock}
-              groupExams={group}
-              subjectOptions={subjectOptions}
-            />
-          </Box>
+            {/* Tab 3: My Classrooms */}
+            <Box role="tabpanel" hidden={tabValue !== 2}>
+              {tabValue === 2 && <ClassroomView />}
+            </Box>
+          </Stack>
         </Stack>
       )}
       <PlansDialogBox

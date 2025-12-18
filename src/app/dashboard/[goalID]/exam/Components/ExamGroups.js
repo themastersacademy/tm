@@ -11,10 +11,10 @@ export default function ExamGroups({ handleOpen }) {
       alignItems="center"
       sx={{
         border: "1px solid var(--border-color)",
-        borderRadius: "24px",
-        padding: { xs: "24px", md: "32px" },
+        borderRadius: { xs: "12px", md: "24px" },
+        padding: { xs: "16px", md: "32px" },
         background: "linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)",
-        gap: "24px",
+        gap: { xs: "16px", md: "24px" },
         width: "100%",
         position: "relative",
         overflow: "hidden",
@@ -41,17 +41,18 @@ export default function ExamGroups({ handleOpen }) {
 
       <Stack
         sx={{
-          gap: "20px",
+          gap: { xs: "12px", md: "20px" },
           maxWidth: { xs: "100%", sm: "60%" },
           zIndex: 1,
+          width: "100%",
         }}
       >
-        <Stack gap="12px">
+        <Stack gap={{ xs: "8px", md: "12px" }}>
           <Typography
             variant="h4"
             sx={{
               fontFamily: "var(--font-geist-sans)",
-              fontSize: { xs: "24px", md: "28px" },
+              fontSize: { xs: "18px", md: "28px" },
               fontWeight: 800,
               color: "var(--text1)",
               lineHeight: 1.2,
@@ -62,7 +63,7 @@ export default function ExamGroups({ handleOpen }) {
           <Typography
             sx={{
               fontFamily: "var(--font-geist-sans)",
-              fontSize: { xs: "14px", md: "16px" },
+              fontSize: { xs: "13px", md: "16px" },
               color: "var(--text2)",
               lineHeight: 1.6,
             }}
@@ -112,10 +113,10 @@ export default function ExamGroups({ handleOpen }) {
             textTransform: "none",
             backgroundColor: "var(--primary-color)",
             width: "fit-content",
-            padding: "10px 24px",
+            padding: { xs: "8px 20px", md: "10px 24px" },
             borderRadius: "12px",
             fontFamily: "var(--font-geist-sans)",
-            fontSize: "15px",
+            fontSize: { xs: "14px", md: "15px" },
             fontWeight: 600,
             boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
             "&:hover": {
@@ -131,12 +132,13 @@ export default function ExamGroups({ handleOpen }) {
         </Button>
       </Stack>
 
+      {/* Image - Hidden on mobile */}
       <Box
         sx={{
           position: "relative",
-          width: { xs: "100%", sm: "280px" },
-          height: { xs: "200px", sm: "220px" },
-          display: "flex",
+          width: { xs: "0", sm: "280px" },
+          height: { xs: "0", sm: "220px" },
+          display: { xs: "none", sm: "flex" },
           justifyContent: "center",
           alignItems: "center",
           zIndex: 1,

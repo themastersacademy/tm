@@ -57,13 +57,13 @@ export default function ExamCard({
     <Card
       sx={{
         width: "100%",
-        minHeight: "200px",
+        minHeight: { xs: "auto", md: "200px" },
         border: "1px solid var(--border-color)",
-        borderRadius: "20px",
-        padding: "20px",
+        borderRadius: { xs: "12px", md: "20px" },
+        padding: { xs: "12px", md: "20px" },
         display: "flex",
         flexDirection: "column",
-        gap: "16px",
+        gap: { xs: "12px", md: "16px" },
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         cursor: "pointer",
         position: "relative",
@@ -84,17 +84,17 @@ export default function ExamCard({
       >
         <Box
           sx={{
-            width: "56px",
-            height: "56px",
+            width: { xs: "44px", md: "56px" },
+            height: { xs: "44px", md: "56px" },
             background:
               "linear-gradient(135deg, var(--sec-color-acc-2) 0%, var(--sec-color-acc-1) 100%)",
-            borderRadius: "16px",
+            borderRadius: { xs: "12px", md: "16px" },
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
           }}
         >
-          <Image src={icon} alt="icon" width={28} height={28} />
+          <Image src={icon} alt="icon" width={24} height={24} />
         </Box>
 
         <Stack direction="row" gap="8px">
@@ -136,11 +136,11 @@ export default function ExamCard({
       {/* Title */}
       <Typography
         sx={{
-          fontSize: "16px",
+          fontSize: { xs: "14px", md: "16px" },
           fontWeight: 700,
           color: "var(--text1)",
           lineHeight: 1.4,
-          minHeight: "44px",
+          minHeight: { xs: "auto", md: "44px" },
           display: "-webkit-box",
           WebkitLineClamp: 2,
           WebkitBoxOrient: "vertical",
@@ -156,10 +156,10 @@ export default function ExamCard({
         sx={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: "12px",
+          gap: { xs: "8px", md: "12px" },
           backgroundColor: "#F8F9FA",
-          padding: "12px",
-          borderRadius: "12px",
+          padding: { xs: "8px", md: "12px" },
+          borderRadius: { xs: "8px", md: "12px" },
         }}
       >
         <Stack direction="row" alignItems="center" gap="6px">

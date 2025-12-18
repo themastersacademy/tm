@@ -271,3 +271,43 @@ export async function leaveBatch(userID, batchID) {
     return { success: false, message: "Error leaving batch" };
   }
 }
+
+export async function updateBatchRollNo(userID, batchID, rollNo) {
+  try {
+    await dynamoDB.send(
+      new TransactWriteCommand({
+        TransactItems: [
+          {
+            Update: {
+              TableName: MASTER_TABLE,
+              Key: {
+                pKey: `STUDENT_BATCH#${userID}`,
+                sKey: `STUDENT_BATCH@${batchID}`,
+              },
+              UpdateExpression: "SET rollNo = :rollNo",
+              ExpressionAttributeValues: {
+                ":rollNo": rollNo,
+              },
+              ConditionExpression:
+                "attribute_exists(pKey) AND attribute_exists(sKey)",
+            },
+          },
+        ],
+      })
+    );
+
+    return { success: true, message: "Roll number updated successfully" };
+  } catch (err) {
+    if (
+      err.message.includes("ConditionalCheckFailed") ||
+      (err.CancellationReasons &&
+        err.CancellationReasons.some(
+          (r) => r.Code === "ConditionalCheckFailed"
+        ))
+    ) {
+      return { success: false, message: "Batch enrollment not found" };
+    }
+    console.error("Error in updateBatchRollNo:", err);
+    return { success: false, message: "Error updating roll number" };
+  }
+}

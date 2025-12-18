@@ -7,7 +7,7 @@ const StyledTabs = styled(Tabs)(({ customstyles }) => ({
   backgroundColor: "var(--white)",
   borderRadius: "10px",
   padding: "4px",
-  width: "fit-content",
+  width: "100%",
   minHeight: "40px",
   ...customstyles?.tabs,
   "& .MuiTabs-indicator": {
@@ -61,6 +61,16 @@ export default function CustomTabs({
         onChange={handleTabChange}
         width={width}
         customstyles={customstyles}
+        variant="scrollable"
+        scrollButtons
+        allowScrollButtonsMobile
+        sx={{
+          "& .MuiTabs-scrollButtons": {
+            "&.Mui-disabled": {
+              opacity: 0.3,
+            },
+          },
+        }}
       >
         {tabs.map((tab, index) => (
           <StyledTab key={index} label={tab.label} />

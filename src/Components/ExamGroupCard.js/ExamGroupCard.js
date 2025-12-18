@@ -5,17 +5,18 @@ import Image from "next/image";
 export default function ExamGroupCard() {
   return (
     <Stack
-      flexDirection="row"
+      flexDirection={{ xs: "column", md: "row" }}
       sx={{
         border: "1px solid var(--border-color)",
         borderRadius: "5px",
         backgroundColor: "var(--white)",
-        padding: "15px",
-        width: "600px",
-        gap: "20px",
+        padding: { xs: "12px", md: "15px" },
+        width: "100%",
+        maxWidth: { md: "600px" },
+        gap: { xs: "15px", md: "20px" },
       }}
     >
-      <Stack gap="15px">
+      <Stack gap={{ xs: "10px", md: "15px" }} flex={1}>
         <Typography
           sx={{ fontFamily: "Lato", fontSize: "14px", fontWeight: "700" }}
         >
@@ -74,8 +75,15 @@ export default function ExamGroupCard() {
           Attempt
         </Button>
       </Stack>
-      <Stack sx={{ marginLeft: "auto" }}>
-        <Image src={examGroupBanner} alt="" width={155} height={155} />
+      <Stack
+        sx={{
+          marginLeft: { xs: "0", md: "auto" },
+          display: { xs: "none", sm: "flex" },
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Image src={examGroupBanner} alt="" width={120} height={120} />
       </Stack>
     </Stack>
   );
