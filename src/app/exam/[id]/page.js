@@ -17,7 +17,7 @@ import practice from "@/public/icons/practice.svg";
 import hours from "@/public/icons/hours.svg";
 import sections from "@/public/icons/sections.svg";
 import bookmark from "@/public/icons/bookmark.svg";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Compatibility from "../Components/Compatibility";
 import { enqueueSnackbar, closeSnackbar } from "notistack";
 import Link from "next/link";
