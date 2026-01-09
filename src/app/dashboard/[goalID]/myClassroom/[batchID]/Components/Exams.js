@@ -46,7 +46,7 @@ export default function Exams({ scheduledExams, examID, batchID }) {
       setExamHistory([]);
       setIsLoading(false);
     }
-  }, [examID, setIsLoading]);
+  }, [examID, batchID, setIsLoading]);
 
   // Run on mount or when examID changes
   useEffect(() => {
@@ -289,86 +289,98 @@ export default function Exams({ scheduledExams, examID, batchID }) {
         })
       : [];
 
-    const missed = expiredExams.map((exam) => {
-      const { id, title, duration, totalQuestions, totalMarks, endTimeStamp } =
-        exam;
-      const date = endTimeStamp ? new Date(endTimeStamp) : new Date();
-      const dateStr = date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
+    const attemptedExamIDs = new Set(
+      Array.isArray(examHistory) ? examHistory.map((e) => e.examID) : []
+    );
 
-      return {
-        key: `expired-${id}`,
-        title,
-        dateStr,
-        duration: duration || 60,
-        totalQuestions: totalQuestions || 0,
-        totalMarks: totalMarks || 0,
-        status: "EXPIRED",
-        leftBlock: (
-          <Stack
-            alignItems="center"
-            justifyContent="center"
-            sx={{
-              backgroundColor: "var(--bg-color)",
-              borderRadius: "16px",
-              padding: "12px",
-              minWidth: "80px",
-              height: "80px",
-              border: "1px solid var(--border-color)",
-            }}
-          >
-            <Typography
+    const missed = expiredExams
+      .filter((exam) => !attemptedExamIDs.has(exam.id))
+      .map((exam) => {
+        const {
+          id,
+          title,
+          duration,
+          totalQuestions,
+          totalMarks,
+          endTimeStamp,
+        } = exam;
+        const date = endTimeStamp ? new Date(endTimeStamp) : new Date();
+        const dateStr = date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+
+        return {
+          key: `expired-${id}`,
+          title,
+          dateStr,
+          duration: duration || 60,
+          totalQuestions: totalQuestions || 0,
+          totalMarks: totalMarks || 0,
+          status: "EXPIRED",
+          leftBlock: (
+            <Stack
+              alignItems="center"
+              justifyContent="center"
               sx={{
-                fontFamily: "var(--font-geist-sans)",
-                fontWeight: 700,
-                fontSize: "12px",
-                color: "var(--text3)",
-                textTransform: "uppercase",
+                backgroundColor: "var(--bg-color)",
+                borderRadius: "16px",
+                padding: "12px",
+                minWidth: "80px",
+                height: "80px",
+                border: "1px solid var(--border-color)",
               }}
             >
-              Expired
-            </Typography>
-            <Typography
+              <Typography
+                sx={{
+                  fontFamily: "var(--font-geist-sans)",
+                  fontWeight: 700,
+                  fontSize: "12px",
+                  color: "var(--text3)",
+                  textTransform: "uppercase",
+                }}
+              >
+                Expired
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "var(--font-geist-sans)",
+                  fontWeight: 700,
+                  fontSize: "16px",
+                  color: "var(--text2)",
+                  marginTop: "4px",
+                }}
+              >
+                {dateStr}
+              </Typography>
+            </Stack>
+          ),
+          actionButton: (
+            <Button
+              variant="outlined"
+              disabled
+              startIcon={<Close />}
               sx={{
+                textTransform: "none",
+                fontSize: "13px",
+                fontWeight: 600,
                 fontFamily: "var(--font-geist-sans)",
-                fontWeight: 700,
-                fontSize: "16px",
-                color: "var(--text2)",
-                marginTop: "4px",
-              }}
-            >
-              {dateStr}
-            </Typography>
-          </Stack>
-        ),
-        actionButton: (
-          <Button
-            variant="outlined"
-            disabled
-            startIcon={<Close />}
-            sx={{
-              textTransform: "none",
-              fontSize: "13px",
-              fontWeight: 600,
-              fontFamily: "var(--font-geist-sans)",
-              borderRadius: "8px",
-              padding: "8px 20px",
-              borderColor: "var(--border-color)",
-              color: "var(--text3)",
-              "&.Mui-disabled": {
+                borderRadius: "8px",
+                padding: "8px 20px",
                 borderColor: "var(--border-color)",
                 color: "var(--text3)",
-              },
-            }}
-            disableElevation
-          >
-            Expired
-          </Button>
-        ),
-      };
-    });
+                "&.Mui-disabled": {
+                  borderColor: "var(--border-color)",
+                  color: "var(--text3)",
+                },
+              }}
+              disableElevation
+            >
+              Expired
+            </Button>
+          ),
+        };
+      });
 
     return [...attempts, ...missed];
   }, [examHistory, expiredExams, router]);

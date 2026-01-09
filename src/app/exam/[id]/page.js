@@ -43,7 +43,7 @@ export default function ExamInstruction() {
     return instruction.serverTimestamp + elapsed;
   };
 
-  const fetchInstruction = async () => {
+  const fetchInstruction = useCallback(async () => {
     setIsLoading(true);
     try {
       await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${id}`).then(
@@ -59,11 +59,11 @@ export default function ExamInstruction() {
     } catch (error) {
       console.error("Error fetching instruction:", error);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchInstruction();
-  }, []);
+  }, [fetchInstruction]);
 
   const startExam = async () => {
     if (instruction.activeAttempt) {
@@ -370,7 +370,7 @@ export default function ExamInstruction() {
               ) : instruction.activeAttempt ? (
                 <East />
               ) : instruction.completedAttempt ? (
-                <Lock /> // Or any other icon indicating completion/locked
+                <East />
               ) : instruction.settings?.isProTest ? (
                 isPro ? (
                   <East />
@@ -383,14 +383,17 @@ export default function ExamInstruction() {
             }
             disabled={
               isStarting ||
-              (instruction.settings?.isProTest
-                ? isPro
-                  ? false
-                  : true
-                : false) ||
-              !!instruction.completedAttempt
+              (instruction.settings?.isProTest ? (isPro ? false : true) : false)
             }
-            onClick={startExam}
+            onClick={() => {
+              if (instruction.completedAttempt) {
+                router.push(
+                  `/exam/${id}/${instruction.completedAttempt.id}/result`
+                );
+              } else {
+                startExam();
+              }
+            }}
             sx={{
               maxWidth: "360px",
               height: "48px",
@@ -418,7 +421,7 @@ export default function ExamInstruction() {
               : instruction.activeAttempt
               ? "Continue Test"
               : instruction.completedAttempt
-              ? "Already Attended"
+              ? "View Result"
               : instruction.settings?.isProTest
               ? isPro
                 ? "Start Test Now"

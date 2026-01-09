@@ -338,33 +338,30 @@ export default function Exam() {
     });
   };
 
-  // Debounced Save Function
-  const debouncedSave = useCallback(
-    _.debounce(
-      (questionID, job, selectedOptions, blankAnswers, timeSpentMs) => {
-        fetch(`/api/exams/${examID}/${attemptID}/question-response`, {
-          method: "POST",
-          body: JSON.stringify({
-            questionID,
-            selectedOptions:
-              job === "selectedOptions" ? selectedOptions : undefined,
-            blankAnswers: job === "blankAnswers" ? blankAnswers : undefined,
-            timeSpentMs,
-          }),
+  // Direct Save Function (Debounce removed to prevent data loss on fast switching)
+  const saveAnswer = useCallback(
+    (questionID, job, selectedOptions, blankAnswers, timeSpentMs) => {
+      fetch(`/api/exams/${examID}/${attemptID}/question-response`, {
+        method: "POST",
+        body: JSON.stringify({
+          questionID,
+          selectedOptions:
+            job === "selectedOptions" ? selectedOptions : undefined,
+          blankAnswers: job === "blankAnswers" ? blankAnswers : undefined,
+          timeSpentMs,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setClientPerfAtFetch(performance.now());
+            setServerTimestamp(data.serverTimestamp);
+          } else {
+            console.error("Failed to save answer");
+          }
         })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success) {
-              setClientPerfAtFetch(performance.now());
-              setServerTimestamp(data.serverTimestamp);
-            } else {
-              // Ideally revert optimistic update here if needed, or notify
-              // router.push(`/exam/${examID}/${attemptID}/result`); // Maybe too aggressive to kick out?
-            }
-          });
-      },
-      500
-    ), // 500ms debounce
+        .catch((err) => console.error("Save answer error:", err));
+    },
     [examID, attemptID]
   );
 
@@ -382,13 +379,7 @@ export default function Exam() {
     }
 
     if (job === "blankAnswers" || job === "selectedOptions") {
-      debouncedSave(
-        questionID,
-        job,
-        selectedOptions,
-        blankAnswers,
-        timeSpentMs
-      );
+      saveAnswer(questionID, job, selectedOptions, blankAnswers, timeSpentMs);
     } else if (job === "markedForReview") {
       // Mark for review usually doesn't need heavy debouncing but good to be consistent?
       // Existing logic was direct fetch. Let's keep it direct or maybe debounce slightly?
