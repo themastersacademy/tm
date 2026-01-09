@@ -16,7 +16,7 @@ import ExamHeader from "../../Components/ExamHeader";
 import MobileSectionDraw from "../../Components/MobileSectionDraw";
 import ExamSection from "../../Components/ExamSection";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { usePreventNavigation } from "../../Components/use-prevent-navigation";
 import NavigationGuard from "../../Components/NavigationGuard";
 import { Bookmark, Fullscreen } from "@mui/icons-material";
@@ -26,7 +26,7 @@ import { seededShuffle } from "@/src/utils/seededShuffle";
 import AntiCheatToast from "../../Components/AntiCheatToast";
 import ViolationDialog from "../../Components/ViolationDialog";
 
-function ExamContent() {
+export default function Exam() {
   const router = useRouter();
   const params = useParams();
   const examID = params.id;
@@ -100,6 +100,8 @@ function ExamContent() {
     [submitExam]
   );
 
+  const [error, setError] = useState(null);
+
   const fetchQuestion = useCallback(async () => {
     try {
       const res = await fetch(`/api/exams/${examID}/${attemptID}`);
@@ -113,7 +115,10 @@ function ExamContent() {
           setServerTimestamp(attemptInfo.serverTimestamp);
           setClientPerfAtFetch(performance.now());
           await fetch(`${attemptInfo.blobSignedUrl}`)
-            .then((res) => res.json())
+            .then((res) => {
+              if (!res.ok) throw new Error("Failed to load question data");
+              return res.json();
+            })
             .then((data) => {
               if (attemptInfo.seed != null) {
                 const seed = attemptInfo.seed.toString();
@@ -125,15 +130,26 @@ function ExamContent() {
               setQuestions(data);
               setLoading(false);
             })
-            .catch(() => {
-              handleEndTest("AUTO");
+            .catch((err) => {
+              console.error("Blob fetch error:", err);
+              setError(
+                "Failed to load exam content. Please check your connection."
+              );
+              setLoading(false);
             });
+        } else if (attemptInfo.status === "COMPLETED") {
+          router.push(`/exam/${examID}/${attemptID}/result`);
         }
+      } else {
+        setError(data.message || "Failed to load exam details");
+        setLoading(false);
       }
     } catch (err) {
       console.error("Error fetching exam or blob data:", err);
+      setError("An unexpected error occurred. Please try again.");
+      setLoading(false);
     }
-  }, [examID, attemptID, handleEndTest, router]);
+  }, [examID, attemptID, router]);
 
   useEffect(() => {
     const onFsChange = () => setIsFsEnabled(!!document.fullscreenElement);
@@ -504,6 +520,33 @@ function ExamContent() {
     }
   }
 
+  if (error) {
+    return (
+      <Stack
+        alignItems="center"
+        justifyContent="center"
+        sx={{ minHeight: "100vh", p: 4, textAlign: "center" }}
+        gap={2}
+      >
+        <Typography variant="h5" color="error" fontWeight={600}>
+          Connection Error
+        </Typography>
+        <Typography color="text.secondary">{error}</Typography>
+        <Button
+          variant="contained"
+          onClick={() => {
+            setError(null);
+            setLoading(true);
+            fetchQuestion();
+          }}
+          sx={{ textTransform: "none", borderRadius: "8px" }}
+        >
+          Retry
+        </Button>
+      </Stack>
+    );
+  }
+
   if (loading) {
     return <LoadingComp />;
   }
@@ -747,14 +790,6 @@ function ExamContent() {
         </Box>
       </Box>
     </Stack>
-  );
-}
-
-export default function Exam() {
-  return (
-    <Suspense fallback={<LoadingComp />}>
-      <ExamContent />
-    </Suspense>
   );
 }
 
