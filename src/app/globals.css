@@ -18,16 +18,26 @@
   --delete-color-acc-2: #ffe5e5;
   --info-color: #78909c;
   --gradient-color: linear-gradient(45deg, #ff3c00, #7a00ff);
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #187163;
+  --secondary: #FEA800;
+  --text-gray: #999999;
 }
 
 html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
 body {
+  color: var(--foreground);
+  background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
@@ -37,5 +47,6 @@ body {
 }
 
 a {
+  color: inherit;
   text-decoration: none;
 }

@@ -1,6 +1,10 @@
 import { Geist, Geist_Mono, Lato } from "next/font/google";
 import "./globals.css";
 import Providers from "./Providers";
+import { satoshi } from "./fonts";
+import { Helvetica } from "./fonts";
+import { ABeeZee } from "./fonts";
+import { BeVietnamPro } from "./fonts";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -73,7 +77,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${lato.variable}`}
+        className={`${geistSans.variable} ${geistMono.variable} ${lato.variable} ${satoshi.variable} ${Helvetica.variable} ${ABeeZee.variable} ${BeVietnamPro.variable}`}
       >
         <ThemeRegistry>
           <Providers>

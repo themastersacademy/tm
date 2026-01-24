@@ -26,7 +26,7 @@ export default function FloatingCheckoutCard({
     <Box
       sx={{
         position: "fixed",
-        bottom: 0,
+        bottom: { xs: "64px", md: 0 },
         left: 0,
         right: 0,
         bgcolor: "white",
@@ -90,7 +90,7 @@ export default function FloatingCheckoutCard({
                     ₹
                     {calculateDiscountedPrice(
                       selectedPlan.priceWithTax,
-                      selectedPlan.discountInPercent
+                      selectedPlan.discountInPercent,
                     )}
                   </Typography>
                   <Typography

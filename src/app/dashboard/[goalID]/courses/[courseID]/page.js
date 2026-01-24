@@ -59,7 +59,7 @@ const MyCourse = () => {
 
   const apiHeaders = useMemo(
     () => ({ "Content-Type": "application/json" }),
-    []
+    [],
   );
 
   const saveProgressToDB = useCallback(async () => {
@@ -74,7 +74,7 @@ const MyCourse = () => {
             lessonProgress: progressRef.current,
           }),
           credentials: "include",
-        }
+        },
       );
       const data = await response.json();
       if (data.success) {
@@ -188,7 +188,7 @@ const MyCourse = () => {
             body: JSON.stringify({ courseID }),
             credentials: "include",
           }),
-        ]
+        ],
       );
 
       const [enrollData, courseData, lessonsData, progressData] =
@@ -217,7 +217,7 @@ const MyCourse = () => {
       }
 
       const firstPreview = lessonsData.data.find(
-        (lesson) => lesson.type === "VIDEO" && lesson.isPreview
+        (lesson) => lesson.type === "VIDEO" && lesson.isPreview,
       );
       if (firstPreview) {
         setSelectedLessonId(firstPreview.id);
@@ -268,7 +268,7 @@ const MyCourse = () => {
         });
       }
     },
-    [selectedLessonId, isEnrolled, enrollment, courseID, isPlaying]
+    [selectedLessonId, isEnrolled, enrollment, courseID, isPlaying],
   );
 
   const handlePlayPauseClick = (e, shouldPlay) => {
@@ -294,7 +294,7 @@ const MyCourse = () => {
               enrollmentID: enrollment?.id,
             }),
             credentials: "include",
-          }
+          },
         );
         const data = await res.json();
         if (data.success) {
@@ -309,7 +309,7 @@ const MyCourse = () => {
         setError("Failed to download file.");
       }
     },
-    [courseID, enrollment, apiHeaders]
+    [courseID, enrollment, apiHeaders],
   );
 
   const courseInfoTags = useMemo(
@@ -327,7 +327,7 @@ const MyCourse = () => {
         text: `${courseDetails?.duration || 0} Hours`,
       },
     ],
-    [courseDetails]
+    [courseDetails],
   );
 
   const [tabValue, setTabValue] = useState(0);
@@ -340,10 +340,10 @@ const MyCourse = () => {
   const analytics = useMemo(() => {
     const totalLessons = lessonList.length || 1;
     const completedLessons = Object.values(progressRef.current).filter(
-      (p) => p.isCompleted
+      (p) => p.isCompleted,
     ).length;
     const progressPercentage = Math.round(
-      (completedLessons / totalLessons) * 100
+      (completedLessons / totalLessons) * 100,
     );
 
     let totalSecondsWatched = 0;
@@ -379,7 +379,7 @@ const MyCourse = () => {
       !courseDetails?.subscription.isPro);
 
   return (
-    <Box sx={{ pb: 8 }}>
+    <Box sx={{ pb: { xs: 24, md: 8 } }}>
       <Script
         src="https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js"
         onLoad={initializePlayer}
@@ -917,7 +917,7 @@ const playVideo = async ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lessonID, courseID, enrollmentID }),
         credentials: "include",
-      }
+      },
     );
     const data = await response.json();
     if (data.success) {
