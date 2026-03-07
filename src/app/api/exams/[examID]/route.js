@@ -8,14 +8,8 @@ export async function GET(req, { params }) {
   const { examID } = await params;
   const session = await getSession();
 
-  if (!session) {
-    return Response.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 }
-    );
+  if (!session?.isAuthenticated || !session.id) {
+    return session.unauthorized("Please log in to continue");
   }
 
   if (!examID) {

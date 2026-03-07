@@ -13,10 +13,13 @@ async function withAuth(handler) {
 // Consistent error handler
 function handleError(error) {
   console.error("Exam History API Error:", error);
-  return Response.json({
-    success: false,
-    message: error.message || "An unexpected error occurred",
-  });
+  return Response.json(
+    {
+      success: false,
+      message: error.message || "An unexpected error occurred",
+    },
+    { status: 500 }
+  );
 }
 
 export async function POST(req) {

@@ -11,8 +11,9 @@ export async function withAuth(handler) {
 // Consistent error handler
 export function handleError(error) {
   console.error("CourseEnroll API Error:", error);
+  const status = Number(error?.statusCode || error?.status) || 500;
   return Response.json({
     success: false,
     message: error.message || "An unexpected error occurred",
-  });
+  }, { status });
 }

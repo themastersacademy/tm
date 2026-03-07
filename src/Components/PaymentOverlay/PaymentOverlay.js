@@ -21,13 +21,6 @@ export default function PaymentOverlay({
   const rzpRef = useRef(null);
 
   useEffect(() => {
-    // console.log("useEffect triggered", {
-    //   scriptLoaded,
-    //   razorpayAvailable: !!window.Razorpay,
-    //   orderId: order?.id,
-    //   priceDetails,
-    // });
-
     if (error) {
       enqueueSnackbar(error, { variant: "error" });
       onClose && onClose();
@@ -46,9 +39,8 @@ export default function PaymentOverlay({
 
     // Initialize Razorpay if script is loaded and no instance exists
     if ((scriptLoaded || window.Razorpay) && !rzpRef.current) {
-      // console.log("Initializing Razorpay with order:", order.id);
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "YOUR_FALLBACK_KEY",
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: amount * 100, // Use validated amount
         currency: "INR",
         name: process.env.NEXT_PUBLIC_COMPANY_NAME || "Your Company",
@@ -57,7 +49,6 @@ export default function PaymentOverlay({
         image: Masters_logo.src,
         handler: async function (response) {
           try {
-            // console.log("Payment response:", response);
             const verifyResponse = await fetch(
               `${process.env.NEXT_PUBLIC_BASE_URL}/api/checkout/course-enroll/verify-payment`,
               {
@@ -74,8 +65,6 @@ export default function PaymentOverlay({
             );
 
             const verifyResult = await verifyResponse.json();
-            // console.log("Verification result:", verifyResult);
-
             if (verifyResult.success) {
               enqueueSnackbar("Payment successful!", { variant: "success" });
             } else {
@@ -100,10 +89,6 @@ export default function PaymentOverlay({
         modal: {
           ondismiss: async function () {
             try {
-              // console.log(
-              //   "Modal dismissed, cancelling transaction:",
-              //   transactionID
-              // );
               const cancelResponse = await fetch(
                 `${process.env.NEXT_PUBLIC_BASE_URL}/api/checkout/course-enroll/cancel-transaction`,
                 {
@@ -119,7 +104,6 @@ export default function PaymentOverlay({
               );
 
               const cancelResult = await cancelResponse.json();
-              // console.log("Cancel result:", cancelResult);
               if (!cancelResult.success) {
                 throw new Error(
                   cancelResult.message || "Failed to cancel transaction"
@@ -141,7 +125,6 @@ export default function PaymentOverlay({
       };
 
       try {
-        // console.log("Creating Razorpay instance");
         const rzp = new window.Razorpay(options);
         rzpRef.current = rzp;
         rzp.open();
@@ -165,7 +148,6 @@ export default function PaymentOverlay({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // console.log("Cleaning up PaymentOverlay");
       rzpRef.current = null;
     };
   }, []);

@@ -40,24 +40,19 @@ export default function GoalCard({
       onClick={onClick}
       sx={{
         width: "100%",
-        minHeight: "280px",
-        borderRadius: "24px",
+        borderRadius: "12px",
         background: isSelected
-          ? "linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 100%)"
+          ? "rgba(24, 113, 99, 0.03)"
           : "var(--white)",
         border: isSelected
           ? "2px solid var(--primary-color)"
           : "1px solid var(--border-color)",
         cursor: "pointer",
-        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "all 0.15s ease",
         position: "relative",
         overflow: "hidden",
         "&:hover": {
           borderColor: "var(--primary-color)",
-          transform: "translateY(-8px)",
-          boxShadow: isSelected
-            ? "0 24px 48px rgba(33, 150, 243, 0.15)"
-            : "0 20px 40px rgba(0,0,0,0.06)",
         },
       }}
     >
@@ -68,21 +63,19 @@ export default function GoalCard({
             position: "absolute",
             top: 0,
             right: 0,
-            background:
-              "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%)",
-            borderBottomLeftRadius: "16px",
-            padding: "8px 16px",
+            backgroundColor: "var(--primary-color)",
+            borderBottomLeftRadius: "10px",
+            padding: "6px 12px",
             display: "flex",
             alignItems: "center",
-            gap: "6px",
-            boxShadow: "0 4px 12px rgba(33, 150, 243, 0.3)",
+            gap: "4px",
           }}
         >
-          <CheckCircleRounded sx={{ color: "white", fontSize: "18px" }} />
+          <CheckCircleRounded sx={{ color: "white", fontSize: "14px" }} />
           <Typography
             sx={{
               color: "white",
-              fontSize: "12px",
+              fontSize: "10px",
               fontWeight: 700,
               letterSpacing: "0.5px",
             }}
@@ -99,20 +92,19 @@ export default function GoalCard({
             position: "absolute",
             top: 0,
             right: 0,
-            background: "linear-gradient(135deg, #4CAF50 0%, #388E3C 100%)",
-            borderBottomLeftRadius: "16px",
-            padding: "8px 16px",
+            backgroundColor: "#4CAF50",
+            borderBottomLeftRadius: "10px",
+            padding: "6px 12px",
             display: "flex",
             alignItems: "center",
-            gap: "6px",
-            boxShadow: "0 4px 12px rgba(76, 175, 80, 0.3)",
+            gap: "4px",
           }}
         >
-          <CheckCircleRounded sx={{ color: "white", fontSize: "18px" }} />
+          <CheckCircleRounded sx={{ color: "white", fontSize: "14px" }} />
           <Typography
             sx={{
               color: "white",
-              fontSize: "12px",
+              fontSize: "10px",
               fontWeight: 700,
               letterSpacing: "0.5px",
             }}
@@ -123,46 +115,45 @@ export default function GoalCard({
       )}
 
       {/* Main Content */}
-      <Stack padding="28px" gap="20px" flex={1}>
+      <Stack padding="20px" gap="16px" flex={1}>
         {/* Icon Section */}
         <Stack
           sx={{
-            width: "80px",
-            height: "80px",
-            borderRadius: "16px",
-            background: isSelected
-              ? "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%)"
-              : "linear-gradient(135deg, #F5F5F5 0%, #E8E8E8 100%)",
+            width: "56px",
+            height: "56px",
+            borderRadius: "12px",
+            backgroundColor: isSelected
+              ? "var(--primary-color)"
+              : "rgba(24, 113, 99, 0.08)",
+            border: isSelected
+              ? "none"
+              : "1px solid rgba(24, 113, 99, 0.15)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: isSelected
-              ? "0 8px 20px rgba(33, 150, 243, 0.25)"
-              : "0 4px 12px rgba(0,0,0,0.06)",
-            transition: "all 0.3s ease",
+            transition: "all 0.15s ease",
           }}
         >
           <Image
             src={getIcon(icon)}
             alt={title}
-            width={44}
-            height={44}
+            width={28}
+            height={28}
             style={{
               filter: isSelected ? "brightness(0) invert(1)" : "none",
-              transition: "all 0.3s",
+              transition: "all 0.15s ease",
             }}
           />
         </Stack>
 
         {/* Title & Description */}
-        <Stack gap="10px" flex={1}>
+        <Stack gap="8px" flex={1}>
           <Typography
             sx={{
-              fontSize: "22px",
-              fontWeight: 800,
+              fontSize: "18px",
+              fontWeight: 700,
               color: "var(--text1)",
               lineHeight: 1.2,
-              letterSpacing: "-0.5px",
             }}
           >
             {title}
@@ -171,11 +162,11 @@ export default function GoalCard({
           {tagline && (
             <Typography
               sx={{
-                fontSize: "13px",
+                fontSize: "11px",
                 fontWeight: 700,
-                color: isSelected ? "var(--primary-color)" : "var(--text3)",
+                color: isSelected ? "var(--primary-color)" : "var(--text4)",
                 textTransform: "uppercase",
-                letterSpacing: "1px",
+                letterSpacing: "0.5px",
               }}
             >
               {tagline}
@@ -184,10 +175,9 @@ export default function GoalCard({
 
           <Typography
             sx={{
-              fontSize: "14px",
-              color: "var(--text2)",
-              lineHeight: 1.6,
-              mt: 0.5,
+              fontSize: "13px",
+              color: "var(--text3)",
+              lineHeight: 1.5,
               display: "-webkit-box",
               WebkitLineClamp: 3,
               WebkitBoxOrient: "vertical",
@@ -203,18 +193,18 @@ export default function GoalCard({
         {(coursesCount > 0 || subjectsCount > 0 || blogsCount > 0) && (
           <Stack
             direction="row"
-            gap="20px"
+            gap="16px"
             sx={{
-              pt: 2,
-              borderTop: "2px solid",
+              pt: "12px",
+              borderTop: "1px solid",
               borderColor: isSelected
-                ? "rgba(33, 150, 243, 0.15)"
+                ? "rgba(24, 113, 99, 0.15)"
                 : "var(--border-color)",
             }}
           >
             {coursesCount > 0 && (
               <StatBadge
-                icon={<SchoolOutlined sx={{ fontSize: "18px" }} />}
+                icon={<SchoolOutlined sx={{ fontSize: "16px" }} />}
                 value={coursesCount}
                 label="Courses"
                 color="var(--primary-color)"
@@ -222,7 +212,7 @@ export default function GoalCard({
             )}
             {subjectsCount > 0 && (
               <StatBadge
-                icon={<MenuBookOutlined sx={{ fontSize: "18px" }} />}
+                icon={<MenuBookOutlined sx={{ fontSize: "16px" }} />}
                 value={subjectsCount}
                 label="Subjects"
                 color="var(--sec-color)"
@@ -230,7 +220,7 @@ export default function GoalCard({
             )}
             {blogsCount > 0 && (
               <StatBadge
-                icon={<ArticleOutlined sx={{ fontSize: "18px" }} />}
+                icon={<ArticleOutlined sx={{ fontSize: "16px" }} />}
                 value={blogsCount}
                 label="Blogs"
                 color="#1976D2"
@@ -245,25 +235,25 @@ export default function GoalCard({
 
 function StatBadge({ icon, value, label, color }) {
   return (
-    <Stack alignItems="center" gap="4px">
+    <Stack alignItems="center" gap="2px">
       <Stack
         direction="row"
         alignItems="center"
-        gap="6px"
+        gap="4px"
         sx={{ color: color }}
       >
         {icon}
-        <Typography sx={{ fontSize: "20px", fontWeight: 800, lineHeight: 1 }}>
+        <Typography sx={{ fontSize: "16px", fontWeight: 700, lineHeight: 1 }}>
           {value}
         </Typography>
       </Stack>
       <Typography
         sx={{
-          fontSize: "11px",
+          fontSize: "10px",
           fontWeight: 600,
-          color: "var(--text3)",
+          color: "var(--text4)",
           textTransform: "uppercase",
-          letterSpacing: "0.5px",
+          letterSpacing: "0.3px",
         }}
       >
         {label}

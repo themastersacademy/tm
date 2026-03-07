@@ -3,14 +3,8 @@ import { getSession } from "@/src/utils/serverSession";
 
 export async function POST(req) {
   const session = await getSession();
-  if (!session) {
-    return Response.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 }
-    );
+  if (!session?.isAuthenticated || !session.id) {
+    return session.unauthorized("Please log in to continue");
   }
   try {
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature } =
@@ -24,6 +18,7 @@ export async function POST(req) {
     }
 
     const result = await verifyPayment({
+      userID: session.id,
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,

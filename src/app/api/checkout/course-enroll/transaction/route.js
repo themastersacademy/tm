@@ -3,29 +3,23 @@ import { getSession } from "@/src/utils/serverSession";
 
 export async function POST(req) {
   const session = await getSession();
-  if (!session) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: "Unauthorized",
-      }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
-    );
+  if (!session?.isAuthenticated || !session.id) {
+    return session.unauthorized("Please log in to continue");
   }
   try {
-    const { transactionID, userID } = await req.json();
+    const { transactionID } = await req.json();
 
-    if (!transactionID || !userID) {
+    if (!transactionID) {
       return new Response(
         JSON.stringify({
           success: false,
-          message: "Missing transactionID or userID",
+          message: "Missing transactionID",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    const transaction = await getTransaction({ transactionID, userID });
+    const transaction = await getTransaction({ transactionID, userID: session.id });
 
     return new Response(JSON.stringify({ success: true, data: transaction }), {
       status: 200,

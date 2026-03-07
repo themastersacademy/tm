@@ -51,6 +51,7 @@ export default function Home() {
 
   const [instructionOpen, setInstructionOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
+  const [isStartingExam, setIsStartingExam] = useState(false);
 
   const handleExamClick = (exam) => {
     setSelectedExam(exam);
@@ -59,9 +60,11 @@ export default function Home() {
 
   const handleStartExam = () => {
     if (selectedExam) {
+      setIsStartingExam(true);
       router.push(`/exam/${selectedExam.id}`);
     }
-    setInstructionOpen(false);
+    // Do not close instruction dialog immediately, let it show loading state
+    // setInstructionOpen(false);
   };
 
   useEffect(() => {
@@ -659,6 +662,7 @@ export default function Home() {
           open={instructionOpen}
           onClose={() => setInstructionOpen(false)}
           onStart={handleStartExam}
+          loading={isStartingExam}
           examData={{
             title: selectedExam.title,
             icon: week1.src,

@@ -8,6 +8,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto";
 import {
+  razorpay,
   createOrder,
   verifyPaymentWithSignature,
   getOrderStatus,
@@ -62,11 +63,12 @@ export async function createTransaction({
 }
 
 export async function verifyPayment({
+  userID,
   razorpayOrderId,
   razorpayPaymentId,
   razorpaySignature,
 }) {
-  if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+  if (!userID || !razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
     throw new Error("verifyPayment: missing parameters");
   }
 
@@ -74,12 +76,31 @@ export async function verifyPayment({
   if (!transaction) {
     throw new Error("Transaction not found");
   }
+  if (transaction.sKey !== `TRANSACTIONS@${userID}`) {
+    throw new Error("Unauthorized: Transaction does not belong to user");
+  }
+
+  // Idempotency: if already completed, return success without re-processing
+  if (transaction.status === "completed") {
+    return {
+      success: true,
+      message: "Payment already verified",
+      status: "completed",
+    };
+  }
 
   const payment = await verifyPaymentWithSignature({
     razorpayOrderId,
     razorpayPaymentId,
     razorpaySignature,
   });
+
+  let transactionStatus = "pending";
+  if (payment.status === "captured") {
+    transactionStatus = "completed";
+  } else if (payment.status === "failed" || payment.status === "refunded") {
+    transactionStatus = "failed";
+  }
 
   const now = Date.now();
   const updateTransactionParams = {
@@ -105,7 +126,7 @@ export async function verifyPayment({
         currency: payment.currency,
         createdAt: payment.created_at,
       },
-      ":status": "completed",
+      ":status": transactionStatus,
       ":updatedAt": now,
     },
   };
@@ -175,6 +196,7 @@ export async function verifyPayment({
   return {
     success: true,
     message: "Payment verified",
+    status: transactionStatus,
   };
 }
 
@@ -240,6 +262,9 @@ export async function cancelTransaction({
   if (!transaction) {
     throw new Error("Transaction not found");
   }
+  if (`TRANSACTION#${transactionID}` !== transaction.pKey) {
+    throw new Error("Transaction ID and order ID do not match");
+  }
 
   if (transaction.sKey !== `TRANSACTIONS@${userID}`) {
     throw new Error("Unauthorized: Transaction does not belong to user");
@@ -259,10 +284,6 @@ export async function cancelTransaction({
     UpdateExpression: "set #status = :status, updatedAt = :updatedAt",
     ExpressionAttributeNames: {
       "#status": "status",
-    },
-    ExpressionAttributeValues: {
-      ":status": "cancelled",
-      ":updatedAt": now,
     },
     ConditionExpression: "#status <> :completedStatus",
     ExpressionAttributeValues: {
@@ -292,6 +313,9 @@ export async function checkAndUpdateTransactionStatus({
   const transaction = await getTransaction({ razorpayOrderId });
   if (!transaction) {
     throw new Error("Transaction not found");
+  }
+  if (`TRANSACTION#${transactionID}` !== transaction.pKey) {
+    throw new Error("Transaction ID and order ID do not match");
   }
 
   if (transaction.sKey !== `TRANSACTIONS@${userID}`) {

@@ -105,7 +105,7 @@ export default function HomePage() {
         margin="0 auto"
         sx={{ marginBottom: { xs: "80px", md: "0px" } }}
       >
-        <Stack padding={{ xs: "16px", md: "32px" }} gap="40px" width="100%">
+        <Stack padding={{ xs: "12px", md: "24px" }} gap="24px" width="100%">
           {/* Desktop Header */}
           <Box sx={{ display: { xs: "none", md: "block" } }}>
             {isLoading ? <HeaderSkeleton /> : <Header />}
@@ -135,13 +135,12 @@ export default function HomePage() {
                   <Stack gap="8px">
                     <Typography
                       sx={{
-                        fontSize: { xs: "24px", md: "28px" },
-                        fontWeight: 800,
+                        fontSize: { xs: "18px", md: "20px" },
+                        fontWeight: 700,
                         color: "var(--text1)",
-                        letterSpacing: "-0.5px",
                       }}
                     >
-                      🌟 Featured Learning Paths
+                      Featured Learning Paths
                     </Typography>
                     <Typography
                       sx={{
@@ -180,10 +179,9 @@ export default function HomePage() {
                 <Stack gap="8px">
                   <Typography
                     sx={{
-                      fontSize: { xs: "24px", md: "28px" },
-                      fontWeight: 800,
+                      fontSize: { xs: "18px", md: "20px" },
+                      fontWeight: 700,
                       color: "var(--text1)",
-                      letterSpacing: "-0.5px",
                     }}
                   >
                     Your Learning Goals
@@ -201,7 +199,6 @@ export default function HomePage() {
                 <Box
                   sx={{
                     overflowX: { xs: "auto", md: "initial" },
-                    whiteSpace: "nowrap",
                     scrollbarWidth: "none",
                     "&::-webkit-scrollbar": { display: "none" },
                     width: "100%",
@@ -209,9 +206,8 @@ export default function HomePage() {
                 >
                   <Stack
                     direction="row"
-                    flexWrap={{ xs: "wrap", md: "nowrap" }}
+                    flexWrap={{ xs: "nowrap", md: "wrap" }}
                     gap="16px"
-                    minWidth={{ xs: "max-content", md: "100%" }}
                   >
                     {goalLoading ? (
                       <>
@@ -255,10 +251,9 @@ export default function HomePage() {
                 <Stack direction="row" justifyContent="space-between" mb={3}>
                   <Typography
                     sx={{
-                      fontSize: "24px",
-                      fontWeight: 800,
+                      fontSize: { xs: "18px", md: "20px" },
+                      fontWeight: 700,
                       color: "var(--text1)",
-                      letterSpacing: "-0.5px",
                     }}
                   >
                     Course Store
@@ -284,10 +279,9 @@ export default function HomePage() {
                 <Stack gap="8px">
                   <Typography
                     sx={{
-                      fontSize: { xs: "24px", md: "28px" },
-                      fontWeight: 800,
+                      fontSize: { xs: "18px", md: "20px" },
+                      fontWeight: 700,
                       color: "var(--text1)",
-                      letterSpacing: "-0.5px",
                     }}
                   >
                     How It Works

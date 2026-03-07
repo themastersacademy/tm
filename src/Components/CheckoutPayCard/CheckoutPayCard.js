@@ -63,7 +63,7 @@ export default function CheckoutPayCard({
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
           backgroundColor: "var(--white, #fff)",
           padding: "0px",
-          width: { sm: "100%", lg: "350px", md: "350px", xs: "350px" },
+          width: { sm: "100%", lg: "350px", md: "350px", xs: "100%" },
           height: "auto",
           maxWidth: { xs: "100%" },
           alignSelf: { xs: "center", md: "flex-end" },

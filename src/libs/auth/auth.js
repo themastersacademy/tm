@@ -1,11 +1,13 @@
-"server only";
+import "server-only";
 import { dynamoDB } from "@/src/utils/awsAgent";
 import {
   PutCommand,
   QueryCommand,
   DeleteCommand,
   UpdateCommand,
+  GetCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { timingSafeEqual } from "crypto";
 import {
   hashPassword,
   verifyPassword,
@@ -205,7 +207,8 @@ export async function createUser({ email, name, password }) {
 export async function resendOTP({ email }) {
   const user = await getUserByEmail(email);
   if (!user) {
-    throw new Error("User not found");
+    // Return success to prevent user enumeration
+    return { success: true, message: "If an account exists, an OTP has been sent" };
   }
   if (user.otp.expiresAt > Date.now() && user.otp.attemptsRemaining > 0) {
     await sendOTPToMail({ to: email, otp: user.otp.otp });
@@ -248,7 +251,7 @@ export async function resendOTP({ email }) {
 export async function verifyOTP({ email, otp }) {
   const user = await getUserByEmail(email);
   if (!user) {
-    throw new Error("User not found");
+    throw new Error("Invalid email or OTP");
   }
   //reduce OTP attempts
   if (user.otp.attemptsRemaining > 0) {
@@ -264,15 +267,17 @@ export async function verifyOTP({ email, otp }) {
       })
     );
   } else {
-    throw new Error("OTP attempts exceeded");
+    throw new Error("OTP attempts exceeded. Please request a new OTP.");
   }
-  //check if OTP is correct
-  if (user.otp.otp !== otp) {
-    throw new Error("Invalid OTP");
-  }
-  //check if OTP is expired
+  //check if OTP is expired first
   if (user.otp.expiresAt < Date.now()) {
-    throw new Error("OTP expired");
+    throw new Error("OTP expired. Please request a new OTP.");
+  }
+  //check if OTP is correct using timing-safe comparison
+  const storedOtp = Buffer.from(String(user.otp.otp));
+  const providedOtp = Buffer.from(String(otp));
+  if (storedOtp.length !== providedOtp.length || !timingSafeEqual(storedOtp, providedOtp)) {
+    throw new Error("Invalid OTP");
   }
 
   await dynamoDB.send(
@@ -292,7 +297,8 @@ export async function verifyOTP({ email, otp }) {
 export async function forgotPassword({ email }) {
   const user = await getUserByEmail(email);
   if (!user) {
-    throw new Error("User not found");
+    // Return success to prevent user enumeration
+    return { success: true, message: "If an account exists, an OTP has been sent" };
   }
   user.otp = user.otp || {};
   user.otp.otp = generateOTP();
@@ -321,7 +327,7 @@ export async function forgotPassword({ email }) {
 export async function verifyOTPForPasswordReset({ email, otp }) {
   const user = await getUserByEmail(email);
   if (!user) {
-    throw new Error("User not found");
+    throw new Error("Invalid email or OTP");
   }
   //reduce OTP attempts
   if (user.otp.attemptsRemaining > 0) {
@@ -337,15 +343,17 @@ export async function verifyOTPForPasswordReset({ email, otp }) {
       })
     );
   } else {
-    throw new Error("OTP attempts exceeded");
+    throw new Error("OTP attempts exceeded. Please request a new OTP.");
   }
-  //check if OTP is correct
-  if (user.otp.otp !== otp) {
-    throw new Error("Invalid OTP");
-  }
-  //check if OTP is expired
+  //check if OTP is expired first
   if (user.otp.expiresAt < Date.now()) {
-    throw new Error("OTP expired");
+    throw new Error("OTP expired. Please request a new OTP.");
+  }
+  //check if OTP is correct using timing-safe comparison
+  const storedOtp = Buffer.from(String(user.otp.otp));
+  const providedOtp = Buffer.from(String(otp));
+  if (storedOtp.length !== providedOtp.length || !timingSafeEqual(storedOtp, providedOtp)) {
+    throw new Error("Invalid OTP");
   }
 
   //generate token

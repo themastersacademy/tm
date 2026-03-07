@@ -24,54 +24,28 @@ export default function HeroDashboard({ userName, stats }) {
       sx={{
         background:
           "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%)",
-        borderRadius: "20px",
-        padding: { xs: "24px", md: "32px" },
+        borderRadius: "10px",
+        padding: { xs: "16px", md: "20px 24px" },
         color: "white",
         position: "relative",
         overflow: "hidden",
-        boxShadow: "0 8px 24px rgba(33, 150, 243, 0.2)",
       }}
     >
-      {/* Decorative circles */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: -50,
-          right: -50,
-          width: "200px",
-          height: "200px",
-          borderRadius: "50%",
-          background: "rgba(255,255,255,0.1)",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          bottom: -30,
-          left: -30,
-          width: "150px",
-          height: "150px",
-          borderRadius: "50%",
-          background: "rgba(255,255,255,0.05)",
-        }}
-      />
-
-      <Stack gap="24px" position="relative" zIndex={1}>
+      <Stack gap="16px" position="relative" zIndex={1}>
         {/* Welcome message */}
-        <Stack gap="8px">
+        <Stack gap="4px">
           <Typography
             sx={{
-              fontSize: { xs: "24px", md: "32px" },
-              fontWeight: 800,
-              letterSpacing: "-0.5px",
+              fontSize: { xs: "18px", md: "20px" },
+              fontWeight: 700,
             }}
           >
-            🎓 Welcome back, {userName || "Student"}!
+            Welcome back, {userName || "Student"}!
           </Typography>
           <Typography
             sx={{
-              fontSize: "16px",
-              opacity: 0.9,
+              fontSize: "13px",
+              opacity: 0.85,
               fontWeight: 500,
             }}
           >
@@ -80,19 +54,19 @@ export default function HeroDashboard({ userName, stats }) {
         </Stack>
 
         {/* Quick stats */}
-        <Stack direction="row" gap={{ xs: "16px", md: "32px" }} flexWrap="wrap">
+        <Stack direction="row" gap={{ xs: "12px", md: "24px" }} flexWrap="wrap">
           <StatBadge
-            icon={<School sx={{ fontSize: 24 }} />}
+            icon={<School sx={{ fontSize: 18 }} />}
             value={coursesEnrolled}
             label="Courses"
           />
           <StatBadge
-            icon={<AccessTime sx={{ fontSize: 24 }} />}
+            icon={<AccessTime sx={{ fontSize: 18 }} />}
             value={hoursCompleted}
             label="Hours"
           />
           <StatBadge
-            icon={<EmojiEvents sx={{ fontSize: 24 }} />}
+            icon={<EmojiEvents sx={{ fontSize: 18 }} />}
             value={certificates}
             label="Certificates"
           />
@@ -102,23 +76,20 @@ export default function HeroDashboard({ userName, stats }) {
         <Box>
           <Button
             variant="contained"
-            endIcon={<ArrowForward />}
+            endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
             onClick={() => router.push(`/dashboard/${goalID}/courses`)}
             sx={{
               backgroundColor: "white",
               color: "var(--primary-color)",
               fontWeight: 700,
-              fontSize: "16px",
-              padding: "12px 24px",
-              borderRadius: "12px",
+              fontSize: "13px",
+              padding: "8px 20px",
+              borderRadius: "8px",
               textTransform: "none",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
               "&:hover": {
                 backgroundColor: "rgba(255,255,255,0.9)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 6px 16px rgba(0,0,0,0.2)",
               },
-              transition: "all 0.3s ease",
+              transition: "all 0.15s ease",
             }}
           >
             Explore Courses
@@ -131,12 +102,12 @@ export default function HeroDashboard({ userName, stats }) {
 
 function StatBadge({ icon, value, label }) {
   return (
-    <Stack direction="row" alignItems="center" gap="12px">
+    <Stack direction="row" alignItems="center" gap="8px">
       <Box
         sx={{
           backgroundColor: "rgba(255,255,255,0.2)",
-          borderRadius: "12px",
-          padding: "12px",
+          borderRadius: "8px",
+          padding: "8px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -147,8 +118,8 @@ function StatBadge({ icon, value, label }) {
       <Stack>
         <Typography
           sx={{
-            fontSize: "28px",
-            fontWeight: 800,
+            fontSize: "20px",
+            fontWeight: 700,
             lineHeight: 1,
           }}
         >
@@ -156,7 +127,7 @@ function StatBadge({ icon, value, label }) {
         </Typography>
         <Typography
           sx={{
-            fontSize: "14px",
+            fontSize: "12px",
             opacity: 0.8,
             fontWeight: 500,
           }}

@@ -1,31 +1,41 @@
 import { dynamoDB } from "@/src/utils/awsAgent";
-import { ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand } from "@aws-sdk/lib-dynamodb";
 
 export async function getAllBanners() {
   const TABLE_NAME = `${process.env.AWS_DB_NAME}master`;
-  const params = {
-    TableName: TABLE_NAME,
-    // Only include items where sKey = "BANNERS" and isUploaded = true
-    FilterExpression: "sKey = :sKey AND isUploaded = :isUploaded",
-    ExpressionAttributeValues: {
-      ":sKey": "BANNERS",
-      ":isUploaded": true,
-    },
-    // Only fetch the attributes we actually need
-    ProjectionExpression: "bannerID, title, bannerURL",
-  };
 
   try {
-    const { Items = [] } = await dynamoDB.send(new ScanCommand(params));
+    // Query via GSI — banners have GSI1-pKey = "BANNERS"
+    const items = [];
+    let lastKey;
+    do {
+      const response = await dynamoDB.send(
+        new QueryCommand({
+          TableName: TABLE_NAME,
+          IndexName: "masterTableIndex",
+          KeyConditionExpression: "#gsi1pk = :gsi1pk",
+          ExpressionAttributeNames: {
+            "#gsi1pk": "GSI1-pKey",
+          },
+          ExpressionAttributeValues: {
+            ":gsi1pk": "BANNERS",
+          },
+          ProjectionExpression: "bannerID, title, bannerURL, isUploaded",
+          ...(lastKey && { ExclusiveStartKey: lastKey }),
+        })
+      );
+      items.push(...(response.Items || []));
+      lastKey = response.LastEvaluatedKey;
+    } while (lastKey);
 
-    // Map each item to the shape we want in the response
-    const data = Items.map((item) => {
-      return {
-        id: item.bannerID,
-        title: item.title,
-        image: item.bannerURL,
-      };
-    });
+    // Filter uploaded banners in-memory
+    const uploadedBanners = items.filter((item) => item.isUploaded === true);
+
+    const data = uploadedBanners.map((item) => ({
+      id: item.bannerID,
+      title: item.title,
+      image: item.bannerURL,
+    }));
 
     return {
       success: true,

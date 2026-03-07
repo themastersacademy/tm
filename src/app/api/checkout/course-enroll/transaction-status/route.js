@@ -1,19 +1,24 @@
 import { getTransaction } from "@/src/libs/transaction/transactionController";
+import { getSession } from "@/src/utils/serverSession";
 
 export async function GET(req) {
   try {
+    const session = await getSession();
+    if (!session?.isAuthenticated || !session.id) {
+      return session.unauthorized("Please log in to continue");
+    }
+
     const url = new URL(req.url);
     const transactionID = url.searchParams.get("transactionID");
-    const userID = url.searchParams.get("userID");
 
-    if (!transactionID || !userID) {
+    if (!transactionID) {
       return Response.json(
         { success: false, message: "Missing required parameters" },
         { status: 400 }
       );
     }
 
-    const transaction = await getTransaction({ transactionID, userID });
+    const transaction = await getTransaction({ transactionID, userID: session.id });
     if (!transaction) {
       return Response.json(
         { success: false, message: "Transaction not found" },

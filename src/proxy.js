@@ -1,5 +1,4 @@
 import { getToken } from "next-auth/jwt";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const unprotectedRoutes = [
@@ -14,13 +13,8 @@ const unprotectedRoutes = [
   "/api/homepage",
 ];
 
-export async function middleware(req) {
+export async function proxy(req) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("DEV")?.value;
-  if (sessionToken) {
-    return NextResponse.next();
-  }
   const isUnprotectedRoute = unprotectedRoutes.some(
     (route) =>
       req.nextUrl.pathname === route ||

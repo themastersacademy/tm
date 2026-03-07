@@ -192,7 +192,6 @@ export default function ProSubscription() {
   const addBillingInfo = async (billingInfo) => {
     try {
       const updatedBillingInfo = { ...billingInfo, zip: billingInfo.pin };
-      // console.log("Submitting billing info:", updatedBillingInfo); // Debug log
       validateBasicBillingInfo(updatedBillingInfo);
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/checkout/billing-info`,
@@ -252,7 +251,6 @@ export default function ProSubscription() {
       }
 
       const updatedBillingInfo = { ...billingInfo, zip: billingInfo.pin };
-      // console.log("Updating billing info:", updatedBillingInfo); // Debug log
       validateBasicBillingInfo(updatedBillingInfo);
 
       await fetch(
@@ -353,10 +351,8 @@ export default function ProSubscription() {
         enqueueSnackbar(data.message || "Failed to delete", {
           variant: "error",
         });
-        // console.log("Failed to delete billing information", data.message);
       }
     } catch (error) {
-      // console.error("Error in deleteBillingInfo:", error.message);
       enqueueSnackbar("Failed to delete: " + error.message, {
         variant: "error",
       });
@@ -365,7 +361,6 @@ export default function ProSubscription() {
 
   const proSubscription = async () => {
     const subscriptionPlanID = plans[selectedPlanIndex]?.id;
-    // console.log("subscriptionPlanID", subscriptionPlanID);
 
     try {
       const response = await fetch(

@@ -101,14 +101,13 @@ export default function PlansDialogBox({
               sx={{
                 flex: 1,
                 border: "1px solid var(--border-color)",
-                borderRadius: "24px",
+                borderRadius: "10px",
                 p: 3,
                 bgcolor: "var(--white)",
                 position: "relative",
-                transition: "all 0.3s ease",
+                transition: "all 0.15s ease",
                 "&:hover": {
                   borderColor: "var(--text3)",
-                  transform: "translateY(-4px)",
                 },
               }}
             >
@@ -174,7 +173,7 @@ export default function PlansDialogBox({
                 variant="outlined"
                 sx={{
                   mt: "auto",
-                  borderRadius: "12px",
+                  borderRadius: "8px",
                   textTransform: "none",
                   py: 1.5,
                   borderColor: "var(--border-color)",
@@ -196,7 +195,6 @@ export default function PlansDialogBox({
               background:
                 "linear-gradient(var(--white), var(--white)) padding-box, linear-gradient(135deg, #FF9800 0%, #FF5722 100%) border-box",
               position: "relative",
-              boxShadow: "0 10px 40px rgba(255, 152, 0, 0.15)",
               overflow: "hidden",
             }}
           >
@@ -326,7 +324,7 @@ export default function PlansDialogBox({
                       onClick={() => handlePlanChange(index)}
                       sx={{
                         p: 1.5,
-                        borderRadius: "12px",
+                        borderRadius: "8px",
                         border: "1px solid",
                         borderColor:
                           selectedPlanIndex === index
@@ -392,7 +390,7 @@ export default function PlansDialogBox({
                   variant="contained"
                   fullWidth
                   sx={{
-                    borderRadius: "12px",
+                    borderRadius: "8px",
                     py: 1.5,
                     bgcolor: "#E0E0E0 !important",
                     color: "#9E9E9E !important",
@@ -421,18 +419,15 @@ export default function PlansDialogBox({
                 }}
                 sx={{
                   mt: "auto",
-                  borderRadius: "12px",
+                  borderRadius: "8px",
                   py: 1.5,
                   bgcolor: "var(--primary-color)",
                   color: "white",
                   fontSize: "16px",
                   fontWeight: 700,
                   textTransform: "none",
-                  boxShadow: "0 8px 20px rgba(255, 152, 0, 0.3)",
                   "&:hover": {
                     bgcolor: "#f57c00",
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 12px 24px rgba(255, 152, 0, 0.4)",
                   },
                 }}
               >

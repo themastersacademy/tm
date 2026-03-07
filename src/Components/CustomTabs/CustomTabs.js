@@ -25,7 +25,7 @@ const StyledTab = styled(Tab)(({ customstyles }) => ({
   borderRadius: "8px",
   padding: "8px 16px",
   minWidth: "auto",
-  transition: "all 0.4s ease",
+  transition: "all 0.15s ease",
   minHeight: "32px",
   "&.Mui-selected": {
     color: "var(--sec-color)",

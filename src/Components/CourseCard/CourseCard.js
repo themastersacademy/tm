@@ -48,20 +48,15 @@ const CourseCard = memo(function CourseCard({
   return (
     <Stack
       sx={{
-        width: { xs: "100%", sm: "300px" },
-        borderRadius: "16px",
+        width: "100%",
+        borderRadius: "10px",
         backgroundColor: "var(--white)",
         border: "1px solid var(--border-color)",
         overflow: "hidden",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "all 0.15s ease",
         cursor: "pointer",
         "&:hover": {
-          transform: "translateY(-8px)",
-          boxShadow: "0 12px 32px rgba(0,0,0,0.12)",
           borderColor: "var(--primary-color)",
-          "& .thumbnail": {
-            transform: "scale(1.05)",
-          },
         },
       }}
     >
@@ -70,19 +65,17 @@ const CourseCard = memo(function CourseCard({
         sx={{
           position: "relative",
           width: "100%",
-          height: { xs: "180px", sm: "200px" },
+          height: { xs: "140px", sm: "160px" },
           overflow: "hidden",
-          backgroundColor: "#f5f5f5",
+          backgroundColor: "#F1F5F9",
         }}
       >
         <Image
           src={imageSrc}
           alt={title}
           fill
-          className="thumbnail"
           style={{
             objectFit: "cover",
-            transition: "transform 0.3s ease",
           }}
         />
 
@@ -140,13 +133,12 @@ const CourseCard = memo(function CourseCard({
                 : "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%)",
               color: "white",
               padding: "6px 12px",
-              borderRadius: "8px",
-              fontSize: "12px",
+              borderRadius: "6px",
+              fontSize: "11px",
               fontWeight: 700,
               display: "flex",
               alignItems: "center",
               gap: "4px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
             }}
           >
             {isPro && <WorkspacePremium sx={{ fontSize: 16 }} />}
@@ -170,7 +162,6 @@ const CourseCard = memo(function CourseCard({
               display: "flex",
               alignItems: "center",
               gap: "4px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
             }}
           >
             <SignalCellularAlt sx={{ fontSize: 14 }} />
@@ -180,11 +171,11 @@ const CourseCard = memo(function CourseCard({
       </Box>
 
       {/* Content Section */}
-      <Stack padding="20px" gap="16px">
+      <Stack padding="14px 16px" gap="12px">
         {/* Title */}
         <Typography
           sx={{
-            fontSize: "18px",
+            fontSize: "15px",
             fontWeight: 700,
             color: "var(--text1)",
             lineHeight: 1.3,
@@ -192,7 +183,6 @@ const CourseCard = memo(function CourseCard({
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
-            minHeight: "48px",
           }}
         >
           {title}
@@ -248,18 +238,18 @@ const CourseCard = memo(function CourseCard({
           alignItems="center"
           justifyContent="space-between"
           sx={{
-            paddingTop: "12px",
+            paddingTop: "10px",
             borderTop: "1px solid var(--border-color)",
           }}
         >
-          <Stack direction="row" gap="16px">
+          <Stack direction="row" gap="12px">
             <Stack direction="row" alignItems="center" gap="6px">
               <PlayLessonIcon
-                sx={{ fontSize: 18, color: "var(--primary-color)" }}
+                sx={{ fontSize: 16, color: "var(--primary-color)" }}
               />
               <Typography
                 sx={{
-                  fontSize: "13px",
+                  fontSize: "12px",
                   fontWeight: 600,
                   color: "var(--text2)",
                 }}
@@ -269,11 +259,11 @@ const CourseCard = memo(function CourseCard({
             </Stack>
             <Stack direction="row" alignItems="center" gap="6px">
               <AccessTimeFilledIcon
-                sx={{ fontSize: 18, color: "var(--primary-color)" }}
+                sx={{ fontSize: 16, color: "var(--primary-color)" }}
               />
               <Typography
                 sx={{
-                  fontSize: "13px",
+                  fontSize: "12px",
                   fontWeight: 600,
                   color: "var(--text2)",
                 }}

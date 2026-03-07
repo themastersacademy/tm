@@ -32,7 +32,6 @@ export default function Account({ isSideNavOpen }) {
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
   const userImage = session?.user?.image;
 
-  // Debug session state and redirect on unauthenticated
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/signIn");
@@ -55,7 +54,6 @@ export default function Account({ isSideNavOpen }) {
     setAnchorEl(null);
   };
 
-  // Handle logout with feedback
   const handleLogout = async () => {
     try {
       await signOut({ redirect: false });
@@ -94,150 +92,159 @@ export default function Account({ isSideNavOpen }) {
 
   return (
     <>
-      <Stack
-        onClick={handleClick}
-        sx={{
-          flexDirection: "row",
-          alignItems: "center",
-          marginTop: "auto",
-          borderRadius: "12px",
-          cursor: "pointer",
-          padding: !isSideNavOpen ? "12px" : "8px",
-          backgroundColor: open ? "var(--primary-color-acc-2)" : "transparent",
-          border: "1px solid transparent",
-          transition: "all 0.2s ease",
-          "&:hover": {
-            backgroundColor: "var(--primary-color-acc-2)",
-            borderColor: "var(--border-color)",
+      <Tooltip
+        title={isSideNavOpen ? session?.user?.name || "Account" : ""}
+        placement="right"
+        slotProps={{
+          tooltip: {
+            sx: {
+              backgroundColor: "var(--text1)",
+              color: "#fff",
+              fontSize: "11px",
+              fontWeight: 600,
+              padding: "4px 8px",
+              borderRadius: "6px",
+            },
           },
-          width: "100%",
-          justifyContent: !isSideNavOpen ? "flex-start" : "center",
         }}
       >
-        <Tooltip
-          title={isSideNavOpen ? session?.user?.name || "Account" : ""}
-          placement="right"
+        <Stack
+          onClick={handleClick}
+          sx={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: "auto",
+            borderRadius: "8px",
+            cursor: "pointer",
+            padding: isSideNavOpen ? "8px" : "8px 10px",
+            backgroundColor: open
+              ? "rgba(24, 113, 99, 0.06)"
+              : "transparent",
+            "&:hover": {
+              backgroundColor: "rgba(24, 113, 99, 0.06)",
+            },
+          }}
         >
-          <Stack position="relative">
-            {userImage ? (
-              <Image
-                src={userImage}
-                alt="profile"
-                width={40}
-                height={40}
-                style={{
-                  borderRadius: "50%",
-                  border: "2px solid var(--white)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                }}
-              />
-            ) : (
-              <Avatar
-                sx={{
-                  width: 40,
-                  height: 40,
-                  bgcolor: "var(--primary-color)",
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                }}
-              >
-                {session?.user?.name?.charAt(0) || "U"}
-              </Avatar>
-            )}
-            {session?.user?.accountType === "PRO" && isSideNavOpen && (
-              <Stack
-                sx={{
-                  position: "absolute",
-                  bottom: -2,
-                  right: -2,
-                  bgcolor: "#FFD700",
-                  width: "14px",
-                  height: "14px",
-                  borderRadius: "50%",
-                  border: "2px solid white",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Typography
-                  sx={{ fontSize: "8px", fontWeight: "bold", color: "#000" }}
+          <Stack
+            sx={{ flexDirection: "row", alignItems: "center", gap: "10px" }}
+          >
+            <Stack position="relative">
+              {userImage ? (
+                <Image
+                  src={userImage}
+                  alt="profile"
+                  width={32}
+                  height={32}
+                  style={{
+                    borderRadius: "50%",
+                  }}
+                />
+              ) : (
+                <Avatar
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    bgcolor: "var(--primary-color)",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                  }}
                 >
-                  P
-                </Typography>
-              </Stack>
-            )}
-          </Stack>
-        </Tooltip>
-
-        {!isSideNavOpen && (
-          <Stack sx={{ ml: 1.5, overflow: "hidden", flex: 1 }}>
-            <Stack direction="row" alignItems="center" gap={1}>
-              <Typography
-                sx={{
-                  fontSize: "14px",
-                  fontWeight: "700",
-                  color: "var(--text1)",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  fontFamily: "Lato",
-                }}
-              >
-                {session?.user?.name || "User"}
-              </Typography>
-              {session?.user?.accountType === "PRO" && (
+                  {session?.user?.name?.charAt(0) || "U"}
+                </Avatar>
+              )}
+              {session?.user?.accountType === "PRO" && isSideNavOpen && (
                 <Stack
                   sx={{
-                    backgroundColor: "#FFD700",
-                    padding: "2px 6px",
-                    borderRadius: "4px",
+                    position: "absolute",
+                    bottom: -2,
+                    right: -2,
+                    bgcolor: "#FFD700",
+                    width: "12px",
+                    height: "12px",
+                    borderRadius: "50%",
+                    border: "1.5px solid white",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
                   <Typography
-                    sx={{
-                      fontSize: "10px",
-                      fontWeight: "800",
-                      color: "#000",
-                      fontFamily: "Lato",
-                      lineHeight: 1,
-                    }}
+                    sx={{ fontSize: "7px", fontWeight: "bold", color: "#000" }}
                   >
-                    PRO
+                    P
                   </Typography>
                 </Stack>
               )}
             </Stack>
-            <Typography
-              sx={{
-                fontSize: "12px",
-                color: "var(--text3)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                fontFamily: "Lato",
-              }}
-            >
-              {session?.user?.email || "user@example.com"}
-            </Typography>
+            {!isSideNavOpen && (
+              <Stack gap="1px">
+                <Stack direction="row" alignItems="center" gap="4px">
+                  <Typography
+                    sx={{
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "var(--text1)",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      maxWidth: "120px",
+                    }}
+                  >
+                    {session?.user?.name || "User"}
+                  </Typography>
+                  {session?.user?.accountType === "PRO" && (
+                    <Stack
+                      sx={{
+                        backgroundColor: "#FFD700",
+                        padding: "1px 4px",
+                        borderRadius: "3px",
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontSize: "9px",
+                          fontWeight: 800,
+                          color: "#000",
+                          lineHeight: 1,
+                        }}
+                      >
+                        PRO
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
+                <Typography
+                  sx={{
+                    fontSize: "10px",
+                    fontWeight: 600,
+                    color: "var(--text3)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: "140px",
+                  }}
+                >
+                  {session?.user?.email || "user@example.com"}
+                </Typography>
+              </Stack>
+            )}
           </Stack>
-        )}
+          {!isSideNavOpen && (
+            <Image
+              src={more_img}
+              alt="more"
+              width={16}
+              height={16}
+              style={{
+                transform: open ? "rotate(180deg)" : "rotate(0)",
+                transition: "transform 0.2s ease",
+                opacity: 0.6,
+              }}
+            />
+          )}
+        </Stack>
+      </Tooltip>
 
-        {!isSideNavOpen && (
-          <Image
-            src={more_img}
-            alt="more"
-            width={16}
-            height={16}
-            style={{
-              transform: open ? "rotate(180deg)" : "rotate(0)",
-              transition: "all .3s ease",
-              opacity: 0.6,
-            }}
-          />
-        )}
-      </Stack>
       <Menu
         anchorEl={anchorEl}
         open={open}
@@ -248,127 +255,65 @@ export default function Account({ isSideNavOpen }) {
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
         sx={{
           "& .MuiPaper-root": {
-            width: "260px",
+            width: "220px",
             marginLeft: "10px",
             backgroundColor: "var(--white)",
-            borderRadius: "12px",
-            color: "var(--text1)",
+            borderRadius: "10px",
             border: "1px solid var(--border-color)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-            overflow: "hidden",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
             "& .MuiMenuItem-root": {
-              padding: "10px 16px",
-              gap: "12px",
+              borderRadius: "6px",
+              margin: "2px 6px",
+              padding: "8px 10px",
+              gap: "10px",
               "&:hover": {
-                backgroundColor: "var(--sec-color-acc-2)",
+                backgroundColor: "rgba(24, 113, 99, 0.06)",
               },
             },
           },
         }}
         elevation={0}
       >
-        {/* Menu Header */}
-        <Stack sx={{ p: "16px 16px 12px 16px", gap: 1.5, outline: "none" }}>
-          <Stack direction="row" alignItems="center" gap={1.5}>
-            {userImage ? (
-              <Image
-                src={userImage}
-                alt="profile"
-                width={48}
-                height={48}
-                style={{
-                  borderRadius: "50%",
-                  border: "1px solid var(--border-color)",
-                }}
-              />
-            ) : (
-              <Avatar
-                sx={{
-                  width: 48,
-                  height: 48,
-                  bgcolor: "var(--primary-color)",
-                  fontSize: "20px",
-                  fontWeight: "bold",
-                }}
-              >
-                {session?.user?.name?.charAt(0) || "U"}
-              </Avatar>
-            )}
-            <Stack sx={{ overflow: "hidden" }}>
-              <Stack direction="row" alignItems="center" gap={0.5}>
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: "15px",
-                    fontFamily: "Lato",
-                    color: "var(--text1)",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    maxWidth: "140px",
-                  }}
-                >
-                  {session?.user?.name || "User"}
-                </Typography>
-                {session?.user?.accountType === "PRO" && (
-                  <Stack
-                    sx={{ bgcolor: "#FFD700", px: 0.5, borderRadius: "3px" }}
-                  >
-                    <Typography
-                      sx={{ fontSize: "9px", fontWeight: 800, color: "black" }}
-                    >
-                      PRO
-                    </Typography>
-                  </Stack>
-                )}
-              </Stack>
-              <Typography
-                sx={{
-                  fontSize: "12px",
-                  color: "var(--text3)",
-                  fontFamily: "Lato",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  maxWidth: "150px",
-                }}
-              >
-                {session?.user?.email}
-              </Typography>
-            </Stack>
-          </Stack>
-          <Stack
-            onClick={() => {
-              router.push(`/dashboard/${goalID}/profile`);
-              handleClose();
-            }}
-            sx={{
-              border: "1px solid var(--border-color)",
-              borderRadius: "6px",
-              py: 0.5,
-              cursor: "pointer",
-              textAlign: "center",
-              transition: "all 0.2s",
-              "&:hover": {
-                bgcolor: "var(--sec-color-acc-2)",
-                borderColor: "var(--primary-color)",
-              },
-            }}
-          >
+        <Stack padding="10px 14px 6px" gap="2px">
+          <Stack direction="row" alignItems="center" gap="4px">
             <Typography
               sx={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "var(--text2)",
-                fontFamily: "Lato",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "var(--text1)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: "140px",
               }}
             >
-              Manage Account
+              {session?.user?.name || "User"}
             </Typography>
+            {session?.user?.accountType === "PRO" && (
+              <Stack
+                sx={{ bgcolor: "#FFD700", px: 0.5, borderRadius: "3px" }}
+              >
+                <Typography
+                  sx={{ fontSize: "9px", fontWeight: 800, color: "black" }}
+                >
+                  PRO
+                </Typography>
+              </Stack>
+            )}
           </Stack>
+          <Typography
+            sx={{
+              fontSize: "11px",
+              color: "var(--text3)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {session?.user?.email}
+          </Typography>
         </Stack>
-
-        <Divider sx={{ my: 0.5 }} />
+        <Divider sx={{ margin: "6px 0" }} />
 
         <MenuItem
           onClick={() => {
@@ -378,16 +323,18 @@ export default function Account({ isSideNavOpen }) {
         >
           <Stack
             sx={{
-              bgcolor: "var(--sec-color-acc-2)",
-              p: 0.8,
+              width: "28px",
+              height: "28px",
+              backgroundColor: "rgba(24, 113, 99, 0.06)",
               borderRadius: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Image src={students_img} alt="profile" width={18} height={18} />
+            <Image src={students_img} alt="profile" width={14} height={14} />
           </Stack>
-          <Typography
-            sx={{ fontSize: "14px", fontWeight: 600, fontFamily: "Lato" }}
-          >
+          <Typography sx={{ fontSize: "13px", fontWeight: 600 }}>
             Profile
           </Typography>
         </MenuItem>
@@ -396,42 +343,48 @@ export default function Account({ isSideNavOpen }) {
           <MenuItem onClick={handlePlansDialogOpen}>
             <Stack
               sx={{
-                bgcolor: "var(--sec-color-acc-2)",
-                p: 0.8,
+                width: "28px",
+                height: "28px",
+                backgroundColor: "rgba(24, 113, 99, 0.06)",
                 borderRadius: "6px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               <HowToRegRounded
-                sx={{ color: "var(--primary-color)", fontSize: "18px" }}
+                sx={{ color: "var(--primary-color)", fontSize: "14px" }}
               />
             </Stack>
             <Stack>
-              <Typography
-                sx={{ fontSize: "14px", fontWeight: 600, fontFamily: "Lato" }}
-              >
+              <Typography sx={{ fontSize: "13px", fontWeight: 600 }}>
                 Upgrade Plan
               </Typography>
-              <Typography
-                sx={{
-                  fontSize: "10px",
-                  color: "var(--text3)",
-                  fontFamily: "Lato",
-                }}
-              >
+              <Typography sx={{ fontSize: "10px", color: "var(--text3)" }}>
                 Unlock all features
               </Typography>
             </Stack>
           </MenuItem>
         )}
 
-        <Divider sx={{ my: 0.5 }} />
+        <Divider sx={{ margin: "6px 0" }} />
 
-        <MenuItem onClick={handleLogout} sx={{ color: "var(--delete-color)" }}>
-          <Stack sx={{ bgcolor: "#FEE2E2", p: 0.8, borderRadius: "6px" }}>
-            <Image src={logout_img} alt="logout" width={18} height={18} />
+        <MenuItem onClick={handleLogout}>
+          <Stack
+            sx={{
+              width: "28px",
+              height: "28px",
+              backgroundColor: "rgba(244, 67, 54, 0.08)",
+              borderRadius: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Image src={logout_img} alt="logout" width={14} height={14} />
           </Stack>
           <Typography
-            sx={{ fontSize: "14px", fontWeight: 600, fontFamily: "Lato" }}
+            sx={{ fontSize: "13px", fontWeight: 600, color: "#F44336" }}
           >
             Logout
           </Typography>

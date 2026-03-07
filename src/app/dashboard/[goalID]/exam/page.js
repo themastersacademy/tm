@@ -10,6 +10,7 @@ import {
   Tabs,
   Tab,
   Box,
+  CircularProgress,
 } from "@mui/material";
 import { Close, Lock, East } from "@mui/icons-material";
 import mocks from "@/public/icons/mocks.svg";
@@ -46,9 +47,11 @@ export default function Exams() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [subjectOptions, setSubjectOptions] = useState([]);
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+  const [isCreatingPracticeTest, setIsCreatingPracticeTest] = useState(false);
 
   const [instructionOpen, setInstructionOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
+  const [isStartingExam, setIsStartingExam] = useState(false);
 
   const handleExamClick = (exam) => {
     setSelectedExam(exam);
@@ -58,9 +61,11 @@ export default function Exams() {
   const handleStartExam = () => {
     if (selectedExam) {
       setLoacalLoading(true);
+      setIsStartingExam(true); // Set new loading state for dialog
       router.push(`/exam/${selectedExam.id}`);
     }
-    setInstructionOpen(false);
+    // Do not close immediately
+    // setInstructionOpen(false);
   };
 
   // Tab State
@@ -101,23 +106,30 @@ export default function Exams() {
       return;
     }
 
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/type/${goalID}/practice/create`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          subjectID: selectedSubject,
-          ...(difficultyLevel !== "all" && { difficultyLevel }),
-        }),
+    setIsCreatingPracticeTest(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/type/${goalID}/practice/create`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            subjectID: selectedSubject,
+            ...(difficultyLevel !== "all" && { difficultyLevel }),
+          }),
+        },
+      );
+      const data = await response.json();
+      if (data.success) {
+        router.push(`/exam/${data.data.examID}/${data.data.attemptID}`);
+      } else {
+        enqueueSnackbar(data.message, {
+          variant: "error",
+        });
+        setIsCreatingPracticeTest(false);
       }
-    );
-    const data = await response.json();
-    if (data.success) {
-      router.push(`/exam/${data.data.examID}/${data.data.attemptID}`);
-    } else {
-      enqueueSnackbar(data.message, {
-        variant: "error",
-      });
+    } catch (error) {
+      enqueueSnackbar("Failed to create practice test", { variant: "error" });
+      setIsCreatingPracticeTest(false);
     }
   };
 
@@ -183,10 +195,9 @@ export default function Exams() {
                     <Typography
                       variant="h5"
                       sx={{
-                        fontFamily: "var(--font-geist-sans)",
                         fontWeight: 700,
                         color: "var(--text1)",
-                        fontSize: { xs: "18px", md: "24px" },
+                        fontSize: { xs: "16px", md: "18px" },
                       }}
                     >
                       Practice Test
@@ -199,10 +210,9 @@ export default function Exams() {
                     <Typography
                       variant="h5"
                       sx={{
-                        fontFamily: "var(--font-geist-sans)",
                         fontWeight: 700,
                         color: "var(--text1)",
-                        fontSize: { xs: "18px", md: "24px" },
+                        fontSize: { xs: "16px", md: "18px" },
                       }}
                     >
                       Test Series
@@ -212,7 +222,7 @@ export default function Exams() {
                         display: "grid",
                         gridTemplateColumns: {
                           xs: "1fr",
-                          sm: "repeat(auto-fill, minmax(300px, 1fr))",
+                          sm: "repeat(auto-fill, minmax(280px, 1fr))",
                         },
                         gap: 3,
                       }}
@@ -271,10 +281,9 @@ export default function Exams() {
                     <Typography
                       variant="h5"
                       sx={{
-                        fontFamily: "var(--font-geist-sans)",
                         fontWeight: 700,
                         color: "var(--text1)",
-                        fontSize: { xs: "18px", md: "24px" },
+                        fontSize: { xs: "16px", md: "18px" },
                       }}
                     >
                       Exam Groups
@@ -284,7 +293,7 @@ export default function Exams() {
                         display: "grid",
                         gridTemplateColumns: {
                           xs: "1fr",
-                          sm: "repeat(auto-fill, minmax(300px, 1fr))",
+                          sm: "repeat(auto-fill, minmax(280px, 1fr))",
                         },
                         gap: 3,
                       }}
@@ -307,7 +316,7 @@ export default function Exams() {
                                   onClick={() => {
                                     setLoacalLoading(true);
                                     router.push(
-                                      `/dashboard/${goalID}/exam/${group.id}`
+                                      `/dashboard/${goalID}/exam/${group.id}`,
                                     );
                                   }}
                                   endIcon={<East />}
@@ -395,7 +404,7 @@ export default function Exams() {
                                   variant="outlined"
                                   onClick={() =>
                                     router.push(
-                                      `/exam/${item.examID}/${item.id}/result`
+                                      `/exam/${item.examID}/${item.id}/result`,
                                     )
                                   }
                                   fullWidth
@@ -417,7 +426,7 @@ export default function Exams() {
                                   variant="contained"
                                   onClick={() =>
                                     router.push(
-                                      `/exam/${item.examID}/${item.id}`
+                                      `/exam/${item.examID}/${item.id}`,
                                     )
                                   }
                                   fullWidth
@@ -486,7 +495,16 @@ export default function Exams() {
             <Button
               variant="text"
               onClick={isPro ? handleStartTest : handlePlansDialogOpen}
-              endIcon={isPro ? <East /> : <Lock />}
+              disabled={isCreatingPracticeTest}
+              endIcon={
+                isCreatingPracticeTest ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : isPro ? (
+                  <East />
+                ) : (
+                  <Lock />
+                )
+              }
               sx={{
                 textTransform: "none",
                 color: "var(--primary-color)",
@@ -495,7 +513,11 @@ export default function Exams() {
                 fontWeight: 600,
               }}
             >
-              {isPro ? "Start Test" : "Upgrade to PRO"}
+              {isCreatingPracticeTest
+                ? "Starting..."
+                : isPro
+                  ? "Start Test"
+                  : "Upgrade to PRO"}
             </Button>
           }
         >
@@ -607,6 +629,7 @@ export default function Exams() {
           open={instructionOpen}
           onClose={() => setInstructionOpen(false)}
           onStart={handleStartExam}
+          loading={isStartingExam}
           examData={{
             title: selectedExam.title,
             icon: mocks.src,

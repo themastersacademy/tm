@@ -24,11 +24,10 @@ export default function DialogBox({
         "& .MuiDialog-paper": {
           width: "600px",
           maxWidth: { xs: "95%", md: "600px" },
-          borderRadius: "20px",
+          borderRadius: "10px",
           border: "1px solid",
           borderColor: "var(--border-color)",
           padding: "0px",
-          boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.1)",
           ...sx,
         },
       }}
@@ -38,8 +37,8 @@ export default function DialogBox({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          fontFamily: "var(--font-geist-sans)",
-          fontSize: "20px",
+          fontFamily: "Lato",
+          fontSize: "16px",
           fontWeight: "700",
           padding: { xs: "20px", md: "24px 24px 0px 24px" },
           color: "var(--text1)",

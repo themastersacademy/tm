@@ -1,5 +1,5 @@
 import { dynamoDB } from "@/src/utils/awsAgent";
-import { ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand } from "@aws-sdk/lib-dynamodb";
 
 const TableName = `${process.env.AWS_DB_NAME}master`;
 
@@ -11,27 +11,31 @@ export async function fetchCouponByCode(code) {
   const now = Date.now();
   const params = {
     TableName,
-    FilterExpression:
-      "sKey = :sk AND #code = :code AND isActive = :active AND startDate <= :now AND endDate >= :now",
+    IndexName: "masterTableIndex",
+    KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
     ExpressionAttributeNames: {
-      "#code": "code",
+      "#gsi1pk": "GSI1-pKey",
+      "#gsi1sk": "GSI1-sKey",
     },
     ExpressionAttributeValues: {
-      ":sk": "COUPONS",
-      ":code": code,
-      ":active": true,
-      ":now": now,
+      ":gsi1pk": `COUPON#${code}`,
+      ":gsi1sk": "COUPONs",
     },
   };
 
   try {
-    const { Items } = await dynamoDB.send(new ScanCommand(params));
-    if (!Items || Items.length === 0) {
+    const { Items } = await dynamoDB.send(new QueryCommand(params));
+
+    // Filter active and within date range in-memory
+    const validCoupons = (Items || []).filter(
+      (c) => c.isActive === true && c.startDate <= now && c.endDate >= now
+    );
+
+    if (validCoupons.length === 0) {
       return { success: false, message: "Invalid or expired coupon" };
     }
 
-    // You may have multiple with the same code—pick the first
-    const c = Items[0];
+    const c = validCoupons[0];
     return {
       success: true,
       data: {
@@ -43,10 +47,6 @@ export async function fetchCouponByCode(code) {
           ? Number(c.maxDiscountPrice)
           : undefined,
         minOrderAmount: c.minOrderAmount,
-        // totalRedemptions: Number(c.totalRedemptions),
-        // totalRedemptionsPerUser: Number(c.totalRedemptionsPerUser),
-        // startDate: c.startDate,
-        // endDate: c.endDate,
         couponClass: c.couponClass,
         applicableCourses: c.applicableCourses || [],
         applicableGoals: c.applicableGoals || [],

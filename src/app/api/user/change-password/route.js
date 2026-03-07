@@ -7,12 +7,17 @@ export async function POST(req) {
       const userID = session.user.id;
       const { oldPassword, newPassword } = await req.json();
 
-      if (!newPassword || newPassword.length < 6) {
+      const { default: validatePasswordFn } = await import("@/src/utils/passwordValidator");
+      if (!newPassword) {
         return Response.json(
-          {
-            success: false,
-            message: "Password must be at least 6 characters long",
-          },
+          { success: false, message: "New password is required" },
+          { status: 400 }
+        );
+      }
+      const passwordCheck = validatePasswordFn(newPassword);
+      if (!passwordCheck.isValid) {
+        return Response.json(
+          { success: false, message: passwordCheck.error },
           { status: 400 }
         );
       }

@@ -18,16 +18,16 @@ export default function LinkComp({ isSideNavOpen, sideNavOpen }) {
   return (
     <Stack
       sx={{
-        gap: "8px",
+        gap: "4px",
         maxHeight: "100%",
         overflowY: "auto",
         overflowX: "hidden",
         scrollbarWidth: "thin",
         "&::-webkit-scrollbar": {
-          width: "4px",
+          width: "3px",
         },
         "&::-webkit-scrollbar-thumb": {
-          backgroundColor: "rgba(255, 152, 0, 0.2)",
+          backgroundColor: "rgba(24, 113, 99, 0.2)",
           borderRadius: "10px",
         },
       }}
@@ -37,8 +37,6 @@ export default function LinkComp({ isSideNavOpen, sideNavOpen }) {
         title="Home"
         href={`/dashboard/${goalID}/home`}
         isSideNavOpen={isSideNavOpen}
-        color="#187163"
-        bgColor="rgba(24, 113, 99, 0.1)"
       />
       <NavComp
         icon={dashboard.src}
@@ -46,32 +44,24 @@ export default function LinkComp({ isSideNavOpen, sideNavOpen }) {
         href={`/dashboard/${goalID}`}
         isSideNavOpen={isSideNavOpen}
         isRoot={true}
-        color="#187163"
-        bgColor="rgba(24, 113, 99, 0.1)"
       />
       <NavComp
         icon={exam.src}
         title="Exam"
         href={`/dashboard/${goalID}/exam`}
         isSideNavOpen={isSideNavOpen}
-        color="#187163"
-        bgColor="rgba(24, 113, 99, 0.1)"
       />
       <NavComp
         icon={courses.src}
         title="Courses"
         href={`/dashboard/${goalID}/courses`}
         isSideNavOpen={isSideNavOpen}
-        color="#187163"
-        bgColor="rgba(24, 113, 99, 0.1)"
       />
       <NavComp
         icon={classroom.src}
         title="My Classroom"
         href={`/dashboard/${goalID}/myClassroom`}
         isSideNavOpen={isSideNavOpen}
-        color="#187163"
-        bgColor="rgba(24, 113, 99, 0.1)"
       />
     </Stack>
   );
@@ -85,22 +75,9 @@ const NavComp = ({
   isSideNavOpen,
   sideNavOpen,
   isRoot,
-  color,
-  bgColor,
 }) => {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const pathname = usePathname();
-
-  // Logic to determine if parent or child is active
-  const isParentActive = isRoot
-    ? pathname === href // Exact match for dashboard root if needed, or adjust logic
-    : pathname === href || (href !== "#" && pathname.startsWith(href + "/"));
-
-  // Special handling for dashboard root vs home
-  // If href is /dashboard/[id], it might match everything.
-  // Let's refine:
-  // If isRoot (Dashboard), active if pathname is exactly that.
-  // If Home, active if pathname is exactly that.
 
   const isActive = isRoot
     ? pathname === href
@@ -136,38 +113,30 @@ const NavComp = ({
             sx: {
               backgroundColor: "var(--text1)",
               color: "#fff",
-              fontSize: "13px",
+              fontSize: "11px",
               fontWeight: 600,
-              padding: "8px 12px",
-              borderRadius: "8px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              padding: "4px 8px",
+              borderRadius: "6px",
             },
           },
         }}
       >
         <Stack
           sx={{
-            minHeight: "48px",
-            padding: isSideNavOpen ? "6px" : "8px 10px",
+            padding: isSideNavOpen ? "6px" : "6px 10px",
             cursor: "pointer",
             alignItems: isSideNavOpen ? "center" : "flex-start",
-            background:
+            backgroundColor:
               isActive || isChildActive
-                ? `linear-gradient(135deg, ${bgColor} 0%, ${color}15 100%)`
+                ? "rgba(24, 113, 99, 0.06)"
                 : "transparent",
-            borderRadius: "12px",
-            border: `1.5px solid ${
-              isActive || isChildActive ? color + "40" : "transparent"
-            }`,
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            borderRadius: "8px",
             position: "relative",
-            overflow: "hidden",
             "&:hover": {
-              background:
+              backgroundColor:
                 list && isNavOpen
                   ? "transparent"
-                  : `linear-gradient(135deg, ${bgColor} 0%, ${color}15 100%)`,
-              borderColor: color + "40",
+                  : "rgba(24, 113, 99, 0.06)",
             },
             "&::before":
               isActive || isChildActive
@@ -177,10 +146,10 @@ const NavComp = ({
                     left: 0,
                     top: "50%",
                     transform: "translateY(-50%)",
-                    width: "4px",
-                    height: "60%",
-                    backgroundColor: color,
-                    borderRadius: "0 4px 4px 0",
+                    width: "3px",
+                    height: "50%",
+                    backgroundColor: "var(--primary-color)",
+                    borderRadius: "0 3px 3px 0",
                   }
                 : {},
           }}
@@ -200,36 +169,34 @@ const NavComp = ({
                   toggleLibrary();
                 }
               }}
-              gap={isSideNavOpen ? 0 : "12px"}
+              gap={isSideNavOpen ? 0 : "10px"}
               justifyContent="space-between"
             >
-              <Stack direction="row" alignItems="center" gap="12px">
+              <Stack direction="row" alignItems="center" gap="10px">
                 <Stack
                   sx={{
-                    width: "40px",
-                    height: "40px",
+                    width: "34px",
+                    height: "34px",
                     backgroundColor:
-                      isActive || isChildActive ? color + "20" : bgColor,
-                    borderRadius: "10px",
+                      isActive || isChildActive
+                        ? "rgba(24, 113, 99, 0.1)"
+                        : "rgba(24, 113, 99, 0.06)",
+                    borderRadius: "8px",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
-                    border: `1.5px solid ${
-                      isActive || isChildActive ? color + "60" : color + "30"
-                    }`,
-                    transition: "all 0.3s ease",
                     flexShrink: 0,
                   }}
                 >
                   <Image
                     src={icon}
                     alt={title}
-                    width={20}
-                    height={20}
+                    width={18}
+                    height={18}
                     style={{
                       filter:
                         isActive || isChildActive
-                          ? "brightness(0) saturate(100%) invert(34%) sepia(16%) saturate(1939%) hue-rotate(128deg) brightness(98%) contrast(92%)" // Approximate filter for #187163
+                          ? "brightness(0) saturate(100%)"
                           : "none",
                     }}
                   />
@@ -237,10 +204,13 @@ const NavComp = ({
                 {!isSideNavOpen && (
                   <Typography
                     sx={{
-                      fontSize: "14px",
-                      fontWeight: isActive || isChildActive ? 700 : 600,
-                      color: isActive || isChildActive ? color : "var(--text1)",
-                      transition: "all 0.2s ease",
+                      fontSize: "13px",
+                      fontWeight: isActive || isChildActive ? 700 : 500,
+                      color:
+                        isActive || isChildActive
+                          ? "var(--primary-color)"
+                          : "var(--text1)",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {title}
@@ -250,10 +220,13 @@ const NavComp = ({
               {list && !isSideNavOpen && (
                 <ExpandMore
                   sx={{
-                    color: isActive || isChildActive ? color : "var(--text3)",
-                    fontSize: "20px",
+                    color:
+                      isActive || isChildActive
+                        ? "var(--primary-color)"
+                        : "var(--text3)",
+                    fontSize: "18px",
                     transform: isNavOpen ? "rotate(180deg)" : "rotate(0deg)",
-                    transition: "transform 0.3s ease",
+                    transition: "transform 0.2s ease",
                   }}
                 />
               )}
@@ -263,20 +236,9 @@ const NavComp = ({
             {isNavOpen && list && (
               <Stack
                 sx={{
-                  pl: isSideNavOpen ? 0 : "52px",
-                  mt: "8px",
-                  gap: "4px",
-                  animation: "slideDown 0.3s ease",
-                  "@keyframes slideDown": {
-                    from: {
-                      opacity: 0,
-                      transform: "translateY(-10px)",
-                    },
-                    to: {
-                      opacity: 1,
-                      transform: "translateY(0)",
-                    },
-                  },
+                  pl: isSideNavOpen ? 0 : "44px",
+                  mt: "4px",
+                  gap: "2px",
                 }}
               >
                 {list.map((item, index) => (
@@ -289,29 +251,22 @@ const NavComp = ({
                   >
                     <Stack
                       sx={{
-                        fontSize: "13px",
-                        fontWeight: 600,
+                        fontSize: "12px",
+                        fontWeight: pathname.startsWith(item.href) ? 700 : 500,
                         color: pathname.startsWith(item.href)
-                          ? color
+                          ? "var(--primary-color)"
                           : "var(--text2)",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
-                        borderRadius: "8px",
-                        padding: "8px 10px",
+                        borderRadius: "6px",
+                        padding: "6px 10px",
                         backgroundColor: pathname.startsWith(item.href)
-                          ? bgColor
+                          ? "rgba(24, 113, 99, 0.06)"
                           : "transparent",
-                        border: `1px solid ${
-                          pathname.startsWith(item.href)
-                            ? color + "30"
-                            : "transparent"
-                        }`,
-                        transition: "all 0.2s ease",
                         cursor: "pointer",
                         "&:hover": {
-                          backgroundColor: bgColor,
-                          borderColor: color + "30",
+                          backgroundColor: "rgba(24, 113, 99, 0.06)",
                         },
                       }}
                     >

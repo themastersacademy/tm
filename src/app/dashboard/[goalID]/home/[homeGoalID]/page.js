@@ -5,8 +5,6 @@ import {
   Stack,
   Typography,
   Box,
-  Chip,
-  LinearProgress,
 } from "@mui/material";
 import {
   InsertDriveFile,
@@ -140,8 +138,8 @@ export default function HomeGoalID() {
 
   return (
     <Stack
-      padding={{ xs: "16px", md: "32px" }}
-      gap="32px"
+      padding={{ xs: "12px", md: "24px" }}
+      gap="24px"
       sx={{ minHeight: "100vh", mb: { xs: "70px", md: 0 } }}
       width="100%"
       alignItems="center"
@@ -150,7 +148,7 @@ export default function HomeGoalID() {
         <PageSkeleton />
       ) : (
         <>
-          <Stack width="100%" maxWidth="1200px" gap="32px">
+          <Stack width="100%" maxWidth="1200px" gap="24px">
             <GoalHead
               title={
                 isGoalLoading ? <Skeleton width="120px" /> : goalDetails.title
@@ -160,7 +158,7 @@ export default function HomeGoalID() {
               bannerImage={goalDetails.bannerImage}
             />
 
-            {/* Quick Stats Section */}
+            {/* Quick Stats */}
             <Box
               sx={{
                 display: "grid",
@@ -179,7 +177,7 @@ export default function HomeGoalID() {
                   ) : (
                     `${stats?.progress || 0}%`
                   ),
-                  icon: <Timeline />,
+                  icon: <Timeline sx={{ fontSize: 20 }} />,
                   color: "#3b82f6",
                 },
                 {
@@ -189,7 +187,7 @@ export default function HomeGoalID() {
                   ) : (
                     stats?.timeSpent || "0h 0m"
                   ),
-                  icon: <AccessTime />,
+                  icon: <AccessTime sx={{ fontSize: 20 }} />,
                   color: "#10b981",
                 },
                 {
@@ -199,7 +197,7 @@ export default function HomeGoalID() {
                   ) : (
                     stats?.quizzesTaken || 0
                   ),
-                  icon: <EmojiEvents />,
+                  icon: <EmojiEvents sx={{ fontSize: 20 }} />,
                   color: "#f59e0b",
                 },
                 {
@@ -209,7 +207,7 @@ export default function HomeGoalID() {
                   ) : (
                     stats?.streak || "0 Days"
                   ),
-                  icon: <TrendingUp />,
+                  icon: <TrendingUp sx={{ fontSize: 20 }} />,
                   color: "#ef4444",
                 },
               ].map((stat, idx) => (
@@ -217,19 +215,22 @@ export default function HomeGoalID() {
                   key={idx}
                   direction="row"
                   alignItems="center"
-                  gap={2}
+                  gap={1.5}
                   sx={{
-                    bgcolor: "white",
-                    p: 2,
-                    borderRadius: "16px",
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                    bgcolor: "var(--white)",
+                    p: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid var(--border-color)",
+                    transition: "all 0.15s ease",
+                    "&:hover": {
+                      borderColor: "var(--primary-color)",
+                    },
                   }}
                 >
                   <Box
                     sx={{
-                      p: 1,
-                      borderRadius: "12px",
+                      p: "8px",
+                      borderRadius: "8px",
                       bgcolor: `${stat.color}15`,
                       color: stat.color,
                       display: "flex",
@@ -240,8 +241,8 @@ export default function HomeGoalID() {
                   <Stack>
                     <Typography
                       sx={{
-                        fontSize: "12px",
-                        color: "#64748b",
+                        fontSize: "11px",
+                        color: "var(--text3)",
                         fontWeight: 600,
                       }}
                     >
@@ -249,9 +250,9 @@ export default function HomeGoalID() {
                     </Typography>
                     <Typography
                       sx={{
-                        fontSize: "16px",
-                        fontWeight: 800,
-                        color: "#1e293b",
+                        fontSize: "15px",
+                        fontWeight: 700,
+                        color: "var(--text1)",
                       }}
                     >
                       {stat.value}
@@ -263,51 +264,43 @@ export default function HomeGoalID() {
 
             <Stack
               direction={{ xs: "column", lg: "row" }}
-              gap="32px"
+              gap="24px"
               width="100%"
               alignItems="flex-start"
             >
               {/* LEFT COLUMN */}
-              <Stack flex={1} gap="32px">
+              <Stack flex={1} gap="24px">
                 {/* Overview */}
-                <Stack gap="16px">
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Stack gap="4px">
-                      <Typography
-                        sx={{
-                          fontSize: { xs: "20px", md: "24px" },
-                          fontWeight: 800,
-                          color: "#1e293b",
-                          letterSpacing: "-0.5px",
-                        }}
-                      >
-                        Overview
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: "14px",
-                          color: "#64748b",
-                          fontWeight: 500,
-                        }}
-                      >
-                        About this learning path
-                      </Typography>
-                    </Stack>
+                <Stack gap="12px">
+                  <Stack gap="4px">
+                    <Typography
+                      sx={{
+                        fontSize: { xs: "16px", md: "18px" },
+                        fontWeight: 700,
+                        color: "var(--text1)",
+                      }}
+                    >
+                      Overview
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "13px",
+                        color: "var(--text3)",
+                        fontWeight: 500,
+                      }}
+                    >
+                      About this learning path
+                    </Typography>
                   </Stack>
 
                   <Stack
                     sx={{
-                      border: "1px solid #e2e8f0",
-                      bgcolor: "white",
-                      borderRadius: "24px",
-                      p: { xs: "24px", md: "32px" },
-                      minHeight: { xs: "auto", md: "300px" },
-                      gap: "16px",
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
+                      border: "1px solid var(--border-color)",
+                      bgcolor: "var(--white)",
+                      borderRadius: "10px",
+                      p: { xs: "16px", md: "20px" },
+                      minHeight: { xs: "auto", md: "250px" },
+                      gap: "12px",
                     }}
                   >
                     {isBlogLoading ? (
@@ -321,22 +314,21 @@ export default function HomeGoalID() {
                 </Stack>
 
                 {/* Subjects */}
-                <Stack gap="16px">
+                <Stack gap="12px">
                   <Stack gap="4px">
                     <Typography
                       sx={{
-                        fontSize: { xs: "20px", md: "24px" },
-                        fontWeight: 800,
-                        color: "#1e293b",
-                        letterSpacing: "-0.5px",
+                        fontSize: { xs: "16px", md: "18px" },
+                        fontWeight: 700,
+                        color: "var(--text1)",
                       }}
                     >
                       Subjects
                     </Typography>
                     <Typography
                       sx={{
-                        fontSize: "14px",
-                        color: "#64748b",
+                        fontSize: "13px",
+                        color: "var(--text3)",
                         fontWeight: 500,
                       }}
                     >
@@ -350,7 +342,7 @@ export default function HomeGoalID() {
                         xs: "1fr",
                         sm: "repeat(auto-fill, minmax(280px, 1fr))",
                       },
-                      gap: "20px",
+                      gap: "16px",
                       width: "100%",
                     }}
                   >
@@ -378,22 +370,21 @@ export default function HomeGoalID() {
                 </Stack>
 
                 {/* Courses */}
-                <Stack gap="16px">
+                <Stack gap="12px">
                   <Stack gap="4px">
                     <Typography
                       sx={{
-                        fontSize: { xs: "20px", md: "24px" },
-                        fontWeight: 800,
-                        color: "#1e293b",
-                        letterSpacing: "-0.5px",
+                        fontSize: { xs: "16px", md: "18px" },
+                        fontWeight: 700,
+                        color: "var(--text1)",
                       }}
                     >
                       Recommended Courses
                     </Typography>
                     <Typography
                       sx={{
-                        fontSize: "14px",
-                        color: "#64748b",
+                        fontSize: "13px",
+                        color: "var(--text3)",
                         fontWeight: 500,
                       }}
                     >
@@ -409,7 +400,7 @@ export default function HomeGoalID() {
                           xs: "1fr",
                           sm: "repeat(auto-fill, minmax(280px, 1fr))",
                         },
-                        gap: "20px",
+                        gap: "16px",
                       }}
                     >
                       <CourseCardSkeleton />
@@ -424,7 +415,7 @@ export default function HomeGoalID() {
                           xs: "1fr",
                           sm: "repeat(auto-fill, minmax(280px, 1fr))",
                         },
-                        gap: "20px",
+                        gap: "16px",
                         width: "100%",
                       }}
                     >
@@ -490,22 +481,21 @@ export default function HomeGoalID() {
                 </Stack>
 
                 {/* Quizzes */}
-                <Stack gap="16px">
+                <Stack gap="12px">
                   <Stack gap="4px">
                     <Typography
                       sx={{
-                        fontSize: { xs: "20px", md: "24px" },
-                        fontWeight: 800,
-                        color: "#1e293b",
-                        letterSpacing: "-0.5px",
+                        fontSize: { xs: "16px", md: "18px" },
+                        fontWeight: 700,
+                        color: "var(--text1)",
                       }}
                     >
                       Weekly Quizzes
                     </Typography>
                     <Typography
                       sx={{
-                        fontSize: "14px",
-                        color: "#64748b",
+                        fontSize: "13px",
+                        color: "var(--text3)",
                         fontWeight: 500,
                       }}
                     >
@@ -519,40 +509,39 @@ export default function HomeGoalID() {
               {/* RIGHT COLUMN (Desktop) - Sticky Sidebar */}
               <Stack
                 display={{ xs: "none", lg: "flex" }}
-                gap={3}
+                gap={2}
                 sx={{
-                  minWidth: "300px",
-                  maxWidth: "340px",
+                  minWidth: "280px",
+                  maxWidth: "320px",
                   position: "sticky",
-                  top: "32px",
+                  top: "24px",
                   alignSelf: "flex-start",
                   height: "fit-content",
                 }}
               >
-                {/* Quick Actions Card */}
+                {/* Quick Actions */}
                 <Stack
                   sx={{
-                    bgcolor: "white",
-                    p: 3,
-                    borderRadius: "16px",
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    bgcolor: "var(--white)",
+                    p: "16px",
+                    borderRadius: "10px",
+                    border: "1px solid var(--border-color)",
                   }}
-                  gap={2}
+                  gap={1.5}
                 >
                   <Typography
                     sx={{
-                      fontSize: "18px",
+                      fontSize: "15px",
                       fontWeight: 700,
-                      color: "#1e293b",
-                      mb: 1,
+                      color: "var(--text1)",
+                      mb: 0.5,
                     }}
                   >
                     Quick Actions
                   </Typography>
                   <Button
                     variant="contained"
-                    startIcon={<PlayArrow />}
+                    startIcon={<PlayArrow sx={{ fontSize: 18 }} />}
                     onClick={() => {
                       if (stats?.lastActiveCourseID) {
                         router.push(
@@ -563,60 +552,60 @@ export default function HomeGoalID() {
                       }
                     }}
                     sx={{
-                      bgcolor: "#2563eb",
+                      bgcolor: "var(--primary-color)",
                       textTransform: "none",
-                      borderRadius: "10px",
-                      py: 1.5,
-                      fontSize: "15px",
-                      fontWeight: 600,
-                      boxShadow: "0 4px 6px -1px rgba(37, 99, 235, 0.2)",
+                      borderRadius: "8px",
+                      py: 1.2,
+                      fontSize: "13px",
+                      fontWeight: 700,
                       "&:hover": {
-                        bgcolor: "#1d4ed8",
+                        bgcolor: "var(--primary-color-dark)",
                       },
+                      transition: "all 0.15s ease",
                     }}
                   >
                     Resume Learning
                   </Button>
                   <Button
                     variant="outlined"
-                    startIcon={<AccessTime />}
+                    startIcon={<AccessTime sx={{ fontSize: 18 }} />}
                     onClick={() => router.push(`/dashboard/${goalID}/exam`)}
                     sx={{
-                      borderColor: "#e2e8f0",
-                      color: "#64748b",
+                      borderColor: "var(--border-color)",
+                      color: "var(--text3)",
                       textTransform: "none",
-                      borderRadius: "10px",
-                      py: 1.5,
-                      fontSize: "15px",
+                      borderRadius: "8px",
+                      py: 1.2,
+                      fontSize: "13px",
                       fontWeight: 600,
                       "&:hover": {
-                        borderColor: "#cbd5e1",
-                        bgcolor: "#f8fafc",
+                        borderColor: "var(--primary-color)",
+                        bgcolor: "var(--bg-color)",
                       },
+                      transition: "all 0.15s ease",
                     }}
                   >
                     View Schedule
                   </Button>
                 </Stack>
 
-                {/* Contents Card */}
+                {/* Contents */}
                 <Box
                   sx={{
-                    bgcolor: "white",
-                    borderRadius: "20px",
-                    p: 3,
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
-                    maxHeight: "calc(100vh - 300px)",
+                    bgcolor: "var(--white)",
+                    borderRadius: "10px",
+                    p: "16px",
+                    border: "1px solid var(--border-color)",
+                    maxHeight: "calc(100vh - 280px)",
                     overflowY: "auto",
                   }}
                 >
                   <Typography
                     sx={{
-                      fontSize: "18px",
-                      fontWeight: 800,
-                      mb: 2,
-                      color: "#1e293b",
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      mb: 1.5,
+                      color: "var(--text1)",
                     }}
                   >
                     Course Content

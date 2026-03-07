@@ -9,25 +9,25 @@ export default function MasterLogo({ isSideNavOpen }) {
     <Stack
       sx={{
         flexDirection: "row",
-        gap: "15px",
+        alignItems: "center",
+        gap: "10px",
       }}
     >
       <Image
         src={mastersLogo}
         alt="logo"
-        width={60}
-        height={26}
+        width={36}
+        height={36}
         onClick={() => router.push("/signIn")}
+        style={{ cursor: "pointer" }}
       />
       {!isSideNavOpen && (
         <Typography
           sx={{
-            fontSize: "14px",
-            fontWeight: "700",
-            letterSpacing: "0.3px",
+            fontSize: "13px",
+            fontWeight: 700,
             color: "var(--primary-color)",
             whiteSpace: "nowrap",
-            display: { xs: "none", md: "block" },
           }}
         >
           {process.env.NEXT_PUBLIC_COMPANY_NAME}

@@ -58,6 +58,8 @@ export default function Checkout() {
   };
 
   const courseEnroll = async () => {
+    if (paymentLoading) return; // Prevent double-clicks
+
     const selectedPlanIndex = courseDetails?.subscription?.plans?.findIndex(
       (plan) =>
         plan.duration === selectedPlan.duration &&
@@ -66,6 +68,7 @@ export default function Checkout() {
         plan.discountInPercent === selectedPlan.discountInPercent
     );
 
+    setPaymentLoading(true); // Set loading BEFORE fetch to prevent double-clicks
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/checkout/course-enroll`,
@@ -88,10 +91,10 @@ export default function Checkout() {
       if (!result.success) {
         throw new Error(result.message || "Failed to initiate payment");
       }
-      setPaymentLoading(true);
       const { order, priceDetails, transactionID } = result.data;
       setPaymentInfo({ order, priceDetails, transactionID });
     } catch (error) {
+      setPaymentLoading(false); // Reset loading on error
       enqueueSnackbar(error.message || "Payment initiation failed", {
         variant: "error",
       });

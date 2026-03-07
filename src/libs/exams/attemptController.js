@@ -93,6 +93,15 @@ async function fetchAttempt(attemptID) {
   return result.Item;
 }
 
+// helper to fetch attempt with user ownership check
+async function fetchAttemptForUser(attemptID, userID) {
+  const attempt = await fetchAttempt(attemptID);
+  if (attempt.userID !== userID) {
+    throw new Error("Attempt not found");
+  }
+  return attempt;
+}
+
 // helper to write back a full updated userAnswers array
 async function writeAnswers(attemptID, userAnswers) {
   await dynamoDB.send(
@@ -123,15 +132,15 @@ async function checkExamAttempt(attempt) {
 // ——————————————————————————————————————————
 // 1) Mark‐Viewed (fire‐and‐forget)
 // ——————————————————————————————————————————
-export async function viewQuestion(attemptID, questionID) {
-  // 1) Fetch the *current* attempt
-  const attempt = await fetchAttempt(attemptID);
+export async function viewQuestion(attemptID, questionID, userID) {
+  // 1) Fetch the *current* attempt with ownership check
+  const attempt = await fetchAttemptForUser(attemptID, userID);
   const { userAnswers: originalAnswers } = attempt;
 
   // Check if the exam attempt is expired
   await checkExamAttempt(attempt);
 
-  // 2) If it’s already there, just return it
+  // 2) If it's already there, just return it
   if (originalAnswers.some((a) => a.questionID === questionID)) {
     return {
       success: true,
@@ -200,7 +209,7 @@ export async function viewQuestion(attemptID, questionID) {
 // 2) Submit‐Answer
 // ——————————————————————————————————————————
 /**
- * Records the student’s response to one question, applying “all‑or‑nothing”
+ * Records the student's response to one question, applying "all‑or‑nothing"
  * scoring for MSQ and FIB (no partial credit).
  */
 export async function questionResponse(
@@ -208,14 +217,23 @@ export async function questionResponse(
   questionID,
   selectedOptions = [],
   blankAnswers = [],
-  timeSpentMs = 0
+  timeSpentMs = 0,
+  userID
 ) {
-  // 1) Load attempt data
-  const attempt = await fetchAttempt(attemptID);
+  // 1) Load attempt data with ownership check
+  const attempt = await fetchAttemptForUser(attemptID, userID);
   const { userAnswers, answerList } = attempt;
 
   // Check if the exam attempt is expired
   await checkExamAttempt(attempt);
+
+  // Server-side time enforcement: reject if past deadline
+  const now = Date.now();
+  const deadline = attempt.startTimeStamp + attempt.duration * 60000;
+  if (now > deadline) {
+    await submitExam(attemptID, "AUTO");
+    throw new Error("Exam time has expired");
+  }
 
   // 2) Map metadata by questionID for O(1) lookup
   const metaById = Object.fromEntries(answerList.map((q) => [q.questionID, q]));
@@ -262,9 +280,9 @@ export async function questionResponse(
 // ——————————————————————————————————————————
 // 3) Toggle‐Bookmark (example of a small flag update)
 // ——————————————————————————————————————————
-export async function toggleBookmark(attemptID, questionID, bookmarked) {
+export async function toggleBookmark(attemptID, questionID, bookmarked, userID) {
   // similar pattern: fetch, find, update, write
-  const attempt = await fetchAttempt(attemptID);
+  const attempt = await fetchAttemptForUser(attemptID, userID);
   const { userAnswers } = attempt;
 
   // Check if the exam attempt is expired
@@ -286,9 +304,20 @@ export async function toggleBookmark(attemptID, questionID, bookmarked) {
 // ——————————————————————————————————————————
 // 4) Submit Exam
 // ——————————————————————————————————————————
-export async function submitExam(attemptID, endedBy = "USER") {
+export async function submitExam(attemptID, endedBy = "USER", userID) {
   // 1) Load the full attempt
   const attempt = await fetchAttempt(attemptID);
+
+  // Verify ownership (skip for AUTO submissions from server-side timer)
+  if (userID && attempt.userID !== userID) {
+    throw new Error("Attempt not found");
+  }
+
+  // Prevent double submission
+  if (attempt.status === "COMPLETED") {
+    throw new Error("Exam already submitted");
+  }
+
   const { userAnswers = [], answerList = [], settings = {} } = attempt;
 
   //From userAnswers need to filter the duplicates
@@ -344,7 +373,7 @@ export async function submitExam(attemptID, endedBy = "USER") {
       ? mCoinReward.rewardCoin || 0
       : 0;
 
-  // 4) Single UpdateCommand with ALL_NEW
+  // 4) Single UpdateCommand with ALL_NEW and conditional to prevent double submission
   const now = Date.now();
   const { Attributes: updated } = await dynamoDB.send(
     new UpdateCommand({
@@ -353,6 +382,7 @@ export async function submitExam(attemptID, endedBy = "USER") {
         pKey: `EXAM_ATTEMPT#${attemptID}`,
         sKey: "EXAM_ATTEMPTS",
       },
+      ConditionExpression: "#st <> :completed",
       UpdateExpression: `
         SET #st      = :status,
             endedAt  = :now,
@@ -372,6 +402,7 @@ export async function submitExam(attemptID, endedBy = "USER") {
         "#st": "status",
       },
       ExpressionAttributeValues: {
+        ":completed": "COMPLETED",
         ":status": "COMPLETED",
         ":now": now,
         ":totalQuestions": answerList.length,
@@ -393,10 +424,11 @@ export async function submitExam(attemptID, endedBy = "USER") {
     throw new Error("Failed to complete the exam");
   }
 
-  // 5) Return the newly updated item directly
+  // 5) Return the newly updated item directly (strip answerList from response)
+  const { answerList: _removed, ...safeData } = updated;
   return {
     success: true,
-    data: updated,
+    data: safeData,
   };
 }
 
@@ -422,7 +454,7 @@ export async function updateViolationCount(attemptID, count) {
 }
 
 // ——————————————————————————————————————————
-// 5) Get Exam Attempts Result
+// 6) Get Exam Attempts Result
 // ——————————————————————————————————————————
 async function streamToString(stream) {
   return await new Promise((resolve, reject) => {
@@ -432,7 +464,7 @@ async function streamToString(stream) {
     stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
   });
 }
-export async function getExamAttemptsResult(attemptID) {
+export async function getExamAttemptsResult(attemptID, userID) {
   // 1) Fetch the exam attempt record
   const { Item } = await dynamoDB.send(
     new GetCommand({
@@ -448,6 +480,16 @@ export async function getExamAttemptsResult(attemptID) {
     throw new Error("Attempt not found");
   }
 
+  // Verify ownership
+  if (Item.userID !== userID) {
+    throw new Error("Attempt not found");
+  }
+
+  // Only allow viewing results for completed exams
+  if (Item.status !== "COMPLETED") {
+    throw new Error("Exam not yet submitted");
+  }
+
   // 2) Load the S3 blob
   const getObjectParams = {
     Bucket: process.env.AWS_BUCKET_NAME,
@@ -460,11 +502,13 @@ export async function getExamAttemptsResult(attemptID) {
 
   const json = JSON.parse(jsonString);
 
-  // 4) Parse and return
+  // 4) Strip answerList from Item before returning
+  const { answerList: _removed, ...safeItem } = Item;
+
   return {
     success: true,
     data: {
-      ...Item,
+      ...safeItem,
       questions: json.sections,
     },
   };
@@ -500,7 +544,7 @@ export async function getScheduledExamAttemptsByUserID(userID, batchID) {
     throw new Error("userID is required");
   }
 
-  // 1) Query the GSI for this user’s exam attempts
+  // 1) Query the GSI for this user's exam attempts
   const { Items = [] } = await dynamoDB.send(
     new QueryCommand({
       TableName: USER_TABLE,

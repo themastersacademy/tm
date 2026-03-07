@@ -58,6 +58,16 @@ export async function createProSubscription({
   const proSubscriptionID = randomUUID();
   let couponDetails = null;
 
+  if (
+    !Array.isArray(user.billingInfo) ||
+    !Number.isInteger(billingInfoIndex) ||
+    billingInfoIndex < 0 ||
+    billingInfoIndex >= user.billingInfo.length ||
+    !user.billingInfo[billingInfoIndex]
+  ) {
+    throw new Error("Billing info not found");
+  }
+
   const userMeta = {
     id: user.id,
     email: user.email,

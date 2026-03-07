@@ -66,26 +66,26 @@ export default function FAQSect() {
 
   return (
     <Container maxWidth="md">
-      <Stack gap={4} alignItems="center" py={6}>
-        <Stack gap="12px" width="100%" alignItems="center" textAlign="center">
+      <Stack gap={3} alignItems="center" py={4}>
+        <Stack gap="8px" width="100%" alignItems="center" textAlign="center">
           <Box
             sx={{
-              p: "12px",
+              p: "8px",
               borderRadius: "50%",
               bgcolor: "var(--sec-color-acc-1)",
               color: "var(--primary-color)",
-              mb: 1,
+              mb: 0.5,
+              display: "flex",
             }}
           >
-            <HelpOutline sx={{ fontSize: 32 }} />
+            <HelpOutline sx={{ fontSize: 24 }} />
           </Box>
           <Typography
             sx={{
               fontFamily: "Lato",
-              fontSize: { xs: "28px", md: "36px" },
-              fontWeight: 800,
+              fontSize: { xs: "18px", md: "20px" },
+              fontWeight: 700,
               color: "var(--text1)",
-              letterSpacing: "-0.5px",
             }}
           >
             Frequently Asked Questions
@@ -93,17 +93,17 @@ export default function FAQSect() {
           <Typography
             sx={{
               fontFamily: "Lato",
-              fontSize: { xs: "16px", md: "18px" },
+              fontSize: "13px",
               color: "var(--text3)",
-              maxWidth: "600px",
+              maxWidth: "500px",
             }}
           >
-            Everything you need to know about our platform and services. Can&apos;t
-            find the answer you&apos;re looking for? Contact our support team.
+            Everything you need to know about our platform and services.
+            Can&apos;t find the answer? Contact our support team.
           </Typography>
         </Stack>
 
-        <Stack gap={2} width="100%">
+        <Stack gap={1.5} width="100%">
           {faqData.map((faq, index) => (
             <Accordion
               key={index}
@@ -116,13 +116,13 @@ export default function FAQSect() {
                   expanded === `panel${index}`
                     ? "var(--primary-color)"
                     : "var(--border-color)",
-                borderRadius: "16px !important",
+                borderRadius: "10px !important",
                 overflow: "hidden",
                 bgcolor:
                   expanded === `panel${index}`
                     ? "var(--bg-color)"
                     : "var(--white)",
-                transition: "all 0.3s ease",
+                transition: "all 0.15s ease",
                 "&:before": {
                   display: "none",
                 },
@@ -146,33 +146,33 @@ export default function FAQSect() {
                 aria-controls={`faq-content-${index}`}
                 id={`faq-header-${index}`}
                 sx={{
-                  px: { xs: 2, md: 3 },
-                  py: 1,
+                  px: { xs: 2, md: 2.5 },
+                  py: 0.5,
                   "& .MuiAccordionSummary-content": {
-                    my: 2,
+                    my: 1.5,
                   },
                 }}
               >
                 <Typography
                   sx={{
                     fontFamily: "Lato",
-                    fontSize: "16px",
+                    fontSize: "14px",
                     fontWeight: 700,
                     color:
                       expanded === `panel${index}`
                         ? "var(--primary-color)"
                         : "var(--text1)",
-                    transition: "color 0.2s",
+                    transition: "color 0.15s ease",
                   }}
                 >
                   {faq.question}
                 </Typography>
               </AccordionSummary>
-              <AccordionDetails sx={{ px: { xs: 2, md: 3 }, pb: 3, pt: 0 }}>
+              <AccordionDetails sx={{ px: { xs: 2, md: 2.5 }, pb: 2.5, pt: 0 }}>
                 <Typography
                   sx={{
                     fontFamily: "Lato",
-                    fontSize: "15px",
+                    fontSize: "13px",
                     lineHeight: 1.6,
                     color: "var(--text3)",
                   }}

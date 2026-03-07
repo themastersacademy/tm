@@ -1,8 +1,6 @@
 import { Button, Stack, Typography, Box } from "@mui/material";
 import { useState } from "react";
 import Image from "next/image";
-import institute from "@/public/icons/institute1.svg";
-import agrade from "@/public/icons/aGrade.svg";
 import crackExamBanner from "@/public/images/crackExamBanner.svg";
 import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
 import { AutoAwesome, School, EmojiEvents } from "@mui/icons-material";
@@ -19,19 +17,19 @@ export default function CrackTest() {
 
   const features = [
     {
-      icon: <School sx={{ fontSize: 28, color: "white" }} />,
+      icon: <School sx={{ fontSize: 20, color: "white" }} />,
       title: "Practice Tests",
       description: "Unlimited access to daily practice tests",
       color: "#4CAF50",
     },
     {
-      icon: <AutoAwesome sx={{ fontSize: 28, color: "white" }} />,
+      icon: <AutoAwesome sx={{ fontSize: 20, color: "white" }} />,
       title: "Mock Tests",
       description: "Full-length exams with real pattern",
       color: "#2196F3",
     },
     {
-      icon: <EmojiEvents sx={{ fontSize: 28, color: "white" }} />,
+      icon: <EmojiEvents sx={{ fontSize: 20, color: "white" }} />,
       title: "Learning Path",
       description: "Structured guidance for success",
       color: "#FF9800",
@@ -42,41 +40,26 @@ export default function CrackTest() {
     <Stack
       flexDirection={{ xs: "column", md: "row" }}
       sx={{
-        borderRadius: "24px",
+        borderRadius: "10px",
         background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)",
         width: "100%",
-        padding: { xs: "32px", md: "48px" },
+        padding: { xs: "20px", md: "24px" },
         justifyContent: "space-between",
         position: "relative",
         overflow: "hidden",
-        boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
       }}
       width="100%"
       maxWidth="1200px"
     >
-      {/* Background decoration */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: -100,
-          right: -100,
-          width: "400px",
-          height: "400px",
-          background:
-            "radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 70%)",
-          borderRadius: "50%",
-        }}
-      />
-
-      <Stack sx={{ gap: "32px", width: { xs: "100%", md: "55%" }, zIndex: 1 }}>
-        <Stack gap="16px">
+      <Stack sx={{ gap: "20px", width: { xs: "100%", md: "55%" }, zIndex: 1 }}>
+        <Stack gap="10px">
           <Typography
             sx={{
               fontFamily: "Lato",
-              fontSize: { xs: "28px", md: "36px" },
-              fontWeight: "800",
+              fontSize: { xs: "18px", md: "20px" },
+              fontWeight: 700,
               color: "white",
-              lineHeight: 1.2,
+              lineHeight: 1.3,
             }}
           >
             Crack GATE and other exams with our{" "}
@@ -85,10 +68,10 @@ export default function CrackTest() {
           <Typography
             sx={{
               fontFamily: "Lato",
-              fontSize: { xs: "16px", md: "18px" },
+              fontSize: "13px",
               color: "rgba(255,255,255,0.7)",
               maxWidth: "500px",
-              lineHeight: 1.6,
+              lineHeight: 1.5,
             }}
           >
             Get a subscription and access unlimited exams, stream courses from
@@ -96,35 +79,32 @@ export default function CrackTest() {
           </Typography>
         </Stack>
 
-        <Stack direction="row" gap="16px" flexWrap="wrap">
+        <Stack direction="row" gap="12px" flexWrap="wrap">
           {features.map((item, index) => (
             <Stack
               key={index}
               sx={{
                 bgcolor: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(10px)",
-                borderRadius: "16px",
-                p: "16px",
-                width: { xs: "100%", sm: "160px" },
+                borderRadius: "8px",
+                p: "12px",
+                width: { xs: "100%", sm: "140px" },
                 border: "1px solid rgba(255,255,255,0.1)",
-                transition: "all 0.2s",
+                transition: "all 0.15s ease",
                 "&:hover": {
                   bgcolor: "rgba(255,255,255,0.1)",
-                  transform: "translateY(-4px)",
                 },
               }}
             >
               <Box
                 sx={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: "12px",
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "8px",
                   bgcolor: item.color,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  mb: 2,
-                  boxShadow: `0 4px 12px ${item.color}40`,
+                  mb: 1.5,
                 }}
               >
                 {item.icon}
@@ -132,8 +112,8 @@ export default function CrackTest() {
               <Typography
                 sx={{
                   fontFamily: "Lato",
-                  fontSize: "16px",
-                  fontWeight: "700",
+                  fontSize: "13px",
+                  fontWeight: 700,
                   color: "white",
                   mb: 0.5,
                 }}
@@ -143,7 +123,7 @@ export default function CrackTest() {
               <Typography
                 sx={{
                   fontFamily: "Lato",
-                  fontSize: "12px",
+                  fontSize: "11px",
                   color: "rgba(255,255,255,0.5)",
                 }}
               >
@@ -161,16 +141,15 @@ export default function CrackTest() {
             backgroundColor: "var(--primary-color)",
             color: "white",
             width: { xs: "100%", sm: "fit-content" },
-            px: "40px",
-            py: "12px",
-            fontSize: "16px",
-            fontWeight: "700",
-            borderRadius: "12px",
-            boxShadow: "0 8px 20px rgba(255, 152, 0, 0.3)",
+            px: "24px",
+            py: "8px",
+            fontSize: "13px",
+            fontWeight: 700,
+            borderRadius: "8px",
             "&:hover": {
               backgroundColor: "#f57c00",
-              transform: "scale(1.02)",
             },
+            transition: "all 0.15s ease",
           }}
         >
           Get Premium Access
@@ -189,13 +168,12 @@ export default function CrackTest() {
         <Image
           src={crackExamBanner}
           alt="Exam Banner"
-          width={450}
-          height={450}
+          width={400}
+          height={400}
           style={{
             width: "100%",
-            maxWidth: "450px",
+            maxWidth: "400px",
             height: "auto",
-            filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.3))",
           }}
         />
       </Stack>

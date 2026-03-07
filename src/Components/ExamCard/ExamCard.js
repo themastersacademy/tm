@@ -39,14 +39,15 @@ export default function ExamCard({
   const getStatusConfig = (status) => {
     switch (status?.toLowerCase()) {
       case "live":
-        return { color: "#F44336", label: "LIVE", bg: "#FFEBEE" };
+        return { color: "#F44336", label: "LIVE", bg: "#FFEBEE", border: "#F4433630" };
       case "completed":
-        return { color: "#4CAF50", label: "Completed", bg: "#E8F5E9" };
+        return { color: "#4CAF50", label: "Completed", bg: "#E8F5E9", border: "#4CAF5030" };
       default:
         return {
           color: "var(--primary-color)",
           label: "Upcoming",
-          bg: "var(--sec-color-acc-2)",
+          bg: "rgba(24, 113, 99, 0.08)",
+          border: "rgba(24, 113, 99, 0.15)",
         };
     }
   };
@@ -57,20 +58,17 @@ export default function ExamCard({
     <Card
       sx={{
         width: "100%",
-        minHeight: { xs: "auto", md: "200px" },
         border: "1px solid var(--border-color)",
-        borderRadius: { xs: "12px", md: "20px" },
-        padding: { xs: "12px", md: "20px" },
+        borderRadius: "10px",
+        padding: "14px 16px",
         display: "flex",
         flexDirection: "column",
-        gap: { xs: "12px", md: "16px" },
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        gap: "12px",
+        transition: "all 0.15s ease",
         cursor: "pointer",
         position: "relative",
         bgcolor: "white",
         "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: "0 12px 32px rgba(0,0,0,0.08)",
           borderColor: "var(--primary-color)",
         },
       }}
@@ -84,68 +82,65 @@ export default function ExamCard({
       >
         <Box
           sx={{
-            width: { xs: "44px", md: "56px" },
-            height: { xs: "44px", md: "56px" },
-            background:
-              "linear-gradient(135deg, var(--sec-color-acc-2) 0%, var(--sec-color-acc-1) 100%)",
-            borderRadius: { xs: "12px", md: "16px" },
+            width: "36px",
+            height: "36px",
+            backgroundColor: "rgba(24, 113, 99, 0.08)",
+            borderRadius: "8px",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            border: "1px solid rgba(24, 113, 99, 0.15)",
+            flexShrink: 0,
           }}
         >
-          <Image src={icon} alt="icon" width={24} height={24} />
+          <Image src={icon} alt="icon" width={18} height={18} />
         </Box>
 
-        <Stack direction="row" gap="8px">
+        <Stack direction="row" gap="6px">
           {isPro && (
-            <Box
+            <Chip
+              icon={<Lock sx={{ fontSize: "12px !important" }} />}
+              label="PRO"
+              size="small"
               sx={{
-                background: "linear-gradient(135deg, #FFD700 0%, #FFA500 100%)",
-                color: "white",
-                padding: "4px 8px",
-                borderRadius: "8px",
+                height: "20px",
                 fontSize: "10px",
                 fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                fontFamily: "var(--font-geist-sans)",
+                backgroundColor: "#FFF3E0",
+                color: "#E65100",
+                border: "1px solid #E6510030",
+                "& .MuiChip-icon": { color: "#E65100" },
+                "& .MuiChip-label": { padding: "0 6px" },
               }}
-            >
-              <Lock sx={{ fontSize: 12 }} /> PRO
-            </Box>
+            />
           )}
-          <Box
+          <Chip
+            label={statusConfig.label}
+            size="small"
             sx={{
-              backgroundColor: statusConfig.bg,
-              color: statusConfig.color,
-              padding: "4px 8px",
-              borderRadius: "8px",
+              height: "20px",
               fontSize: "10px",
               fontWeight: 700,
-              textTransform: "uppercase",
-              fontFamily: "var(--font-geist-sans)",
+              backgroundColor: statusConfig.bg,
+              color: statusConfig.color,
+              border: `1px solid ${statusConfig.border}`,
+              "& .MuiChip-label": { padding: "0 6px" },
             }}
-          >
-            {statusConfig.label}
-          </Box>
+          />
         </Stack>
       </Stack>
 
       {/* Title */}
       <Typography
         sx={{
-          fontSize: { xs: "14px", md: "16px" },
+          fontSize: "14px",
           fontWeight: 700,
           color: "var(--text1)",
           lineHeight: 1.4,
-          minHeight: { xs: "auto", md: "44px" },
           display: "-webkit-box",
           WebkitLineClamp: 2,
           WebkitBoxOrient: "vertical",
           overflow: "hidden",
-          fontFamily: "var(--font-geist-sans)",
         }}
       >
         {title}
@@ -156,20 +151,20 @@ export default function ExamCard({
         sx={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: { xs: "8px", md: "12px" },
-          backgroundColor: "#F8F9FA",
-          padding: { xs: "8px", md: "12px" },
-          borderRadius: { xs: "8px", md: "12px" },
+          gap: "8px",
+          backgroundColor: "rgba(24, 113, 99, 0.04)",
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid rgba(24, 113, 99, 0.08)",
         }}
       >
         <Stack direction="row" alignItems="center" gap="6px">
-          <AccessTime sx={{ fontSize: 16, color: "var(--text3)" }} />
+          <AccessTime sx={{ fontSize: 14, color: "var(--text4)" }} />
           <Typography
             sx={{
               fontSize: "12px",
               fontWeight: 600,
               color: "var(--text2)",
-              fontFamily: "var(--font-geist-sans)",
             }}
           >
             {duration ? `${duration} min` : "N/A"}
@@ -177,13 +172,12 @@ export default function ExamCard({
         </Stack>
 
         <Stack direction="row" alignItems="center" gap="6px">
-          <HelpOutline sx={{ fontSize: 16, color: "var(--text3)" }} />
+          <HelpOutline sx={{ fontSize: 14, color: "var(--text4)" }} />
           <Typography
             sx={{
               fontSize: "12px",
               fontWeight: 600,
               color: "var(--text2)",
-              fontFamily: "var(--font-geist-sans)",
             }}
           >
             {totalQuestions ? `${totalQuestions} Qs` : "N/A"}
@@ -191,13 +185,12 @@ export default function ExamCard({
         </Stack>
 
         <Stack direction="row" alignItems="center" gap="6px">
-          <EmojiEvents sx={{ fontSize: 16, color: "var(--text3)" }} />
+          <EmojiEvents sx={{ fontSize: 14, color: "var(--text4)" }} />
           <Typography
             sx={{
               fontSize: "12px",
               fontWeight: 600,
               color: "var(--text2)",
-              fontFamily: "var(--font-geist-sans)",
             }}
           >
             {totalMarks ? `${totalMarks} Marks` : "N/A"}
@@ -219,7 +212,6 @@ export default function ExamCard({
               fontWeight: 600,
               color: "var(--text2)",
               textTransform: "capitalize",
-              fontFamily: "var(--font-geist-sans)",
             }}
           >
             {difficulty || "Medium"}
@@ -228,7 +220,7 @@ export default function ExamCard({
       </Stack>
 
       {/* Footer: Score or Action */}
-      <Stack sx={{ marginTop: "auto", paddingTop: "8px" }}>
+      <Stack sx={{ marginTop: "auto" }}>
         {score !== null ? (
           <Stack
             direction="row"
@@ -237,19 +229,17 @@ export default function ExamCard({
           >
             <Typography
               sx={{
-                fontSize: "13px",
-                color: "var(--text3)",
-                fontFamily: "var(--font-geist-sans)",
+                fontSize: "12px",
+                color: "var(--text4)",
               }}
             >
               Your Score
             </Typography>
             <Typography
               sx={{
-                fontSize: "16px",
+                fontSize: "15px",
                 fontWeight: 700,
                 color: "var(--primary-color)",
-                fontFamily: "var(--font-geist-sans)",
               }}
             >
               {score}/{totalMarks}

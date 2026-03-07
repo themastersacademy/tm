@@ -1,35 +1,29 @@
-import { Button, Card, Stack, Skeleton } from "@mui/material";
+import { Card, Stack, Skeleton } from "@mui/material";
 
 export default function PrimaryCardSkeleton() {
   return (
     <Card
       sx={{
-        width: "150px",
-        height: "200px",
-        padding: "20px 0px 20px 0px",
+        width: { xs: "100%", sm: "280px" },
+        minHeight: "180px",
+        padding: "16px",
         borderRadius: "10px",
         border: "1px solid var(--border-color)",
       }}
       elevation={0}
     >
-      <Stack>
-        <Stack alignItems="center" gap="7px">
-          <Skeleton
-            variant="rectangular"
-            animation="wave"
-            sx={{
-              width: "75px",
-              height: "75px",
-              borderRadius: "15px",
-              backgroundColor: "var(--sec-color-acc-1)",
-            }}
-          />
-          <Skeleton variant="text" width={60} />
-          <Skeleton variant="text" width={80} />
-        </Stack>
-        <Button>
-          <Skeleton variant="text" width={60} />
-        </Button>
+      <Stack alignItems="center" gap="10px">
+        <Skeleton
+          variant="rectangular"
+          animation="wave"
+          sx={{
+            width: "48px",
+            height: "48px",
+            borderRadius: "10px",
+          }}
+        />
+        <Skeleton variant="text" width={80} />
+        <Skeleton variant="text" width={100} />
       </Stack>
     </Card>
   );

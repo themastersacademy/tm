@@ -61,10 +61,3 @@ export default function validatePassword(password) {
     error: null,
   };
 }
-
-// Example usage:
-// const result = validatePassword("Weak");
-// console.log(result); // { isValid: false, error: "Password must be at least 8 characters long" }
-//
-// const result2 = validatePassword("StrongP@ss1");
-// console.log(result2); // { isValid: true, error: null }

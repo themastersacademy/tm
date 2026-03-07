@@ -36,7 +36,13 @@ export async function enrollInCourse({
   }
 
   const billingInfo = user.billingInfo;
-  if (!billingInfo[billingInfoIndex]) {
+  if (
+    !Array.isArray(billingInfo) ||
+    !Number.isInteger(billingInfoIndex) ||
+    billingInfoIndex < 0 ||
+    billingInfoIndex >= billingInfo.length ||
+    !billingInfo[billingInfoIndex]
+  ) {
     throw new Error("Billing info not found");
   }
 

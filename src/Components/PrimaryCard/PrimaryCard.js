@@ -13,22 +13,20 @@ export default function PrimaryCard({
     <Card
       sx={{
         width: { xs: "100%", sm: "280px" },
-        minHeight: "220px",
+        minHeight: "180px",
         border: enrolled
           ? "2px solid var(--primary-color)"
           : "1px solid var(--border-color)",
-        padding: "24px",
-        borderRadius: "16px",
+        padding: "16px",
+        borderRadius: "10px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         textAlign: "center",
         position: "relative",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "all 0.15s ease",
         cursor: "pointer",
         "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
           borderColor: "var(--primary-color)",
         },
       }}
@@ -39,13 +37,13 @@ export default function PrimaryCard({
         <Box
           sx={{
             position: "absolute",
-            top: 12,
-            right: 12,
+            top: 10,
+            right: 10,
             backgroundColor: "var(--primary-color)",
             color: "white",
-            fontSize: "11px",
+            fontSize: "10px",
             fontWeight: 600,
-            padding: "4px 10px",
+            padding: "3px 8px",
             borderRadius: "6px",
             textTransform: "uppercase",
             letterSpacing: "0.5px",
@@ -55,31 +53,36 @@ export default function PrimaryCard({
         </Box>
       )}
 
-      <Stack alignItems="center" gap="12px" flex={1}>
+      <Stack alignItems="center" gap="10px" flex={1}>
         {/* Icon */}
         <Box
           sx={{
-            width: "80px",
-            height: "80px",
-            background:
-              "linear-gradient(135deg, var(--sec-color-acc-2) 0%, var(--sec-color-acc-1) 100%)",
-            borderRadius: "20px",
+            width: "48px",
+            height: "48px",
+            backgroundColor: "rgba(24, 113, 99, 0.08)",
+            borderRadius: "10px",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+            border: "1px solid rgba(24, 113, 99, 0.15)",
           }}
         >
-          <Image src={icon} alt="icon" width={36} height={36} />
+          <Image src={icon} alt="icon" width={24} height={24} />
         </Box>
 
         {/* Title */}
         <Typography
           sx={{
-            fontSize: "16px",
+            fontSize: "14px",
             fontWeight: 700,
             color: "var(--text1)",
             lineHeight: 1.3,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            wordBreak: "break-word",
           }}
         >
           {title}
@@ -89,7 +92,7 @@ export default function PrimaryCard({
         {subtitle && (
           <Typography
             sx={{
-              fontSize: "13px",
+              fontSize: "12px",
               fontWeight: 500,
               color: "var(--text3)",
               lineHeight: 1.4,

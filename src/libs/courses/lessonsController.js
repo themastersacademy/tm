@@ -28,21 +28,33 @@ export async function getAllLessons({ courseID }) {
       return { success: false, message: "Course not found" };
     }
 
-    // 2. Extract the ordered lesson IDs array
+    // 2. Extract the ordered lesson IDs array and sections
     const orderedIds = Array.isArray(course.lessonIDs) ? course.lessonIDs : [];
+    const sections = course.sections || [];
 
-    // 3. Scan for all lessons belonging to this course, only linked ones
-    const lessonsResp = await dynamoDB.send(
-      new ScanCommand({
-        TableName: TABLE,
-        FilterExpression: "sKey = :sk AND isLinked = :linked",
-        ExpressionAttributeValues: {
-          ":sk": `LESSONS@${courseID}`,
-          ":linked": true,
-        },
-      })
-    );
-    const lessons = lessonsResp.Items || [];
+    // 3. Query lessons via GSI, then filter linked in-memory
+    const allLessons = [];
+    let lessonsLastKey;
+    do {
+      const lessonsResp = await dynamoDB.send(
+        new QueryCommand({
+          TableName: TABLE,
+          IndexName: "masterTableIndex",
+          KeyConditionExpression: "#gsi1pk = :gsi1pk",
+          ExpressionAttributeNames: {
+            "#gsi1pk": "GSI1-pKey",
+          },
+          ExpressionAttributeValues: {
+            ":gsi1pk": `LESSONS@${courseID}`,
+          },
+          ...(lessonsLastKey && { ExclusiveStartKey: lessonsLastKey }),
+        })
+      );
+      allLessons.push(...(lessonsResp.Items || []));
+      lessonsLastKey = lessonsResp.LastEvaluatedKey;
+    } while (lessonsLastKey);
+
+    const lessons = allLessons.filter((item) => item.isLinked === true);
 
     // 4. Sort by the index in the course.lessonIDs array
     const sorted = lessons.sort((a, b) => {
@@ -63,6 +75,7 @@ export async function getAllLessons({ courseID }) {
       success: true,
       message: "Lessons fetched successfully",
       data,
+      sections,
     };
   } catch (error) {
     console.error("Error fetching lessons:", error);
@@ -109,14 +122,10 @@ export async function getLessonVideoURL({
     }
 
     const isEnrolled = await verifyCourseEnrollment(enrollmentID, userID);
-    // if (!isEnrolled) {
-    //   return { success: false, message: "User is not enrolled in this course" };
-    // }
-
     if (!lesson.isPreview && !isEnrolled) {
       return {
         success: false,
-        message: "Lesson is not a preview and user is not enrolled",
+        message: "User is not enrolled in this course",
       };
     }
 
@@ -196,14 +205,10 @@ export async function getLessonFileURL({
     }
 
     const isEnrolled = await verifyCourseEnrollment(enrollmentID, userID);
-    // if (!isEnrolled) {
-    //   return { success: false, message: "User is not enrolled in this course" };
-    // }
-
     if (!lesson.isPreview && !isEnrolled) {
       return {
         success: false,
-        message: "Lesson is not a preview and user is not enrolled",
+        message: "User is not enrolled in this course",
       };
     }
 

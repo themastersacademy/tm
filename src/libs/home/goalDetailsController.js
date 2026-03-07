@@ -1,5 +1,5 @@
 import { dynamoDB } from "@/src/utils/awsAgent";
-import { GetCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 
 const TABLE_NAME = `${process.env.AWS_DB_NAME}master`;
 
@@ -110,19 +110,35 @@ export async function getGoalContent({ blogID, goalID }) {
 }
 
 export async function getLiveCourses(goalID) {
-  const params = {
-    TableName: TABLE_NAME,
-    FilterExpression: "sKey = :sKey AND isLive = :isLive",
-    ExpressionAttributeValues: {
-      ":sKey": `COURSES@${goalID}`,
-      ":isLive": true,
-    },
-  };
-
   try {
-    const { Items } = await dynamoDB.send(new ScanCommand(params));
+    // Query via GSI — courses already have GSI1-pKey = "COURSES", GSI1-sKey = "COURSES@<goalID>"
+    const items = [];
+    let lastKey;
+    do {
+      const response = await dynamoDB.send(
+        new QueryCommand({
+          TableName: TABLE_NAME,
+          IndexName: "masterTableIndex",
+          KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
+          ExpressionAttributeNames: {
+            "#gsi1pk": "GSI1-pKey",
+            "#gsi1sk": "GSI1-sKey",
+          },
+          ExpressionAttributeValues: {
+            ":gsi1pk": "COURSES",
+            ":gsi1sk": `COURSES@${goalID}`,
+          },
+          ...(lastKey && { ExclusiveStartKey: lastKey }),
+        })
+      );
+      items.push(...(response.Items || []));
+      lastKey = response.LastEvaluatedKey;
+    } while (lastKey);
 
-    if (!Items || Items.length === 0) {
+    // Filter live courses in-memory
+    const liveItems = items.filter((item) => item.isLive === true);
+
+    if (liveItems.length === 0) {
       return {
         success: true,
         message: "No live courses found",
@@ -130,9 +146,8 @@ export async function getLiveCourses(goalID) {
       };
     }
 
-    // Map the items to a cleaner format, excluding DynamoDB-specific keys
-    const courses = Items.map(({ pKey, sKey, ...course }) => ({
-      id: pKey.split("#")[1], // Extract courseID from pKey
+    const courses = liveItems.map(({ pKey, sKey, ...course }) => ({
+      id: pKey.split("#")[1],
       ...course,
     }));
 

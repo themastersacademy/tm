@@ -68,7 +68,16 @@ export const usePreventNavigation = (shouldPrevent) => {
     document.addEventListener("keydown", handleKeyDown);
 
     // 5️⃣ Disable text selection & context menu
-    const disableEvent = (e) => e.preventDefault();
+    const disableEvent = (e) => {
+      // Allow select/focus on inputs and textareas
+      if (
+        e.type === "selectstart" &&
+        (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+      ) {
+        return;
+      }
+      e.preventDefault();
+    };
     document.body.style.userSelect = "none";
     document.body.style.webkitUserSelect = "none";
     document.addEventListener("contextmenu", disableEvent);

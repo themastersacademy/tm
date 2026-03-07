@@ -1,7 +1,8 @@
-"server only";
+import "server-only";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import { S3Client } from "@aws-sdk/client-s3";
+import { SESClient } from "@aws-sdk/client-ses";
 
 if (
   !process.env.AWS_ACCESS_KEY_ID ||
@@ -31,4 +32,12 @@ const s3 = new S3Client({
   },
 });
 
-export { dynamoDB, s3 };
+const ses = new SESClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_IAM_SECRET_KEY,
+  },
+});
+
+export { dynamoDB, s3, ses };

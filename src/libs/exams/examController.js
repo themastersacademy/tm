@@ -97,7 +97,7 @@ export async function getScheduledExamByBatch(userID, batchID) {
       ExpressionAttributeValues: {
         ":pk": `BATCH_EXAM#${batchID}`,
       },
-    })
+    }),
   );
   const links = joinResp.Items || [];
   if (links.length === 0) {
@@ -116,7 +116,7 @@ export async function getScheduledExamByBatch(userID, batchID) {
           Keys: examKeys,
         },
       },
-    })
+    }),
   );
 
   const exams = batchGetResp.Responses?.[MASTER_TABLE] || [];
@@ -250,7 +250,6 @@ export async function startExam({ examID, userID }) {
       updatedAt: now,
     },
   };
-  // console.log("examAttemptParams", examAttemptParams);
   try {
     await dynamoDB.send(new PutCommand(examAttemptParams));
     return {
@@ -284,6 +283,7 @@ export async function getExamAttemptByID(id, userID) {
       "#st",
       "blobVersion",
       "blobSignedUrl",
+      "blobBucketKey", // Add this
       "userAnswers",
       "attemptNumber",
       "totalSkippedAnswers",
@@ -314,6 +314,20 @@ export async function getExamAttemptByID(id, userID) {
       Item = res.data; // swap in the completed data
     } else {
       console.warn("Auto‑submit failed, returning in‑progress state");
+    }
+  }
+
+  // Regenerate signed URL to prevent expiration
+  if (Item.blobBucketKey) {
+    // Duration is in minutes, convert to seconds. Add buffer.
+    const urlExpiry = (Item.duration || 180) * 60 + 300;
+    const freshUrl = await getFileURL({
+      path: Item.blobBucketKey,
+      expiry: urlExpiry,
+    });
+    // getFileURL returns string on success, object on failure
+    if (typeof freshUrl === "string") {
+      Item.blobSignedUrl = freshUrl;
     }
   }
 
@@ -421,36 +435,3 @@ export async function getPreviousAttempt(userID, examID) {
   // Return the first (most recent) one
   return matching[0];
 }
-
-// async function getPreviousAttempt(userID, examID) {
-//   if (!userID || !examID) {
-//     throw new Error("Both userID and examID are required");
-//   }
-
-//   const params = {
-//     TableName: USER_TABLE,
-//     IndexName: USER_INDEX_NAME,
-//     KeyConditionExpression: "#gsiPK = :pk AND #gsiSK = :sk",
-//     FilterExpression: "examID = :examID",
-//     ExpressionAttributeNames: {
-//       "#gsiPK": "GSI1-pKey",
-//       "#gsiSK": "GSI1-sKey",
-//     },
-//     ExpressionAttributeValues: {
-//       ":pk": "EXAM_ATTEMPTS", // your GSI partition
-//       ":sk": `EXAM_ATTEMPT@${userID}`, // your GSI sort
-//       ":examID": examID, // filter on this field
-//     },
-//     // if you only want the single latest attempt:
-//     Limit: 1,
-//     ScanIndexForward: false, // false → newest items first if you sort by timestamp
-//   };
-
-//   try {
-//     const { Items } = await dynamoDB.send(new QueryCommand(params));
-//     return Items?.[0] ?? null;
-//   } catch (err) {
-//     console.error("getPreviousAttempt error:", err);
-//     throw new Error("Failed to fetch previous attempt");
-//   }
-// }

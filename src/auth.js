@@ -151,7 +151,6 @@ export const authOptions = {
   pages: {
     signIn: "/signIn",
   },
-  // debug: process.env.NODE_ENV === "development",
 };
 
 export default NextAuth(authOptions);

@@ -1,10 +1,16 @@
 import { forgotPassword } from "@/src/libs/auth/auth";
+import { checkRateLimit, getClientIP, rateLimitResponse } from "@/src/utils/rateLimit";
 
 export async function POST(request) {
+  // Rate limit: 3 forgot-password attempts per 5 minutes per IP
+  const ip = getClientIP(request);
+  const { allowed, retryAfterMs } = checkRateLimit(`forgot-password:${ip}`, 3, 300000);
+  if (!allowed) return rateLimitResponse(retryAfterMs);
+
   const { email } = await request.json();
   if (!email) {
     return Response.json(
-      { success: false, error: "Email is required" },
+      { success: false, message: "Email is required" },
       { status: 400 }
     );
   }
@@ -13,7 +19,7 @@ export async function POST(request) {
     return Response.json(result);
   } catch (error) {
     return Response.json(
-      { success: false, message: error.message },
+      { success: false, message: "An error occurred. Please try again." },
       { status: 500 }
     );
   }

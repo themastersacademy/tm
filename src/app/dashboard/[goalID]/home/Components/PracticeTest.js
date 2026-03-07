@@ -71,9 +71,8 @@ export default function PracticeTest() {
         gridTemplateColumns: {
           xs: "1fr",
           sm: "repeat(auto-fill, minmax(280px, 1fr))",
-          md: "repeat(auto-fill, minmax(300px, 1fr))",
         },
-        gap: "20px",
+        gap: "16px",
         width: "100%",
       }}
     >

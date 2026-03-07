@@ -12,6 +12,7 @@ import {
   ListItemIcon,
   ListItemText,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import {
   AccessTime,
@@ -30,6 +31,7 @@ export default function ExamInstructionDialog({
   onClose,
   onStart,
   examData,
+  loading,
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -52,7 +54,7 @@ export default function ExamInstructionDialog({
       sx={{
         bgcolor: bgcolor,
         p: 2,
-        borderRadius: "12px",
+        borderRadius: "8px",
         flex: 1,
         border: "1px solid",
         borderColor: "rgba(0,0,0,0.05)",
@@ -90,12 +92,12 @@ export default function ExamInstructionDialog({
   return (
     <DialogBox
       isOpen={open}
-      onClose={onClose}
+      onClose={loading ? undefined : onClose}
       width="600px"
       fullScreen={isMobile}
       title="Exam Instructions"
       icon={
-        <IconButton onClick={onClose}>
+        <IconButton onClick={onClose} disabled={loading}>
           <Close />
         </IconButton>
       }
@@ -103,7 +105,14 @@ export default function ExamInstructionDialog({
         <Button
           variant="contained"
           onClick={onStart}
-          endIcon={<PlayArrow />}
+          disabled={loading}
+          endIcon={
+            loading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <PlayArrow />
+            )
+          }
           size="large"
           sx={{
             bgcolor: "var(--primary-color)",
@@ -119,7 +128,7 @@ export default function ExamInstructionDialog({
             },
           }}
         >
-          Start Now
+          {loading ? "Starting..." : "Start Now"}
         </Button>
       }
     >
@@ -129,22 +138,23 @@ export default function ExamInstructionDialog({
           {examData.icon && (
             <Box
               sx={{
-                width: 64,
-                height: 64,
-                borderRadius: "16px",
-                bgcolor: "var(--sec-color-acc-2)",
+                width: 44,
+                height: 44,
+                borderRadius: "10px",
+                bgcolor: "rgba(24, 113, 99, 0.08)",
+                border: "1px solid rgba(24, 113, 99, 0.15)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
               }}
             >
-              <Image src={examData.icon} alt="exam" width={32} height={32} />
+              <Image src={examData.icon} alt="exam" width={22} height={22} />
             </Box>
           )}
           <Box>
             <Typography
-              sx={{ fontSize: "20px", fontWeight: 800, color: "var(--text1)" }}
+              sx={{ fontSize: "16px", fontWeight: 700, color: "var(--text1)" }}
             >
               {examData.title}
             </Typography>
@@ -188,7 +198,7 @@ export default function ExamInstructionDialog({
         </Box>
 
         {/* Instructions List */}
-        <Box sx={{ bgcolor: "#F8F9FA", p: 3, borderRadius: "16px" }}>
+        <Box sx={{ bgcolor: "rgba(24, 113, 99, 0.04)", p: 2.5, borderRadius: "10px", border: "1px solid rgba(24, 113, 99, 0.08)" }}>
           <Stack direction="row" alignItems="center" gap={1} mb={2}>
             <WarningAmber sx={{ color: "var(--text2)", fontSize: 20 }} />
             <Typography

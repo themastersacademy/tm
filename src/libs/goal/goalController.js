@@ -1,22 +1,62 @@
 import { dynamoDB } from "@/src/utils/awsAgent";
-import { GetCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 
 export async function getGoalList() {
-  const params = {
-    TableName: `${process.env.AWS_DB_NAME}master`,
-    FilterExpression: "sKey = :sKey AND isLive = :isLive",
-    ExpressionAttributeValues: {
-      ":sKey": "GOALS",
-      ":isLive": true,
-    },
-  };
-  const command = new ScanCommand(params);
+  const TABLE = `${process.env.AWS_DB_NAME}master`;
+
   try {
-    const result = await dynamoDB.send(command);
+    // Step 1: Query via GSI
+    const gsiItems = [];
+    let lastKey;
+
+    do {
+      const response = await dynamoDB.send(
+        new QueryCommand({
+          TableName: TABLE,
+          IndexName: "masterTableIndex",
+          KeyConditionExpression: "#gsi1pk = :gsi1pk",
+          ExpressionAttributeNames: {
+            "#gsi1pk": "GSI1-pKey",
+          },
+          ExpressionAttributeValues: {
+            ":gsi1pk": "GOALS",
+          },
+          ...(lastKey && { ExclusiveStartKey: lastKey }),
+        })
+      );
+      gsiItems.push(...(response.Items || []));
+      lastKey = response.LastEvaluatedKey;
+    } while (lastKey);
+
+    // Step 2: Merge with legacy scan fallback
+    const foundKeys = new Set(gsiItems.map((item) => item.pKey));
+    let legacyLastKey;
+    do {
+      const response = await dynamoDB.send(
+        new ScanCommand({
+          TableName: TABLE,
+          FilterExpression: "sKey = :sKey",
+          ExpressionAttributeValues: {
+            ":sKey": "GOALS",
+          },
+          ...(legacyLastKey && { ExclusiveStartKey: legacyLastKey }),
+        })
+      );
+      for (const item of response.Items || []) {
+        if (!foundKeys.has(item.pKey)) {
+          gsiItems.push(item);
+        }
+      }
+      legacyLastKey = response.LastEvaluatedKey;
+    } while (legacyLastKey);
+
+    // Filter live goals in-memory
+    const liveGoals = gsiItems.filter((item) => item.isLive === true);
+
     return {
       success: true,
       message: "Goal list fetched successfully",
-      data: result.Items.map((item) => ({
+      data: liveGoals.map((item) => ({
         id: item.pKey.split("#")[1],
         title: item.title,
         icon: item.icon,

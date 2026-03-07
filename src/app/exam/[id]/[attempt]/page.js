@@ -51,10 +51,30 @@ export default function Exam() {
   const { showDialog, confirmNavigation, cancelNavigation } =
     usePreventNavigation(true);
 
-  const now = () => {
+  const now = useCallback(() => {
     const elapsed = performance.now() - clientPerfAtFetch;
     return serverTimestamp + elapsed;
-  };
+  }, [clientPerfAtFetch, serverTimestamp]);
+
+  const handleQuestionSelection = useCallback(
+    ({ sectionIndex, questionIndex }) => {
+      setQuestionState((prev) => ({
+        ...prev,
+        selectedSectionIndex: sectionIndex,
+        selectedQuestionIndex: questionIndex,
+        questionNo:
+          questions?.sections?.reduce((acc, section, i) => {
+            if (i < sectionIndex) {
+              return acc + section.questions.length;
+            }
+            return acc;
+          }, 0) +
+          questionIndex +
+          1,
+      }));
+    },
+    [questions],
+  );
 
   const submitExam = useCallback(
     (endedBy) => {
@@ -85,7 +105,7 @@ export default function Exam() {
           enqueueSnackbar("Something went wrong", { variant: "error" });
         });
     },
-    [examID, attemptID, router]
+    [examID, attemptID, router],
   );
 
   const handleEndTest = useCallback(
@@ -97,7 +117,7 @@ export default function Exam() {
         submitExam(endedBy);
       }
     },
-    [submitExam]
+    [submitExam],
   );
 
   const [error, setError] = useState(null);
@@ -116,7 +136,14 @@ export default function Exam() {
           setClientPerfAtFetch(performance.now());
           await fetch(`${attemptInfo.blobSignedUrl}`)
             .then((res) => {
-              if (!res.ok) throw new Error("Failed to load question data");
+              if (!res.ok) {
+                console.error("Blob fetch failed:", {
+                  status: res.status,
+                  statusText: res.statusText,
+                  url: attemptInfo.blobSignedUrl,
+                });
+                throw new Error("Failed to load question data");
+              }
               return res.json();
             })
             .then((data) => {
@@ -133,7 +160,7 @@ export default function Exam() {
             .catch((err) => {
               console.error("Blob fetch error:", err);
               setError(
-                "Failed to load exam content. Please check your connection."
+                "Failed to load exam content. Please check your connection.",
               );
               setLoading(false);
             });
@@ -186,7 +213,7 @@ export default function Exam() {
         console.error("Failed to report violation:", error);
       }
     },
-    [examID, attemptID]
+    [examID, attemptID],
   );
 
   useEffect(() => {
@@ -247,7 +274,7 @@ export default function Exam() {
     setQuestionState((prev) => ({
       ...prev,
       sectionViseQuestionCount: questions?.sections?.map(
-        (section) => section.questions.length
+        (section) => section.questions.length,
       ),
     }));
   }, [questions]);
@@ -256,7 +283,7 @@ export default function Exam() {
     (questionID) => {
       return userAnswers.find((answer) => answer.questionID === questionID);
     },
-    [userAnswers]
+    [userAnswers],
   );
 
   useEffect(() => {
@@ -274,7 +301,7 @@ export default function Exam() {
           if (data.success) {
             setUserAnswers((prev) => {
               const newQuestionData = data.data.find(
-                (q) => q.questionID === questionID
+                (q) => q.questionID === questionID,
               );
               if (!newQuestionData) return prev;
 
@@ -304,10 +331,10 @@ export default function Exam() {
   ]);
 
   // Optimistic update helper
-  const updateLocalUserAnswer = (questionID, job, value) => {
+  const updateLocalUserAnswer = useCallback((questionID, job, value) => {
     setUserAnswers((prev) => {
       const existingIndex = prev.findIndex(
-        (ans) => ans.questionID === questionID
+        (ans) => ans.questionID === questionID,
       );
 
       // If not found, create a new entry locally
@@ -336,7 +363,7 @@ export default function Exam() {
       newAnswers[existingIndex] = currentAnswer;
       return newAnswers;
     });
-  };
+  }, []);
 
   // Direct Save Function (Debounce removed to prevent data loss on fast switching)
   const saveAnswer = useCallback(
@@ -362,56 +389,42 @@ export default function Exam() {
         })
         .catch((err) => console.error("Save answer error:", err));
     },
-    [examID, attemptID]
+    [examID, attemptID],
   );
 
-  const updateUserAnswer = (questionID, job, userAnswer) => {
-    const { selectedOptions, blankAnswers, timeSpentMs, markedForReview } =
-      userAnswer;
+  const updateUserAnswer = useCallback(
+    (questionID, job, userAnswer) => {
+      const { selectedOptions, blankAnswers, timeSpentMs, markedForReview } =
+        userAnswer;
 
-    // Optimistic Update
-    if (job === "selectedOptions") {
-      updateLocalUserAnswer(questionID, job, selectedOptions);
-    } else if (job === "blankAnswers") {
-      updateLocalUserAnswer(questionID, job, blankAnswers);
-    } else if (job === "markedForReview") {
-      updateLocalUserAnswer(questionID, job, markedForReview);
-    }
+      // Optimistic Update
+      if (job === "selectedOptions") {
+        updateLocalUserAnswer(questionID, job, selectedOptions);
+      } else if (job === "blankAnswers") {
+        updateLocalUserAnswer(questionID, job, blankAnswers);
+      } else if (job === "markedForReview") {
+        updateLocalUserAnswer(questionID, job, markedForReview);
+      }
 
-    if (job === "blankAnswers" || job === "selectedOptions") {
-      saveAnswer(questionID, job, selectedOptions, blankAnswers, timeSpentMs);
-    } else if (job === "markedForReview") {
-      // Mark for review usually doesn't need heavy debouncing but good to be consistent?
-      // Existing logic was direct fetch. Let's keep it direct or maybe debounce slightly?
-      // Keeping direct for now as it's a toggle.
-      fetch(`/api/exams/${examID}/${attemptID}/mark-unmark-question`, {
-        method: "POST",
-        body: JSON.stringify({ questionID, bookmarked: markedForReview }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setClientPerfAtFetch(performance.now());
-          setServerTimestamp(data.serverTimestamp);
-        });
-    }
-  };
-
-  const handleQuestionSelection = ({ sectionIndex, questionIndex }) => {
-    setQuestionState((prev) => ({
-      ...prev,
-      selectedSectionIndex: sectionIndex,
-      selectedQuestionIndex: questionIndex,
-      questionNo:
-        questions?.sections?.reduce((acc, section, i) => {
-          if (i < sectionIndex) {
-            return acc + section.questions.length;
-          }
-          return acc;
-        }, 0) +
-        questionIndex +
-        1,
-    }));
-  };
+      if (job === "blankAnswers" || job === "selectedOptions") {
+        saveAnswer(questionID, job, selectedOptions, blankAnswers, timeSpentMs);
+      } else if (job === "markedForReview") {
+        // Mark for review usually doesn't need heavy debouncing but good to be consistent?
+        // Existing logic was direct fetch. Let's keep it direct or maybe debounce slightly?
+        // Keeping direct for now as it's a toggle.
+        fetch(`/api/exams/${examID}/${attemptID}/mark-unmark-question`, {
+          method: "POST",
+          body: JSON.stringify({ questionID, bookmarked: markedForReview }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            setClientPerfAtFetch(performance.now());
+            setServerTimestamp(data.serverTimestamp);
+          });
+      }
+    },
+    [updateLocalUserAnswer, saveAnswer, examID, attemptID],
+  );
 
   const handleOnNextQuestion = useCallback(() => {
     const sections = questions?.sections || [];
@@ -478,38 +491,6 @@ export default function Exam() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleOnNextQuestion, handleOnPreviousQuestion]);
-
-  function toggleFullScreen() {
-    const docEl = document.documentElement;
-    const fsEnabled =
-      docEl.requestFullscreen ||
-      document.fullscreenEnabled ||
-      docEl.webkitRequestFullscreen ||
-      docEl.msRequestFullscreen;
-
-    if (!fsEnabled) {
-      console.warn("Fullscreen not enabled or supported by this browser");
-      return;
-    }
-
-    if (!document.fullscreenElement) {
-      const request =
-        docEl.requestFullscreen ||
-        docEl.webkitRequestFullscreen ||
-        docEl.msRequestFullscreen;
-      if (request) {
-        request.call(docEl);
-      }
-    } else {
-      const exit =
-        document.exitFullscreen ||
-        document.webkitExitFullscreen ||
-        document.msExitFullscreen;
-      if (exit) {
-        exit.call(document);
-      }
-    }
-  }
 
   if (error) {
     return (
@@ -664,6 +645,10 @@ export default function Exam() {
                 fullWidth
                 variant="contained"
                 onClick={() => submitExam("USER")}
+                disabled={isSubmitting}
+                startIcon={
+                  isSubmitting && <CircularProgress size={20} color="inherit" />
+                }
                 sx={{
                   borderRadius: "10px",
                   height: "48px",
@@ -673,7 +658,7 @@ export default function Exam() {
                   "&:hover": { bgcolor: "var(--primary-color-dark)" },
                 }}
               >
-                Submit Now
+                {isSubmitting ? "Submitting..." : "Submit Now"}
               </Button>
             </Stack>
           </Box>
@@ -720,7 +705,8 @@ export default function Exam() {
               }
               userAnswer={getUserAnswer(
                 questions?.sections?.[questionState.selectedSectionIndex]
-                  ?.questions?.[questionState.selectedQuestionIndex]?.questionID
+                  ?.questions?.[questionState.selectedQuestionIndex]
+                  ?.questionID,
               )}
               updateUserAnswer={updateUserAnswer}
               handleOnNextQuestion={handleOnNextQuestion}
@@ -782,6 +768,38 @@ export default function Exam() {
       </Box>
     </Stack>
   );
+}
+
+function toggleFullScreen() {
+  const docEl = document.documentElement;
+  const fsEnabled =
+    docEl.requestFullscreen ||
+    document.fullscreenEnabled ||
+    docEl.webkitRequestFullscreen ||
+    docEl.msRequestFullscreen;
+
+  if (!fsEnabled) {
+    console.warn("Fullscreen not enabled or supported by this browser");
+    return;
+  }
+
+  if (!document.fullscreenElement) {
+    const request =
+      docEl.requestFullscreen ||
+      docEl.webkitRequestFullscreen ||
+      docEl.msRequestFullscreen;
+    if (request) {
+      request.call(docEl);
+    }
+  } else {
+    const exit =
+      document.exitFullscreen ||
+      document.webkitExitFullscreen ||
+      document.msExitFullscreen;
+    if (exit) {
+      exit.call(document);
+    }
+  }
 }
 
 function FullscreenPrompt({ onEnable }) {

@@ -6,22 +6,15 @@ import {
   Typography,
   DialogContent,
   Popover,
-  InputBase,
-  Badge,
-  Avatar,
 } from "@mui/material";
 import {
   ArrowBackIosRounded,
-  Notifications,
   Add,
   Close,
   East,
-  Search,
-  KeyboardArrowDown,
   ExpandMore,
 } from "@mui/icons-material";
 import Image from "next/image";
-import mCoins from "@/public/icons/mCoins.svg";
 import PlansDialogBox from "../PlansDialogBox/PlansDialogBox";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
@@ -161,9 +154,9 @@ export default function Header({ button = [], back }) {
             alignItems: "center",
             flexDirection: "row",
             backgroundColor: "var(--white)",
-            padding: "0 24px",
+            padding: "0 16px",
             borderRadius: { xs: "0px", md: "10px" },
-            height: "70px",
+            height: "56px",
             gap: "20px",
           }}
         >
@@ -273,8 +266,8 @@ export default function Header({ button = [], back }) {
                 sx: {
                   mt: 1.5,
                   width: "240px",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  borderRadius: "10px",
+                  boxShadow: "none",
                   border: "1px solid var(--border-color)",
                   padding: "8px",
                 },
@@ -354,45 +347,6 @@ export default function Header({ button = [], back }) {
               </Stack>
             </Popover>
           </Stack>
-          {/* Center Section: Search Bar - HIDDEN */}
-          {/* <Stack
-            sx={{
-              flex: 1,
-              maxWidth: "400px",
-              display: { xs: "none", md: "flex" },
-            }}
-          >
-            <Stack
-              direction="row"
-              alignItems="center"
-              sx={{
-                backgroundColor: "var(--sec-color-acc-2)",
-                borderRadius: "12px",
-                padding: "8px 16px",
-                border: "1px solid transparent",
-                transition: "all 0.2s",
-                "&:focus-within": {
-                  backgroundColor: "var(--white)",
-                  borderColor: "var(--primary-color)",
-                  boxShadow: "0 0 0 3px var(--primary-color-acc-2)",
-                },
-              }}
-            >
-              <Search sx={{ color: "var(--text3)", mr: 1 }} />
-              <InputBase
-                placeholder="Search for courses, exams..."
-                sx={{
-                  width: "100%",
-                  fontSize: "14px",
-                  color: "var(--text1)",
-                  "& input::placeholder": {
-                    color: "var(--text3)",
-                    opacity: 1,
-                  },
-                }}
-              />
-            </Stack>
-          </Stack> */}
           {/* Right Section: Actions */}
           <Stack flexDirection="row" alignItems="center" gap="20px">
             {/* Additional Buttons */}
@@ -403,48 +357,6 @@ export default function Header({ button = [], back }) {
                 ))}
               </Stack>
             )}
-
-            {/* Gamification & Notifications - HIDDEN */}
-            {/* <Stack
-              direction="row"
-              alignItems="center"
-              gap="16px"
-              sx={{ display: { xs: "none", md: "flex" } }}
-            >
-              <Stack
-                direction="row"
-                alignItems="center"
-                gap="6px"
-                sx={{
-                  backgroundColor: "var(--sec-color-acc-1)",
-                  padding: "6px 12px",
-                  borderRadius: "20px",
-                  border: "1px solid var(--sec-color-acc-2)",
-                }}
-              >
-                <Image src={mCoins} alt="Coins" width={20} height={20} />
-                <Typography
-                  sx={{
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "var(--sec-color)",
-                  }}
-                >
-                  100
-                </Typography>
-              </Stack>
-
-              <IconButton
-                sx={{
-                  color: "var(--text2)",
-                  "&:hover": { color: "var(--primary-color)" },
-                }}
-              >
-                <Badge color="error" variant="dot">
-                  <Notifications />
-                </Badge>
-              </IconButton>
-            </Stack> */}
 
             {/* Plan Status */}
             <Button
@@ -529,8 +441,7 @@ export default function Header({ button = [], back }) {
               "& .MuiDialog-paper": {
                 width: "1200px",
                 maxWidth: { xs: "95%", md: "1200px" },
-                borderRadius: "20px",
-                boxShadow: "0 24px 48px rgba(0,0,0,0.12)",
+                borderRadius: "10px",
               },
             }}
           >

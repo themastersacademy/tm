@@ -33,19 +33,17 @@ export default function GoalHead({ title, icon, isPro, bannerImage }) {
 
   return (
     <>
-      {/* Hero Header with Cover Photo */}
       <Box
         sx={{
           width: "100%",
           maxWidth: "1200px",
           position: "relative",
-          borderRadius: "24px",
+          borderRadius: "10px",
           overflow: "hidden",
-          height: { xs: "200px", md: "280px" },
-          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          height: { xs: "180px", md: "240px" },
         }}
       >
-        {/* Background Image */}
+        {/* Background */}
         {bannerImage ? (
           <Box
             sx={{
@@ -74,7 +72,7 @@ export default function GoalHead({ title, icon, isPro, bannerImage }) {
           />
         )}
 
-        {/* Gradient Overlay */}
+        {/* Overlay */}
         <Box
           sx={{
             position: "absolute",
@@ -83,8 +81,8 @@ export default function GoalHead({ title, icon, isPro, bannerImage }) {
             width: "100%",
             height: "100%",
             background: bannerImage
-              ? "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.6) 100%)"
-              : "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 100%)",
+              ? "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 100%)"
+              : "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.2) 100%)",
           }}
         />
 
@@ -94,11 +92,11 @@ export default function GoalHead({ title, icon, isPro, bannerImage }) {
             position: "relative",
             zIndex: 1,
             height: "100%",
-            padding: { xs: "20px", md: "32px" },
+            padding: { xs: "16px", md: "20px 24px" },
             justifyContent: "space-between",
           }}
         >
-          {/* Top Section - Back Button */}
+          {/* Top - Back Button */}
           <Stack
             direction="row"
             justifyContent="space-between"
@@ -106,19 +104,20 @@ export default function GoalHead({ title, icon, isPro, bannerImage }) {
           >
             <Button
               onClick={() => router.back()}
-              startIcon={<ArrowBackIosRounded sx={{ fontSize: "16px" }} />}
+              startIcon={<ArrowBackIosRounded sx={{ fontSize: "14px" }} />}
               sx={{
                 color: "white",
                 textTransform: "none",
                 fontWeight: 600,
-                fontSize: "14px",
-                backgroundColor: "rgba(255,255,255,0.2)",
+                fontSize: "13px",
+                backgroundColor: "rgba(255,255,255,0.15)",
                 backdropFilter: "blur(10px)",
-                padding: "8px 16px",
-                borderRadius: "12px",
+                padding: "6px 14px",
+                borderRadius: "8px",
                 "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.3)",
+                  backgroundColor: "rgba(255,255,255,0.25)",
                 },
+                transition: "all 0.15s ease",
               }}
             >
               Back
@@ -127,23 +126,20 @@ export default function GoalHead({ title, icon, isPro, bannerImage }) {
             {isPro && (
               <Button
                 variant="contained"
-                endIcon={<East />}
+                endIcon={<East sx={{ fontSize: 16 }} />}
                 onClick={handlePlansDialogOpen}
                 sx={{
                   textTransform: "none",
                   backgroundColor: "#FFD700",
                   color: "#000",
                   fontWeight: 700,
-                  fontSize: "14px",
-                  padding: "10px 20px",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 12px rgba(255, 215, 0, 0.4)",
+                  fontSize: "13px",
+                  padding: "6px 16px",
+                  borderRadius: "8px",
                   "&:hover": {
                     backgroundColor: "#FFC700",
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 6px 16px rgba(255, 215, 0, 0.5)",
                   },
-                  transition: "all 0.3s ease",
+                  transition: "all 0.15s ease",
                 }}
               >
                 Get Pro
@@ -151,39 +147,34 @@ export default function GoalHead({ title, icon, isPro, bannerImage }) {
             )}
           </Stack>
 
-          {/* Bottom Section - Title & Icon */}
-          <Stack direction="row" alignItems="center" gap="20px">
-            {/* Goal Icon */}
+          {/* Bottom - Title & Icon */}
+          <Stack direction="row" alignItems="center" gap="14px">
             <Box
               sx={{
-                width: { xs: "64px", md: "80px" },
-                height: { xs: "64px", md: "80px" },
-                borderRadius: "20px",
+                width: { xs: "48px", md: "56px" },
+                height: { xs: "48px", md: "56px" },
+                borderRadius: "10px",
                 background: "rgba(255,255,255,0.95)",
                 backdropFilter: "blur(10px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
               }}
             >
               <Image
                 src={getIcon(icon)}
                 alt="goal icon"
-                width={40}
-                height={40}
+                width={28}
+                height={28}
               />
             </Box>
 
-            {/* Goal Title */}
-            <Stack gap="8px" flex={1}>
+            <Stack gap="4px" flex={1}>
               <Typography
                 sx={{
                   color: "white",
-                  fontSize: { xs: "24px", md: "32px" },
-                  fontWeight: 800,
-                  letterSpacing: "-0.5px",
-                  textShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                  fontSize: { xs: "18px", md: "22px" },
+                  fontWeight: 700,
                   lineHeight: 1.2,
                 }}
               >
@@ -191,10 +182,9 @@ export default function GoalHead({ title, icon, isPro, bannerImage }) {
               </Typography>
               <Typography
                 sx={{
-                  color: "rgba(255,255,255,0.9)",
-                  fontSize: { xs: "13px", md: "15px" },
+                  color: "rgba(255,255,255,0.85)",
+                  fontSize: "13px",
                   fontWeight: 500,
-                  textShadow: "0 1px 4px rgba(0,0,0,0.3)",
                 }}
               >
                 Master your learning journey

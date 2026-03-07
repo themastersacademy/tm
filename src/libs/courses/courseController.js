@@ -16,7 +16,7 @@ export async function getCourse({ goalID, courseID }) {
       ":isLive": true,
     },
     ProjectionExpression:
-      "pKey, title, description, #duration, lessons, thumbnail, #language, lessonIDs, subscription, createdAt, updatedAt",
+      "pKey, title, description, #duration, lessons, thumbnail, #language, lessonIDs, sections, subscription, createdAt, updatedAt",
     ExpressionAttributeNames: {
       "#duration": "duration",
       "#language": "language",

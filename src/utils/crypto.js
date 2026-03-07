@@ -1,4 +1,4 @@
-"server only";
+import "server-only";
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -27,18 +27,14 @@ export async function hashPassword(password) {
 }
 
 /**
- * Generates a random OTP (One-Time Password).
- * The OTP is a 4-digit number.
+ * Generates a cryptographically secure random OTP (One-Time Password).
+ * The OTP is a 6-digit number.
  *
  * @returns {string} - The generated OTP.
  */
 export function generateOTP() {
-  const digits = "0123456789";
-  let otp = "";
-  for (let i = 0; i < 4; i++) {
-    otp += digits[Math.floor(Math.random() * 10)];
-  }
-  return otp;
+  const { randomInt } = require("crypto");
+  return String(randomInt(100000, 1000000));
 }
 
 /**

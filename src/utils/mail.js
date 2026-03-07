@@ -1,33 +1,22 @@
-import nodemailer from "nodemailer";
+import { SendEmailCommand } from "@aws-sdk/client-ses";
+import { ses } from "@/src/utils/awsAgent";
+
+const SES_FROM_EMAIL = "no-reply@classory.app";
 
 export const sendOTPToMail = async ({ to, otp }) => {
-  const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    name: process.env.MAIL_NAME,
-    port: process.env.MAIL_PORT,
-    secure: true, // true for 465, false for other ports
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASSWORD,
+  const params = {
+    Source: `The Masters Academy <${SES_FROM_EMAIL}>`,
+    Destination: {
+      ToAddresses: [to],
     },
-  });
-
-  await new Promise((resolve, reject) => {
-    // verify connection configuration
-    transporter.verify(function (error, success) {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(success);
-      }
-    });
-  });
-
-  const mailInfo = {
-    from: `The Masters Academy <${process.env.MAIL_USER}>`,
-    to, // recipient email address
-    subject: "Verify Your Account - The Masters Academy",
-    html: `
+    Message: {
+      Subject: {
+        Data: "Verify Your Account - The Masters Academy",
+        Charset: "UTF-8",
+      },
+      Body: {
+        Html: {
+          Data: `
       <!DOCTYPE html>
       <html lang="en">
         <head>
@@ -36,7 +25,7 @@ export const sendOTPToMail = async ({ to, otp }) => {
           <style>
             body {
               font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-              background-color: #FEECC9; /* Accent Color 1 */
+              background-color: #FEECC9;
               margin: 0;
               padding: 0;
             }
@@ -49,7 +38,7 @@ export const sendOTPToMail = async ({ to, otp }) => {
               overflow: hidden;
             }
             .header {
-              background-color: #187163; /* Primary Color */
+              background-color: #187163;
               color: #ffffff;
               padding: 20px;
               text-align: center;
@@ -73,7 +62,7 @@ export const sendOTPToMail = async ({ to, otp }) => {
               font-size: 32px;
               font-weight: bold;
               color: #ffffff;
-              background-color: #FF8851; /* Accent Color 2 */
+              background-color: #FF8851;
               padding: 20px 40px;
               border-radius: 6px;
               letter-spacing: 3px;
@@ -82,11 +71,11 @@ export const sendOTPToMail = async ({ to, otp }) => {
             }
             .validity {
               font-size: 14px;
-              color: #EB4646; /* Strong red - kept as is */
+              color: #EB4646;
               margin-bottom: 20px;
             }
             .footer {
-              background-color: #FEA800; /* Secondary Color */
+              background-color: #FEA800;
               color: #ffffff;
               text-align: center;
               padding: 15px;
@@ -118,23 +107,17 @@ export const sendOTPToMail = async ({ to, otp }) => {
               </p>
             </div>
             <div class="footer">
-              &copy; ${new Date().getFullYear()} The Masters Academy. All rights reserved.<br />
-              This email was sent through Incrix CRM.
+              &copy; ${new Date().getFullYear()} The Masters Academy. All rights reserved.
             </div>
           </div>
         </body>
       </html>
     `,
+          Charset: "UTF-8",
+        },
+      },
+    },
   };
 
-  await new Promise((resolve, reject) => {
-    transporter.sendMail(mailInfo, function (error, info) {
-      if (error) {
-        reject(error);
-        return error;
-      } else {
-        resolve(info);
-      }
-    });
-  });
+  await ses.send(new SendEmailCommand(params));
 };

@@ -10,35 +10,31 @@ export default function InsightCard() {
       justifyContent="space-between"
       sx={{
         border: "1px solid var(--border-color)",
-        borderRadius: "24px",
+        borderRadius: "10px",
         backgroundColor: "var(--white)",
-        minHeight: "330px",
         width: "100%",
         overflow: "hidden",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
-        transition: "all 0.3s ease",
+        transition: "all 0.15s ease",
         "&:hover": {
-          boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+          borderColor: "var(--primary-color)",
         },
       }}
     >
       <Stack
         sx={{
-          padding: { xs: "32px", md: "48px" },
+          padding: { xs: "20px", md: "24px" },
           width: { xs: "100%", md: "55%" },
-          gap: "32px",
+          gap: "20px",
           justifyContent: "center",
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(249,250,251,1) 100%)",
         }}
       >
-        <Stack gap="16px">
+        <Stack gap="12px">
           <Stack direction="row" alignItems="center" gap={1}>
-            <AutoAwesome sx={{ color: "var(--primary-color)", fontSize: 20 }} />
+            <AutoAwesome sx={{ color: "var(--primary-color)", fontSize: 18 }} />
             <Typography
               sx={{
                 fontFamily: "Lato",
-                fontSize: "14px",
+                fontSize: "12px",
                 fontWeight: 700,
                 color: "var(--primary-color)",
                 textTransform: "uppercase",
@@ -51,9 +47,9 @@ export default function InsightCard() {
           <Typography
             sx={{
               fontFamily: "Lato",
-              fontSize: { xs: "24px", md: "32px" },
-              fontWeight: "800",
-              lineHeight: 1.2,
+              fontSize: { xs: "18px", md: "20px" },
+              fontWeight: 700,
+              lineHeight: 1.3,
               color: "var(--text1)",
             }}
           >
@@ -62,8 +58,8 @@ export default function InsightCard() {
           <Typography
             sx={{
               fontFamily: "Lato",
-              fontSize: { xs: "16px", md: "18px" },
-              lineHeight: "1.6",
+              fontSize: "13px",
+              lineHeight: "1.5",
               color: "var(--text3)",
             }}
           >
@@ -75,7 +71,7 @@ export default function InsightCard() {
 
         <Stack
           flexDirection={{ xs: "column", sm: "row" }}
-          gap="20px"
+          gap="16px"
           sx={{ marginTop: "auto" }}
         >
           {[
@@ -87,24 +83,15 @@ export default function InsightCard() {
               key={index}
               flexDirection="row"
               alignItems="center"
-              gap="12px"
+              gap="8px"
             >
-              <Box
-                sx={{
-                  bgcolor: "var(--sec-color-acc-1)",
-                  borderRadius: "50%",
-                  p: "4px",
-                  display: "flex",
-                }}
-              >
-                <CheckCircle
-                  sx={{ color: "var(--primary-color)", fontSize: "16px" }}
-                />
-              </Box>
+              <CheckCircle
+                sx={{ color: "var(--primary-color)", fontSize: 16 }}
+              />
               <Typography
                 sx={{
                   fontFamily: "Lato",
-                  fontSize: "15px",
+                  fontSize: "12px",
                   fontWeight: 600,
                   color: "var(--text2)",
                 }}

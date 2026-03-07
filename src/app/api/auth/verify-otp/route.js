@@ -1,10 +1,16 @@
 import { verifyOTP } from "@/src/libs/auth/auth";
+import { checkRateLimit, getClientIP, rateLimitResponse } from "@/src/utils/rateLimit";
 
 export async function POST(request) {
+  // Rate limit: 5 OTP attempts per minute per IP
+  const ip = getClientIP(request);
+  const { allowed, retryAfterMs } = checkRateLimit(`verify-otp:${ip}`, 5, 60000);
+  if (!allowed) return rateLimitResponse(retryAfterMs);
+
   const { email, otp } = await request.json();
   if (!email || !otp) {
     return Response.json(
-      { success: false, error: "Email and OTP are required" },
+      { success: false, message: "Email and OTP are required" },
       { status: 400 }
     );
   }
@@ -14,7 +20,7 @@ export async function POST(request) {
   } catch (error) {
     return Response.json(
       { success: false, message: error.message },
-      { status: 500 }
+      { status: 400 }
     );
   }
 }

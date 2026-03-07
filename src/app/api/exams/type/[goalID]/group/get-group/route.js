@@ -3,14 +3,8 @@ import { getSession } from "@/src/utils/serverSession";
 
 export async function POST(req, { params }) {
   const session = await getSession();
-  if (!session) {
-    return Response.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 }
-    );
+  if (!session?.isAuthenticated) {
+    return session.unauthorized("Please log in to continue");
   }
   const { goalID } = await params;
   const { groupID } = await req.json();

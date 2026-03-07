@@ -24,7 +24,7 @@ export default function StyledSelect({
   };
 
   return (
-    <FormControl size="small" disabled={disable} {...sx}>
+    <FormControl size="small" disabled={disable} sx={sx}>
       <InputLabel
         sx={{
           fontFamily: "var(--font-geist-sans)",
