@@ -13,13 +13,17 @@ export default function ContinueWithGoogle({
       onClick={() => signIn("google")}
       sx={{
         textTransform: "none",
-        borderRadius: "4px",
-        fontFamily: "Lato",
-        fontSize: "18px",
-        height: "40px",
+        borderRadius: "8px",
+        fontSize: "13px",
+        fontWeight: 600,
+        height: "36px",
         width: "100%",
-        color: "var(--primary-color)",
-        borderColor: "var(--primary-color)",
+        color: "var(--text1)",
+        borderColor: "var(--border-color)",
+        "&:hover": {
+          borderColor: "var(--primary-color)",
+          backgroundColor: "rgba(24, 113, 99, 0.04)",
+        },
       }}
       startIcon={
         isGoogleLoading ? (

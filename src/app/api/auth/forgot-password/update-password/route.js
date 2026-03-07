@@ -28,9 +28,10 @@ export async function POST(request) {
     const result = await updateUserPassword({ password, token });
     return Response.json(result);
   } catch (error) {
+    const message = error.message || "Password update failed. Please try again.";
     return Response.json(
-      { success: false, message: "Password update failed. Please try again." },
-      { status: 500 }
+      { success: false, message },
+      { status: 400 }
     );
   }
 }

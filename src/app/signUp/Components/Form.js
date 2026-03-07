@@ -71,31 +71,31 @@ function Form({
   return (
     <Stack
       sx={{
-        width: { xs: "300px", sm: "350px", md: "350px" },
-        gap: 2,
+        width: "100%",
+        gap: "14px",
         justifyContent: "center",
         alignItems: "center",
       }}
     >
       {/* Email Section */}
-      <Stack gap={1}>
-        <Stack direction="row" justifyContent="space-between">
+      <Stack gap={0.5} width="100%">
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography
-            sx={{ fontFamily: "Lato", fontSize: "16px", fontWeight: 500 }}
+            sx={{ fontSize: "13px", fontWeight: 600, color: "var(--text2)" }}
           >
             Email
           </Typography>
           <Typography
             sx={{
-              fontFamily: "Lato",
-              fontSize: "16px",
+              fontSize: "12px",
               fontWeight: 500,
-              color: "var(--sec-color)",
+              color: "var(--primary-color)",
               cursor: "pointer",
+              "&:hover": { textDecoration: "underline" },
             }}
             onClick={() => router.push("/signIn")}
           >
-            Login existing account
+            Already have an account?
           </Typography>
         </Stack>
         <StyledTextField
@@ -103,14 +103,14 @@ function Form({
           value={email}
           onChange={handleEmailChange}
           onKeyDown={handleKeyDown}
-          sx={{ width: { xs: "300px", sm: "350px", md: "350px" } }}
+          sx={{ width: "100%" }}
         />
       </Stack>
 
       {/* Password Section */}
-      <Stack gap={1} width="100%">
+      <Stack gap={0.5} width="100%">
         <Typography
-          sx={{ fontFamily: "Lato", fontSize: "16px", fontWeight: 500 }}
+          sx={{ fontSize: "13px", fontWeight: 600, color: "var(--text2)" }}
         >
           Password
         </Typography>
@@ -210,32 +210,32 @@ function Form({
       />
 
       {/* Get OTP Button */}
-      <Stack
-        gap={1}
-        width={{ xs: "300px", sm: "350px", md: "350px" }}
-        alignItems="center"
-      >
+      <Stack gap="12px" width="100%" alignItems="center">
         <Button
           variant="contained"
           onClick={handleGetOTP}
           disableElevation
           disabled={isButtonDisabled}
           startIcon={
-            isLoading ? <CircularProgress size={20} color="inherit" /> : null
+            isLoading ? <CircularProgress size={16} color="inherit" /> : null
           }
           sx={{
             textTransform: "none",
             backgroundColor: "var(--primary-color)",
-            borderRadius: "4px",
-            fontFamily: "Lato",
-            fontSize: "18px",
-            height: "40px",
-            width: { xs: "300px", sm: "350px", md: "350px" },
+            borderRadius: "8px",
+            fontSize: "13px",
+            fontWeight: 600,
+            height: "36px",
+            width: "100%",
           }}
         >
           Get OTP
         </Button>
-        <Typography color="var(--text4)">Or</Typography>
+        <Stack direction="row" alignItems="center" width="100%" spacing={1.5}>
+          <Stack sx={{ height: "1px", bgcolor: "var(--border-color)", flex: 1 }} />
+          <Typography sx={{ color: "var(--text4)", fontSize: "12px" }}>or</Typography>
+          <Stack sx={{ height: "1px", bgcolor: "var(--border-color)", flex: 1 }} />
+        </Stack>
         <ContinueWithGoogle
           isButtonDisabled={isLoading || !agreedToTerms}
           isLoading={isLoading}

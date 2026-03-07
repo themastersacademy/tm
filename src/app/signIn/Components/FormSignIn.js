@@ -141,8 +141,8 @@ const FormSignIn = memo(() => {
   return (
     <Stack
       sx={{
-        width: { xs: "300px", sm: "350px", md: "350px" },
-        gap: "20px",
+        width: "100%",
+        gap: "16px",
         justifyContent: "center",
         alignItems: "center",
       }}
@@ -150,28 +150,28 @@ const FormSignIn = memo(() => {
       onSubmit={handleCredentialsLogin}
       noValidate
     >
-      <Stack gap={1} width="100%">
-        <Stack flexDirection="row" justifyContent="space-between">
+      <Stack gap={0.5} width="100%">
+        <Stack flexDirection="row" justifyContent="space-between" alignItems="center">
           <Typography
             sx={{
-              fontFamily: "Lato",
-              fontSize: "16px",
-              fontWeight: "500",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "var(--text2)",
             }}
           >
             Email
           </Typography>
           <Typography
             sx={{
-              fontFamily: "Lato",
-              fontSize: "16px",
-              fontWeight: "500",
-              color: "var(--sec-color)",
+              fontSize: "12px",
+              fontWeight: 500,
+              color: "var(--primary-color)",
               cursor: "pointer",
+              "&:hover": { textDecoration: "underline" },
             }}
             onClick={navigateToSignUp}
           >
-            Create new account
+            Create account
           </Typography>
         </Stack>
         <StyledTextField
@@ -183,12 +183,12 @@ const FormSignIn = memo(() => {
           autoComplete="email"
         />
       </Stack>
-      <Stack gap={1} width="100%">
+      <Stack gap={0.5} width="100%">
         <Typography
           sx={{
-            fontFamily: "Lato",
-            fontSize: "16px",
-            fontWeight: "500",
+            fontSize: "13px",
+            fontWeight: 600,
+            color: "var(--text2)",
           }}
         >
           Password
@@ -203,15 +203,16 @@ const FormSignIn = memo(() => {
         />
         <Typography
           sx={{
-            fontFamily: "Lato",
-            fontSize: "16px",
-            color: "var(--sec-color)",
+            fontSize: "12px",
+            color: "var(--primary-color)",
             cursor: "pointer",
             alignSelf: "flex-end",
+            mt: 0.5,
+            "&:hover": { textDecoration: "underline" },
           }}
           onClick={() => router.push("/forgot-password")}
         >
-          Forgot Password
+          Forgot Password?
         </Typography>
       </Stack>
 
@@ -222,10 +223,10 @@ const FormSignIn = memo(() => {
         sx={{
           textTransform: "none",
           backgroundColor: "var(--primary-color)",
-          borderRadius: "4px",
-          fontFamily: "Lato",
-          fontSize: "18px",
-          height: "40px",
+          borderRadius: "8px",
+          fontSize: "13px",
+          fontWeight: 600,
+          height: "36px",
           width: "100%",
           "&:disabled": {
             backgroundColor: "#e0e0e0",
@@ -234,19 +235,19 @@ const FormSignIn = memo(() => {
         disableElevation
         startIcon={
           isLoading ? (
-            <CircularProgress size={24} sx={{ color: "white" }} />
+            <CircularProgress size={18} sx={{ color: "white" }} />
           ) : null
         }
       >
-        Continue
+        Sign In
       </Button>
 
-      <Stack direction="row" alignItems="center" width="100%" spacing={2}>
+      <Stack direction="row" alignItems="center" width="100%" spacing={1.5}>
         <Stack
           sx={{ height: "1px", bgcolor: "var(--border-color)", flex: 1 }}
         />
-        <Typography color="var(--text4)" sx={{ fontFamily: "Lato" }}>
-          Or
+        <Typography sx={{ color: "var(--text4)", fontSize: "12px" }}>
+          or
         </Typography>
         <Stack
           sx={{ height: "1px", bgcolor: "var(--border-color)", flex: 1 }}
@@ -259,26 +260,26 @@ const FormSignIn = memo(() => {
         onClick={handleGoogleSignIn}
         sx={{
           textTransform: "none",
-          borderRadius: "4px",
-          fontFamily: "Lato",
-          fontSize: "18px",
-          height: "40px",
+          borderRadius: "8px",
+          fontSize: "13px",
+          fontWeight: 600,
+          height: "36px",
           width: "100%",
-          color: "var(--primary-color)",
-          borderColor: "var(--primary-color)",
+          color: "var(--text1)",
+          borderColor: "var(--border-color)",
           "&:hover": {
-            borderColor: "var(--primary-color-dark)",
-            backgroundColor: "var(--sec-color-acc-2)",
+            borderColor: "var(--primary-color)",
+            backgroundColor: "rgba(24, 113, 99, 0.04)",
           },
         }}
         startIcon={
           isGoogleLoading ? (
             <CircularProgress
-              size={20}
+              size={16}
               sx={{ color: "var(--primary-color)" }}
             />
           ) : (
-            <GoogleIcon />
+            <GoogleIcon sx={{ fontSize: "18px" }} />
           )
         }
       >

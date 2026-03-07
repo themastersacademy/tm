@@ -43,15 +43,15 @@ function FormOTP({ otp, setOtp, handleVerifyOTP, isLoading, handleResendOTP }) {
   }, [handleResendOTP]);
 
   return (
-    <Stack sx={{ width: "350px", gap: 2, justifyContent: "center" }}>
+    <Stack sx={{ width: "100%", gap: "14px", justifyContent: "center" }}>
       <Stack gap={2}>
-        <Typography sx={{ fontFamily: "Lato", fontSize: "16px", fontWeight: 500 }}>
+        <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "var(--text2)" }}>
           Enter OTP
         </Typography>
         <MuiOtpInput
           value={otp}
           onChange={setOtp}
-          length={4}
+          length={6}
           autoFocus
           onComplete={handleComplete}
           validateChar={(value) => !isNaN(Number(value))}
@@ -90,16 +90,16 @@ function FormOTP({ otp, setOtp, handleVerifyOTP, isLoading, handleResendOTP }) {
       <Button
         variant="contained"
         onClick={() => handleVerifyOTP(otp)}
-        disabled={isLoading || otp.length !== 4}
+        disabled={isLoading || otp.length !== 6}
         disableElevation
         startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
         sx={{
           textTransform: "none",
           backgroundColor: "var(--primary-color)",
-          borderRadius: "4px",
-          fontFamily: "Lato",
-          fontSize: "18px",
-          height: "40px",
+          borderRadius: "8px",
+          fontSize: "13px",
+          fontWeight: 600,
+          height: "36px",
           width: "100%",
         }}
       >

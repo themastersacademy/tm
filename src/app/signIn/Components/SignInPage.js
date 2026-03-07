@@ -1,5 +1,5 @@
 "use client";
-import { Stack, Typography, Box } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import Image from "next/image";
 import FormSignIn from "./FormSignIn";
 import mastersLogo from "@/public/images/masters-logo.svg";
@@ -22,51 +22,35 @@ export default function SignInPage() {
           justifyContent: "center",
           alignItems: "center",
           width: "100%",
-          maxWidth: "450px",
-          padding: { xs: "20px", md: "40px" },
-          backgroundColor: { xs: "transparent", md: "white" },
-          borderRadius: { xs: "0", md: "16px" },
-          boxShadow: { xs: "none", md: "0px 4px 20px rgba(0, 0, 0, 0.05)" },
+          maxWidth: "400px",
+          padding: { xs: "20px", md: "32px" },
         }}
       >
         <Stack
           sx={{
-            width: { xs: "80px", md: "100px" },
-            height: { xs: "80px", md: "100px" },
-            backgroundColor: "var(--border-color)",
-            borderRadius: "50%",
+            width: "48px",
+            height: "48px",
+            backgroundColor: "rgba(24, 113, 99, 0.08)",
+            borderRadius: "10px",
             justifyContent: "center",
             alignItems: "center",
-            mb: 2,
+            mb: 2.5,
           }}
         >
-          <Stack
-            sx={{
-              width: { xs: "50px", md: "64px" },
-              height: { xs: "50px", md: "64px" },
-              backgroundColor: "var(--white)",
-              borderRadius: "50%",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0px 2px 8px rgba(0,0,0,0.1)",
-            }}
-          >
-            <Image
-              src={mastersLogo}
-              alt="logo"
-              width={40}
-              height={40}
-              style={{ width: "auto", height: "auto", maxWidth: "60%" }}
-            />
-          </Stack>
+          <Image
+            src={mastersLogo}
+            alt="logo"
+            width={28}
+            height={28}
+            style={{ width: "auto", height: "auto", maxWidth: "28px" }}
+          />
         </Stack>
         <Typography
           sx={{
-            fontFamily: "Lato",
-            fontSize: { xs: "24px", md: "28px" },
-            fontWeight: "700",
+            fontSize: "20px",
+            fontWeight: 700,
             color: "var(--text1)",
-            marginBottom: "8px",
+            marginBottom: "4px",
             textAlign: "center",
           }}
         >
@@ -74,10 +58,9 @@ export default function SignInPage() {
         </Typography>
         <Typography
           sx={{
-            fontFamily: "Lato",
-            fontSize: "14px",
+            fontSize: "13px",
             color: "var(--text3)",
-            marginBottom: "32px",
+            marginBottom: "24px",
             textAlign: "center",
           }}
         >
@@ -87,25 +70,17 @@ export default function SignInPage() {
       </Stack>
 
       <Stack
-        flexDirection={{ xs: "column", md: "row" }}
-        width="100%"
-        justifyContent="center"
+        direction="row"
         alignItems="center"
-        gap="8px"
+        gap="6px"
         sx={{
-          fontFamily: "Lato",
-          padding: "20px",
           position: "absolute",
-          bottom: 0,
+          bottom: 16,
         }}
       >
         <Typography
           suppressHydrationWarning
-          sx={{
-            fontSize: "10px",
-            fontWeight: "500",
-            color: "var(--text4)",
-          }}
+          sx={{ fontSize: "10px", fontWeight: 500, color: "var(--text4)" }}
         >
           Powered by
         </Typography>

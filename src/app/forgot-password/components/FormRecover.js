@@ -13,17 +13,16 @@ const GetOTP = memo(({ email, setEmail, handleGetOTP, isLoading }) => (
   <Stack gap={2}>
     <Stack flexDirection="row" justifyContent="space-between">
       <Typography
-        sx={{ fontFamily: "Lato", fontSize: "16px", fontWeight: "500" }}
+        sx={{ fontSize: "13px", fontWeight: 600, color: "var(--text2)" }}
       >
         Email
       </Typography>
       <Link href="/signUp">
         <Typography
           sx={{
-            fontFamily: "Lato",
-            fontSize: "16px",
-            fontWeight: "500",
-            color: "var(--sec-color)",
+            fontSize: "12px",
+            fontWeight: 500,
+            color: "var(--primary-color)",
             cursor: "pointer",
           }}
         >
@@ -39,18 +38,18 @@ const GetOTP = memo(({ email, setEmail, handleGetOTP, isLoading }) => (
       onChange={(e) => setEmail(e.target.value)}
     />
     <Stack flexDirection="row" gap="5px">
-      <Typography sx={{ fontFamily: "Lato", fontSize: "16px" }}>
-        Know password
+      <Typography sx={{ fontSize: "12px", color: "var(--text3)" }}>
+        Remember your password?
       </Typography>
       <Link href="/signIn">
         <Typography
           sx={{
-            fontFamily: "Lato",
-            fontSize: "16px",
-            color: "var(--sec-color)",
+            fontSize: "12px",
+            color: "var(--primary-color)",
+            "&:hover": { textDecoration: "underline" },
           }}
         >
-          Login
+          Sign in
         </Typography>
       </Link>
     </Stack>
@@ -88,7 +87,7 @@ const VerifyOTP = memo(
     resendOTPTime,
   }) => (
     <Stack gap={2}>
-      <Typography sx={{ fontSize: "16px", fontWeight: "500" }}>
+      <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "var(--text2)" }}>
         Verify OTP
       </Typography>
       <Typography
@@ -100,6 +99,7 @@ const VerifyOTP = memo(
       <MuiOtpInput
         value={otp}
         onChange={setOtp}
+        length={6}
         sx={{
           "& .MuiOutlinedInput-notchedOutline": {
             border: "1px solid var(--primary-color)",
@@ -156,13 +156,13 @@ const VerifyOTP = memo(
         sx={{
           textTransform: "none",
           backgroundColor: "var(--primary-color)",
-          borderRadius: "4px",
-          fontFamily: "Lato",
-          fontSize: "18px",
-          height: "40px",
+          borderRadius: "8px",
+          fontSize: "13px",
+          fontWeight: 600,
+          height: "36px",
           width: "100%",
         }}
-        disabled={isLoading || otp.length !== 4}
+        disabled={isLoading || otp.length !== 6}
         startIcon={
           isLoading ? <CircularProgress size={20} color="inherit" /> : null
         }
@@ -186,7 +186,7 @@ const ChangePassword = memo(
   }) => (
     <Stack gap={2}>
       <Typography
-        sx={{ fontFamily: "Lato", fontSize: "16px", fontWeight: "500" }}
+        sx={{ fontSize: "13px", fontWeight: 600, color: "var(--text2)" }}
       >
         Update Password
       </Typography>
@@ -224,10 +224,10 @@ const ChangePassword = memo(
         sx={{
           textTransform: "none",
           backgroundColor: "var(--primary-color)",
-          borderRadius: "4px",
-          fontFamily: "Lato",
-          fontSize: "18px",
-          height: "40px",
+          borderRadius: "8px",
+          fontSize: "13px",
+          fontWeight: 600,
+          height: "36px",
           width: "100%",
         }}
         disabled={
@@ -527,8 +527,8 @@ export default function FormRecover() {
   return (
     <Stack
       sx={{
-        width: "350px",
-        gap: "20px",
+        width: "100%",
+        gap: "16px",
         justifyContent: "center",
       }}
     >

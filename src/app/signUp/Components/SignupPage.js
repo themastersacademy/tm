@@ -135,51 +135,60 @@ export default function SignupPage() {
       height="100vh"
       justifyContent="center"
       alignItems="center"
+      sx={{ backgroundColor: "var(--bg1)", position: "relative" }}
     >
       <Stack
-        sx={{ justifyContent: "center", alignItems: "center", height: "100vh" }}
+        sx={{
+          justifyContent: "center",
+          alignItems: "center",
+          width: "100%",
+          maxWidth: "400px",
+          padding: { xs: "20px", md: "32px" },
+        }}
       >
-        {/* Logo Section */}
         <Stack
           sx={{
-            width: { xs: "100px", md: "110px" },
-            height: { xs: "100px", md: "110px" },
-            backgroundColor: "var(--border-color)",
-            borderRadius: "50%",
+            width: "48px",
+            height: "48px",
+            backgroundColor: "rgba(24, 113, 99, 0.08)",
+            borderRadius: "10px",
             justifyContent: "center",
             alignItems: "center",
+            mb: 2.5,
           }}
         >
-          <Stack
-            sx={{
-              width: "70px",
-              height: "70px",
-              backgroundColor: "var(--white)",
-              borderRadius: "50px",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Image src={mastersLogo} alt="logo" width={48} height={48} />
-          </Stack>
+          <Image
+            src={mastersLogo}
+            alt="logo"
+            width={28}
+            height={28}
+            style={{ width: "auto", height: "auto", maxWidth: "28px" }}
+          />
         </Stack>
         <Typography
           sx={{
-            fontFamily: "Lato",
-            fontSize: { xs: "20px", md: "24px" },
-            fontWeight: "600",
+            fontSize: "20px",
+            fontWeight: 700,
             color: "var(--text1)",
-            marginTop: "15px",
-            marginBottom: "35px",
+            marginBottom: "4px",
             textAlign: "center",
           }}
         >
           Create your account
         </Typography>
+        <Typography
+          sx={{
+            fontSize: "13px",
+            color: "var(--text3)",
+            marginBottom: "24px",
+            textAlign: "center",
+          }}
+        >
+          Sign up to start learning
+        </Typography>
 
-        {/* Conditional Form Rendering */}
         {status === "loading" || status === "authenticated" ? (
-          <CircularProgress />
+          <CircularProgress sx={{ color: "var(--primary-color)" }} />
         ) : isOTPSent ? (
           <FormOTP
             otp={otp}
@@ -199,55 +208,30 @@ export default function SignupPage() {
             handleGetOTP={handleGetOTP}
             isLoading={isLoading}
             validationError={validationError}
-            // isMobile={isMobile} // Pass this if Form component needs it, but Form should preferably use responsive styles too.
-            // Assuming Form can handle missing isMobile or I should check Form.
-            // I'll keep it as "false" or just omit if it defaults fine.
-            // Let's assume Form handles it or check later.
           />
         )}
       </Stack>
-      {/* Footer */}
+
       <Stack
-        flexDirection={{ xs: "column", md: "row" }}
-        width="100%"
-        justifyContent={{ xs: "center", md: "space-between" }}
+        direction="row"
         alignItems="center"
-        sx={{ fontFamily: "Lato", padding: "20px", marginTop: "auto" }}
+        gap="6px"
+        sx={{ position: "absolute", bottom: 16 }}
       >
-        <Stack>
-          <Typography
-            sx={{
-              marginTop: "auto",
-              marginRight: "auto",
-              fontFamily: "Lato",
-              fontSize: { xs: "12px", md: "16px" },
-              fontWeight: "700",
-              color: "var(--text4)",
-            }}
-          >
-            ©2025 @ The Masters Academy
-          </Typography>
-        </Stack>
-        <Stack flexDirection="row" alignItems="center" gap="10px">
-          <Typography
-            suppressHydrationWarning
-            sx={{
-              fontFamily: "Lato",
-              fontSize: "10px",
-              fontWeight: "700",
-              color: "var(--text4)",
-            }}
-          >
-            Designed By
-          </Typography>
-          <Image
-            suppressHydrationWarning
-            src={incrixLogo}
-            alt="incrix"
-            width={50}
-            height={16}
-          />
-        </Stack>
+        <Typography
+          suppressHydrationWarning
+          sx={{ fontSize: "10px", fontWeight: 500, color: "var(--text4)" }}
+        >
+          Powered by
+        </Typography>
+        <Image
+          suppressHydrationWarning
+          src={incrixLogo}
+          alt="incrix"
+          width={50}
+          height={16}
+          style={{ opacity: 0.7 }}
+        />
       </Stack>
     </Stack>
   );
