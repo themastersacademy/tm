@@ -24,38 +24,37 @@ const USER_TABLE = `${process.env.AWS_DB_NAME}users`;
 export async function getUserByEmail(email) {
   const params = {
     TableName: `${process.env.AWS_DB_NAME}users`,
-    IndexName: "GSI1-index", // Ensure this matches your GSI name
-    KeyConditionExpression: "#gsi1PKey = :email AND #gsi1SKey = :email", // Use expression attribute names
+    IndexName: "GSI1-index",
+    KeyConditionExpression: "#gsi1PKey = :email AND #gsi1SKey = :email",
     ExpressionAttributeNames: {
-      "#gsi1PKey": "GSI1-pKey", // Map placeholder to actual attribute name
-      "#gsi1SKey": "GSI1-sKey", // Map placeholder to actual attribute name
+      "#gsi1PKey": "GSI1-pKey",
+      "#gsi1SKey": "GSI1-sKey",
     },
     ExpressionAttributeValues: {
-      ":email": `USER#${email}`, // Match the GSI key structure
+      ":email": `USER#${email}`,
     },
   };
 
+  let result;
   try {
-    const result = await dynamoDB.send(new QueryCommand(params));
-    const user = result.Items[0];
-
-    if (result.Items.length === 0) {
-      throw new Error("User not found");
-    }
-
-    const isUpdated = await updateUserProSubscription(user);
-    if (!isUpdated) {
-      return user;
-    }
-
-    const updatedResult = await dynamoDB.send(new QueryCommand(params));
-    const updatedUser = updatedResult.Items[0];
-    return updatedUser;
+    result = await dynamoDB.send(new QueryCommand(params));
   } catch (error) {
     console.error("Error fetching user by email:", error);
-    return null;
-    // throw new Error("Failed to retrieve user");
+    throw error; // propagate real DynamoDB errors — do NOT swallow as null
   }
+
+  if (!result.Items || result.Items.length === 0) {
+    return null; // user genuinely not found
+  }
+
+  const user = result.Items[0];
+  const isUpdated = await updateUserProSubscription(user);
+  if (!isUpdated) {
+    return user;
+  }
+
+  const updatedResult = await dynamoDB.send(new QueryCommand(params));
+  return updatedResult.Items[0];
 }
 
 export async function updateUserProSubscription(user) {
