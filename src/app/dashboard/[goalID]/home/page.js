@@ -86,9 +86,7 @@ export default function HomePage() {
   useEffect(() => {
     const fetchDirectExams = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/my-exams/get-schedule-exam`
-        );
+        const res = await fetch("/api/my-exams/get-schedule-exam");
         const data = await res.json();
         if (data.success) setDirectExams(data.data || []);
       } catch (err) {
