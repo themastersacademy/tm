@@ -145,6 +145,63 @@ export async function getScheduledExamByBatch(userID, batchID) {
   };
 }
 
+export async function getScheduledExamsByStudentID(userID) {
+  if (!userID) {
+    throw new Error("userID is required");
+  }
+
+  // 1) Find all exam IDs where this student was directly assigned
+  const joinResp = await dynamoDB.send(
+    new QueryCommand({
+      TableName: MASTER_TABLE,
+      KeyConditionExpression: "pKey = :pk",
+      ExpressionAttributeValues: {
+        ":pk": `STUDENT_EXAM#${userID}`,
+      },
+    })
+  );
+  const links = joinResp.Items || [];
+  if (links.length === 0) {
+    return { success: true, data: [] };
+  }
+
+  // 2) Batch-get the exam details
+  const examKeys = links.map((link) => ({
+    pKey: `EXAM#${link.examID}`,
+    sKey: "EXAMS@scheduled",
+  }));
+
+  const batchGetResp = await dynamoDB.send(
+    new BatchGetCommand({
+      RequestItems: {
+        [MASTER_TABLE]: { Keys: examKeys },
+      },
+    })
+  );
+
+  const exams = batchGetResp.Responses?.[MASTER_TABLE] || [];
+
+  // 3) Filter only live exams
+  const liveExams = exams.filter((ex) => ex.isLive);
+
+  // 4) Map to client shape (same as getScheduledExamByBatch)
+  const result = liveExams.map((ex) => ({
+    id: ex.pKey.split("#", 2)[1],
+    title: ex.title,
+    startTimeStamp: ex.startTimeStamp,
+    duration: ex.duration,
+    isLive: ex.isLive,
+    settings: ex.settings,
+    createdAt: ex.createdAt,
+    updatedAt: ex.updatedAt,
+    totalQuestions: ex.totalQuestions,
+    totalMarks: ex.totalMarks,
+    endTimeStamp: ex.endTimeStamp,
+  }));
+
+  return { success: true, data: result };
+}
+
 export async function startExam({ examID, userID }) {
   if (!examID || !userID) {
     throw new Error("Exam id and user id are required");

@@ -1,5 +1,5 @@
 "use client";
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import Header from "@/src/Components/Header/Header";
 import CrackTest from "./Components/CrackTest";
 import gate_cse from "@/public/icons/gate_cse.svg";
@@ -7,7 +7,7 @@ import banking from "@/public/icons/banking.svg";
 import placements from "@/public/icons/placements.svg";
 import MobileHeader from "@/src/Components/MobileHeader/MobileHeader";
 import Store from "../courses/Components/Store";
-import { East } from "@mui/icons-material";
+import { East, Assignment, AccessTime } from "@mui/icons-material";
 import BannerCarousel from "@/src/Components/BannerCarousel/BannerCarousel";
 import { useRouter, useParams } from "next/navigation";
 import PageSkeleton from "@/src/Components/SkeletonCards/PageSkeleton";
@@ -42,6 +42,8 @@ export default function HomePage() {
   const [featuredGoals, setFeaturedGoals] = useState([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
+  const [directExams, setDirectExams] = useState([]);
+  const [directExamsLoading, setDirectExamsLoading] = useState(true);
 
   const isLoading = bannerLoading;
 
@@ -79,6 +81,23 @@ export default function HomePage() {
       }
     };
     fetchFeaturedGoals();
+  }, []);
+
+  useEffect(() => {
+    const fetchDirectExams = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/my-exams/get-schedule-exam`
+        );
+        const data = await res.json();
+        if (data.success) setDirectExams(data.data || []);
+      } catch (err) {
+        console.error("Failed to fetch assigned exams:", err);
+      } finally {
+        setDirectExamsLoading(false);
+      }
+    };
+    fetchDirectExams();
   }, []);
 
   const handleGoalClick = (id) => {
@@ -245,6 +264,117 @@ export default function HomePage() {
                   </Stack>
                 </Box>
               </Stack>
+
+              {/* Directly Assigned Exams */}
+              {(directExamsLoading || directExams.length > 0) && (
+                <Stack gap="16px">
+                  <Stack direction="row" alignItems="center" gap="8px">
+                    <Assignment sx={{ color: "var(--primary-color)", fontSize: "20px" }} />
+                    <Typography
+                      sx={{ fontSize: { xs: "18px", md: "20px" }, fontWeight: 700, color: "var(--text1)" }}
+                    >
+                      Assigned Exams
+                    </Typography>
+                    {!directExamsLoading && (
+                      <Chip
+                        label={directExams.length}
+                        size="small"
+                        sx={{
+                          backgroundColor: "var(--primary-color-acc-2)",
+                          color: "var(--primary-color)",
+                          fontWeight: 700,
+                          fontSize: "12px",
+                        }}
+                      />
+                    )}
+                  </Stack>
+
+                  <Stack gap="12px">
+                    {directExamsLoading ? (
+                      <Stack
+                        sx={{
+                          height: "80px",
+                          borderRadius: "12px",
+                          backgroundColor: "var(--bg1)",
+                          animation: "pulse 1.5s ease-in-out infinite",
+                        }}
+                      />
+                    ) : (
+                      directExams.map((exam) => {
+                        const startDate = new Date(exam.startTimeStamp);
+                        const endDate = exam.endTimeStamp
+                          ? new Date(exam.endTimeStamp)
+                          : new Date(startDate.getTime() + (exam.duration || 60) * 60000);
+                        const isExpired = new Date() > endDate;
+
+                        return (
+                          <Stack
+                            key={exam.id}
+                            direction={{ xs: "column", md: "row" }}
+                            alignItems={{ xs: "flex-start", md: "center" }}
+                            justifyContent="space-between"
+                            gap="12px"
+                            sx={{
+                              backgroundColor: "var(--white)",
+                              borderRadius: "12px",
+                              padding: "16px 20px",
+                              border: "1px solid var(--border-color)",
+                              opacity: isExpired ? 0.6 : 1,
+                            }}
+                          >
+                            <Stack gap="4px" flex={1}>
+                              <Stack direction="row" alignItems="center" gap="8px">
+                                <Typography sx={{ fontSize: "15px", fontWeight: 700, color: "var(--text1)" }}>
+                                  {exam.title}
+                                </Typography>
+                                {isExpired && (
+                                  <Chip
+                                    label="Expired"
+                                    size="small"
+                                    sx={{ backgroundColor: "rgba(239,68,68,0.1)", color: "#ef4444", fontSize: "11px", fontWeight: 600 }}
+                                  />
+                                )}
+                              </Stack>
+                              <Stack direction="row" gap="12px" alignItems="center" flexWrap="wrap">
+                                <Stack direction="row" alignItems="center" gap="4px">
+                                  <AccessTime sx={{ fontSize: "13px", color: "var(--text3)" }} />
+                                  <Typography sx={{ fontSize: "12px", color: "var(--text3)" }}>
+                                    {startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })},{" "}
+                                    {startDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                                  </Typography>
+                                </Stack>
+                                <Typography sx={{ fontSize: "12px", color: "var(--text3)" }}>
+                                  {exam.duration || 60} min · {exam.totalQuestions || 0} Qs · {exam.totalMarks || 0} marks
+                                </Typography>
+                              </Stack>
+                            </Stack>
+
+                            {!isExpired && (
+                              <Button
+                                variant="contained"
+                                endIcon={<East />}
+                                onClick={() => router.push(`/exam/${exam.id}`)}
+                                disableElevation
+                                sx={{
+                                  textTransform: "none",
+                                  backgroundColor: "var(--primary-color)",
+                                  borderRadius: "10px",
+                                  padding: "8px 20px",
+                                  fontSize: "13px",
+                                  fontWeight: 600,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                Start Exam
+                              </Button>
+                            )}
+                          </Stack>
+                        );
+                      })
+                    )}
+                  </Stack>
+                </Stack>
+              )}
 
               {/* Store Section for Mobile */}
               <Stack sx={{ display: { xs: "flex", md: "none" } }}>
