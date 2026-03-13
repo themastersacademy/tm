@@ -232,17 +232,33 @@ export async function startExam({ examID, userID }) {
   let batchMeta;
   let batchID;
   if (exam.type === "scheduled") {
-    const response = await getUserBatches(userID);
-    if (!response.success || !response.data.length) {
-      throw new Error("User is not enrolled in any batch");
+    // First check if the user is directly enrolled in this exam (individual assignment)
+    const directEnrollResp = await dynamoDB.send(
+      new GetCommand({
+        TableName: MASTER_TABLE,
+        Key: {
+          pKey: `STUDENT_EXAM#${userID}`,
+          sKey: `STUDENT_EXAMS@${examID}`,
+        },
+      })
+    );
+
+    if (!directEnrollResp.Item) {
+      // Not directly enrolled — fall back to batch-based access
+      const response = await getUserBatches(userID);
+      if (!response.success || !response.data.length) {
+        throw new Error("User is not enrolled in any batch");
+      }
+      const batch = response.data.find((b) =>
+        exam.batchList?.includes(b.batchID)
+      );
+      if (!batch) {
+        throw new Error("User is not enrolled in the batch of this exam");
+      }
+      batchID = batch.batchID;
+      batchMeta = batch.batchMeta;
     }
-    // Check batchList in exam object
-    const batch = response.data.find((b) => exam.batchList.includes(b.batchID));
-    if (!batch) {
-      throw new Error("User is not enrolled in the batch of this exam");
-    }
-    batchID = batch.batchID;
-    batchMeta = batch.batchMeta;
+    // If directEnrollResp.Item exists, user is individually assigned — batchID/batchMeta remain undefined
   }
 
   const examAttemptID = randomUUID();
