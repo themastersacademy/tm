@@ -28,6 +28,7 @@ import HeroDashboard from "./Components/HeroDashboard";
 import AnnouncementBanner from "./Components/AnnouncementBanner";
 import FeaturedGoalCard from "./Components/FeaturedGoalCard";
 import { useState, useEffect } from "react";
+import CountdownTimer from "@/src/Components/CountdownTimer/CountdownTimer";
 
 export default function HomePage() {
   const router = useRouter();
@@ -299,11 +300,15 @@ export default function HomePage() {
                       />
                     ) : (
                       directExams.map((exam) => {
-                        const startDate = new Date(exam.startTimeStamp);
+                        const now = Date.now();
+                        const startDate = exam.startTimeStamp ? new Date(exam.startTimeStamp) : null;
                         const endDate = exam.endTimeStamp
                           ? new Date(exam.endTimeStamp)
-                          : new Date(startDate.getTime() + (exam.duration || 60) * 60000);
-                        const isExpired = new Date() > endDate;
+                          : startDate
+                            ? new Date(startDate.getTime() + (exam.duration || 60) * 60000)
+                            : null;
+                        const isNotStarted = startDate && now < startDate.getTime();
+                        const isExpired = endDate && now > endDate.getTime();
 
                         return (
                           <Stack
@@ -333,21 +338,27 @@ export default function HomePage() {
                                   />
                                 )}
                               </Stack>
-                              <Stack direction="row" gap="12px" alignItems="center" flexWrap="wrap">
-                                <Stack direction="row" alignItems="center" gap="4px">
-                                  <AccessTime sx={{ fontSize: "13px", color: "var(--text3)" }} />
+                              {startDate && (
+                                <Stack direction="row" gap="12px" alignItems="center" flexWrap="wrap">
+                                  <Stack direction="row" alignItems="center" gap="4px">
+                                    <AccessTime sx={{ fontSize: "13px", color: "var(--text3)" }} />
+                                    <Typography sx={{ fontSize: "12px", color: "var(--text3)" }}>
+                                      {startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })},{" "}
+                                      {startDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                                    </Typography>
+                                  </Stack>
                                   <Typography sx={{ fontSize: "12px", color: "var(--text3)" }}>
-                                    {startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })},{" "}
-                                    {startDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                                    {exam.duration || 60} min · {exam.totalQuestions || 0} Qs · {exam.totalMarks || 0} marks
                                   </Typography>
                                 </Stack>
-                                <Typography sx={{ fontSize: "12px", color: "var(--text3)" }}>
-                                  {exam.duration || 60} min · {exam.totalQuestions || 0} Qs · {exam.totalMarks || 0} marks
-                                </Typography>
-                              </Stack>
+                              )}
                             </Stack>
 
-                            {!isExpired && (
+                            {isNotStarted ? (
+                              <Box sx={{ minWidth: { xs: "100%", md: "200px" } }}>
+                                <CountdownTimer targetTime={exam.startTimeStamp} />
+                              </Box>
+                            ) : !isExpired ? (
                               <Button
                                 variant="contained"
                                 endIcon={<East />}
@@ -365,7 +376,7 @@ export default function HomePage() {
                               >
                                 Start Exam
                               </Button>
-                            )}
+                            ) : null}
                           </Stack>
                         );
                       })

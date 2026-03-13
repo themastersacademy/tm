@@ -31,6 +31,7 @@ import PlansDialogBox from "@/src/Components/PlansDialogBox/PlansDialogBox";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import ExamInstructionDialog from "@/src/Components/ExamInstruction/ExamInstructionDialog";
 import ClassroomView from "../myClassroom/Components/ClassroomView";
+import CountdownTimer from "@/src/Components/CountdownTimer/CountdownTimer";
 
 export default function Exams() {
   const { data: session } = useSession();
@@ -52,6 +53,24 @@ export default function Exams() {
   const [instructionOpen, setInstructionOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
   const [isStartingExam, setIsStartingExam] = useState(false);
+
+  const [directExams, setDirectExams] = useState([]);
+  const [directExamsLoading, setDirectExamsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDirectExams = async () => {
+      try {
+        const res = await fetch("/api/my-exams/get-schedule-exam");
+        const data = await res.json();
+        if (data.success) setDirectExams(data.data || []);
+      } catch (err) {
+        console.error("Failed to fetch assigned exams:", err);
+      } finally {
+        setDirectExamsLoading(false);
+      }
+    };
+    fetchDirectExams();
+  }, []);
 
   const handleExamClick = (exam) => {
     setSelectedExam(exam);
@@ -191,6 +210,82 @@ export default function Exams() {
             <Box role="tabpanel" hidden={tabValue !== 0}>
               {tabValue === 0 && (
                 <Stack gap={{ xs: 3, md: 5 }}>
+
+                  {/* Scheduled / Assigned Exams */}
+                  {(directExamsLoading || directExams.length > 0) && (
+                    <Stack spacing={3}>
+                      <Typography
+                        variant="h5"
+                        sx={{ fontWeight: 700, color: "var(--text1)", fontSize: { xs: "16px", md: "18px" } }}
+                      >
+                        Scheduled Exams
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: { xs: "1fr", sm: "repeat(auto-fill, minmax(280px, 1fr))" },
+                          gap: 3,
+                        }}
+                      >
+                        {directExamsLoading ? (
+                          <PrimaryCardSkeleton />
+                        ) : (
+                          directExams.map((exam) => {
+                            const now = Date.now();
+                            const startDate = exam.startTimeStamp ? new Date(exam.startTimeStamp) : null;
+                            const endDate = exam.endTimeStamp
+                              ? new Date(exam.endTimeStamp)
+                              : startDate
+                                ? new Date(startDate.getTime() + (exam.duration || 60) * 60000)
+                                : null;
+                            const isNotStarted = startDate && now < startDate.getTime();
+                            const isExpired = endDate && now > endDate.getTime();
+                            return (
+                              <ExamCard
+                                key={exam.id}
+                                title={exam.title}
+                                icon={mocks.src}
+                                duration={exam.duration || 60}
+                                totalQuestions={exam.totalQuestions || 0}
+                                totalMarks={exam.totalMarks || 0}
+                                difficulty="scheduled"
+                                status={isExpired ? "completed" : "live"}
+                                actionButton={
+                                  isNotStarted ? (
+                                    <CountdownTimer targetTime={exam.startTimeStamp} />
+                                  ) : !isExpired ? (
+                                    <Button
+                                      variant="contained"
+                                      endIcon={<East />}
+                                      onClick={() => router.push(`/exam/${exam.id}`)}
+                                      fullWidth
+                                      disableElevation
+                                      sx={{
+                                        textTransform: "none",
+                                        backgroundColor: "var(--primary-color)",
+                                        fontSize: "14px",
+                                        fontWeight: 600,
+                                        borderRadius: "10px",
+                                        fontFamily: "var(--font-geist-sans)",
+                                        py: 1,
+                                      }}
+                                    >
+                                      Start Exam
+                                    </Button>
+                                  ) : (
+                                    <Button variant="outlined" disabled fullWidth sx={{ borderRadius: "10px", textTransform: "none", fontSize: "14px" }}>
+                                      Expired
+                                    </Button>
+                                  )
+                                }
+                              />
+                            );
+                          })
+                        )}
+                      </Box>
+                    </Stack>
+                  )}
+
                   <Stack spacing={3}>
                     <Typography
                       variant="h5"
