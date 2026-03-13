@@ -27,9 +27,7 @@ export default function Result() {
 
   const fetchResult = useCallback(async () => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${params.id}/${params.attempt}/result`
-      );
+      const res = await fetch(`/api/exams/${params.id}/${params.attempt}/result`);
       const data = await res.json();
       if (data.success) {
         setResult(data.data);

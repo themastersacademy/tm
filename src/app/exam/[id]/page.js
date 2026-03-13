@@ -46,18 +46,16 @@ export default function ExamInstruction() {
   const fetchInstruction = useCallback(async () => {
     setIsLoading(true);
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${id}`).then(
-        (res) =>
-          res.json().then((data) => {
-            setClientPerfAtFetch(performance.now());
-            if (data.success) {
-              setInstruction(data.data);
-              setIsLoading(false);
-            }
-          })
-      );
+      const res = await fetch(`/api/exams/${id}`);
+      const data = await res.json();
+      setClientPerfAtFetch(performance.now());
+      if (data.success) {
+        setInstruction(data.data);
+      }
     } catch (error) {
       console.error("Error fetching instruction:", error);
+    } finally {
+      setIsLoading(false);
     }
   }, [id]);
 
@@ -72,9 +70,7 @@ export default function ExamInstruction() {
     }
     setIsStarting(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/exams/${id}/start`
-      )
+      const res = await fetch(`/api/exams/${id}/start`)
         .then((res) => res.json())
         .then((data) => {
           closeSnackbar();

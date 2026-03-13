@@ -465,7 +465,7 @@ async function streamToString(stream) {
   });
 }
 export async function getExamAttemptsResult(attemptID, userID) {
-  // 1) Fetch the exam attempt record
+  // 1) Fetch the exam attempt record (strongly consistent — must see the submitted state)
   const { Item } = await dynamoDB.send(
     new GetCommand({
       TableName: USER_TABLE,
@@ -473,6 +473,7 @@ export async function getExamAttemptsResult(attemptID, userID) {
         pKey: `EXAM_ATTEMPT#${attemptID}`,
         sKey: "EXAM_ATTEMPTS",
       },
+      ConsistentRead: true,
     })
   );
 
