@@ -17,6 +17,7 @@ const CourseCard = memo(function CourseCard({
   Language = [],
   lessons = "0 Lessons",
   hours = "0 Hours",
+  price = null,
   actionButton = null,
   actionMobile = null,
   isPro = false,
@@ -273,6 +274,19 @@ const CourseCard = memo(function CourseCard({
             </Stack>
           </Stack>
         </Stack>
+
+        {/* Price */}
+        {price && (
+          <Typography
+            sx={{
+              fontSize: "16px",
+              fontWeight: 700,
+              color: price === "Free" ? "#4CAF50" : "var(--text1)",
+            }}
+          >
+            {price}
+          </Typography>
+        )}
 
         {/* Enrollment Count */}
         {enrolledCount && (

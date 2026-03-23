@@ -75,9 +75,24 @@ export default function Store() {
                         : [item.language]
                     }
                     lessons={`${item.lessons || 0} Lessons`}
-                    hours={`${item.duration || 0} min`}
+                    hours={
+                      (() => {
+                        const mins = item.duration || 0;
+                        if (mins < 60) return `${mins} min`;
+                        const h = Math.floor(mins / 60);
+                        const m = mins % 60;
+                        return m > 0 ? `${h} hrs ${m} min` : `${h} hrs`;
+                      })()
+                    }
                     isPro={item.subscription?.isPro}
                     isFree={item.subscription?.isFree}
+                    price={
+                      item.subscription?.isFree
+                        ? "Free"
+                        : item.subscription?.plans?.length > 0
+                          ? `₹${Number(item.subscription.plans[0].priceWithTax).toLocaleString("en-IN")}`
+                          : null
+                    }
                     difficulty={item.difficulty}
                     instructor={item.instructor}
                     enrolledCount={item.enrolledCount}
