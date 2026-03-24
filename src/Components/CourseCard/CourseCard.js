@@ -18,6 +18,8 @@ const CourseCard = memo(function CourseCard({
   lessons = "0 Lessons",
   hours = "0 Hours",
   price = null,
+  originalPrice = null,
+  discount = null,
   actionButton = null,
   actionMobile = null,
   isPro = false,
@@ -277,15 +279,44 @@ const CourseCard = memo(function CourseCard({
 
         {/* Price */}
         {price && (
-          <Typography
-            sx={{
-              fontSize: "16px",
-              fontWeight: 700,
-              color: price === "Free" ? "#4CAF50" : "var(--text1)",
-            }}
-          >
-            {price}
-          </Typography>
+          <Stack direction="row" alignItems="baseline" gap="8px">
+            <Typography
+              sx={{
+                fontSize: "16px",
+                fontWeight: 700,
+                color: price === "Free" ? "#4CAF50" : "var(--text1)",
+              }}
+            >
+              {price}
+            </Typography>
+            {originalPrice && originalPrice !== price && (
+              <Typography
+                sx={{
+                  fontSize: "13px",
+                  color: "var(--text4)",
+                  textDecoration: "line-through",
+                  fontWeight: 500,
+                }}
+              >
+                {originalPrice}
+              </Typography>
+            )}
+            {discount && (
+              <Typography
+                sx={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: "var(--sec-color)",
+                  bgcolor: "var(--sec-color-acc-2)",
+                  px: "6px",
+                  py: "2px",
+                  borderRadius: "4px",
+                }}
+              >
+                {discount}% OFF
+              </Typography>
+            )}
+          </Stack>
         )}
 
         {/* Enrollment Count */}

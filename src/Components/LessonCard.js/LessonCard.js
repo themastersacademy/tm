@@ -16,11 +16,9 @@ export default function LessonCard({
       flexDirection="row"
       alignItems="center"
       sx={{
-        width: { xs: "100%", sm: "100%", md: "100%", lg: "350px" },
-        maxWidth: { xs: "100%", sm: "100%", md: "100%", lg: "350px" },
-        maxHeight: "70px",
-        height: "70px",
-        padding: "10px",
+        width: "100%",
+        minHeight: "60px",
+        padding: "10px 12px",
         backgroundColor: isSelected
           ? "var(--sec-color-acc-1)"
           : now && !isSelected
@@ -34,11 +32,11 @@ export default function LessonCard({
     >
       {iconStart}
       <Stack gap="2px">
-        <Typography sx={{ fontFamily: "Lato", fontSize: "16px" }}>
+        <Typography sx={{ fontFamily: "Lato", fontSize: "14px", fontWeight: 500 }}>
           {LessonName}
         </Typography>
         <Typography
-          sx={{ fontFamily: "Lato", fontSize: "12px", color: "var(--text3)" }}
+          sx={{ fontFamily: "Lato", fontSize: "11px", color: "var(--text3)" }}
         >
           {duration}
         </Typography>

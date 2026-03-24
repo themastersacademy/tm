@@ -94,128 +94,88 @@ export default function CheckoutCard({ courseDetails, isPaidCourseForUser }) {
       {/* Desktop Card */}
       <Box
         sx={{
-          display: { xs: "none", lg: "block" },
+          display: { xs: "none", md: "block" },
           bgcolor: "white",
-          borderRadius: "24px",
-          border: "1px solid #e2e8f0",
-          boxShadow: "0px 4px 20px rgba(0,0,0,0.05)",
+          borderRadius: "10px",
+          border: "1px solid var(--border-color)",
           overflow: "hidden",
-          position: "sticky",
-          top: "24px",
         }}
       >
-        {/* Thumbnail */}
-        <Box sx={{ position: "relative", width: "100%", aspectRatio: "16/9" }}>
-          <Image
-            src={courseDetails?.thumbnail || defaultThumbnail}
-            alt={courseDetails?.title || "Course Thumbnail"}
-            fill
-            style={{ objectFit: "cover" }}
-          />
-          {isFree && (
-            <Box
-              sx={{
-                position: "absolute",
-                top: 16,
-                right: 16,
-                bgcolor: "#22c55e",
-                color: "white",
-                px: 1.5,
-                py: 0.5,
-                borderRadius: "100px",
-                fontSize: "12px",
-                fontWeight: 700,
-                boxShadow: "0 4px 12px rgba(34, 197, 94, 0.3)",
-              }}
-            >
-              FREE
-            </Box>
-          )}
-        </Box>
-
-        <Stack p={3} gap={3}>
-          {/* Price Section */}
-          {!isPaidCourseForUser && !isFree && selectedPlan && (
-            <Stack>
-              <Stack direction="row" alignItems="baseline" gap={1}>
-                <Typography
-                  sx={{
-                    fontSize: "32px",
-                    fontWeight: 800,
-                    color: "#0f172a",
-                    lineHeight: 1,
-                  }}
-                >
-                  ₹
-                  {calculateDiscountedPrice(
-                    selectedPlan.priceWithTax,
-                    selectedPlan.discountInPercent
-                  )}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: "16px",
-                    color: "#94a3b8",
-                    textDecoration: "line-through",
-                    fontWeight: 500,
-                  }}
-                >
-                  ₹{selectedPlan.priceWithTax}
-                </Typography>
-                <Box
-                  sx={{
-                    bgcolor: "#eff6ff",
-                    color: "#3b82f6",
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: "6px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                  }}
-                >
-                  {selectedPlan.discountInPercent}% OFF
-                </Box>
-              </Stack>
-            </Stack>
-          )}
+        <Stack p={2} gap={2}>
+          {/* Course Name */}
+          <Typography
+            sx={{
+              fontSize: "15px",
+              fontWeight: 700,
+              color: "var(--text1)",
+              fontFamily: "Lato",
+              lineHeight: 1.3,
+            }}
+          >
+            {courseDetails?.title}
+          </Typography>
 
           {/* Plan Selector */}
-          {!isPaidCourseForUser && !isFree && plans.length > 0 && (
-            <Stack gap={1}>
-              <Typography
-                sx={{ fontSize: "13px", fontWeight: 600, color: "#64748b" }}
-              >
-                Select Validity
-              </Typography>
-              <Select
-                value={selectedPlan?.duration || ""}
-                onChange={handlePlanChange}
-                displayEmpty
-                sx={{
-                  borderRadius: "12px",
-                  bgcolor: "#f8fafc",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#e2e8f0",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#cbd5e1",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#3b82f6",
-                  },
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#334155",
-                }}
-              >
-                {plans.map((plan, index) => (
-                  <MenuItem key={index} value={plan.duration}>
-                    {formatPlanLabel(plan)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </Stack>
+          {!isFree && plans.length > 0 && (
+            <Select
+              value={selectedPlan?.duration || ""}
+              onChange={handlePlanChange}
+              displayEmpty
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                bgcolor: "var(--bg1)",
+                fontSize: "13px",
+                fontWeight: 600,
+                "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" },
+              }}
+            >
+              {plans.map((plan, index) => (
+                <MenuItem key={index} value={plan.duration}>
+                  {formatPlanLabel(plan)}
+                </MenuItem>
+              ))}
+            </Select>
           )}
+
+          {/* Price Section */}
+          {isFree ? (
+            <Typography
+              sx={{ fontSize: "22px", fontWeight: 800, color: "#22c55e", lineHeight: 1 }}
+            >
+              Free
+            </Typography>
+          ) : selectedPlan ? (
+            <Stack direction="row" alignItems="baseline" gap={1}>
+              <Typography
+                sx={{ fontSize: "22px", fontWeight: 800, color: "var(--text1)", lineHeight: 1 }}
+              >
+                ₹{calculateDiscountedPrice(selectedPlan.priceWithTax, selectedPlan.discountInPercent)}
+              </Typography>
+              {selectedPlan.discountInPercent > 0 && (
+                <>
+                  <Typography
+                    sx={{ fontSize: "13px", color: "var(--text4)", textDecoration: "line-through" }}
+                  >
+                    ₹{selectedPlan.priceWithTax}
+                  </Typography>
+                  <Box
+                    sx={{
+                      bgcolor: "var(--sec-color-acc-2)",
+                      color: "var(--sec-color)",
+                      px: 0.8,
+                      py: 0.3,
+                      borderRadius: "4px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {selectedPlan.discountInPercent}% OFF
+                  </Box>
+                </>
+              )}
+            </Stack>
+          ) : null}
 
           {/* CTA Button */}
           <Button
@@ -224,63 +184,29 @@ export default function CheckoutCard({ courseDetails, isPaidCourseForUser }) {
             fullWidth
             endIcon={<East />}
             disabled={!isFree && !selectedPlan}
+            disableElevation
             sx={{
-              py: 1.5,
-              borderRadius: "12px",
+              py: 1.2,
+              borderRadius: "10px",
               textTransform: "none",
-              fontSize: "16px",
+              fontSize: "14px",
               fontWeight: 700,
-              bgcolor: isPaidCourseForUser ? "#22c55e" : "#3b82f6",
-              boxShadow: isPaidCourseForUser
-                ? "0 4px 12px rgba(34, 197, 94, 0.3)"
-                : "0 4px 12px rgba(59, 130, 246, 0.3)",
-              "&:hover": {
-                bgcolor: isPaidCourseForUser ? "#16a34a" : "#2563eb",
-                boxShadow: isPaidCourseForUser
-                  ? "0 6px 16px rgba(34, 197, 94, 0.4)"
-                  : "0 6px 16px rgba(59, 130, 246, 0.4)",
-              },
+              bgcolor: "var(--primary-color)",
+              "&:hover": { bgcolor: "var(--primary-color-dark)" },
             }}
           >
             {isPaidCourseForUser
               ? "Go to Course"
               : isFree
               ? "Enroll for Free"
-              : "Buy Now"}
+              : "Proceed to checkout"}
           </Button>
 
-          {/* Features */}
-          <Stack gap={2}>
-            <Typography
-              sx={{ fontSize: "14px", fontWeight: 700, color: "#0f172a" }}
-            >
-              This Course Includes:
-            </Typography>
-            <Stack gap={1.5}>
-              {features.map((feature, index) => (
-                <Stack
-                  key={index}
-                  direction="row"
-                  alignItems="center"
-                  gap={1.5}
-                >
-                  <Box sx={{ color: "#3b82f6", display: "flex" }}>
-                    {feature.icon}
-                  </Box>
-                  <Typography
-                    sx={{ fontSize: "14px", color: "#64748b", fontWeight: 500 }}
-                  >
-                    {feature.text}
-                  </Typography>
-                </Stack>
-              ))}
-            </Stack>
-          </Stack>
         </Stack>
       </Box>
 
       {/* Mobile Floating Card */}
-      <Box sx={{ display: { xs: "block", lg: "none" } }}>
+      <Box sx={{ display: { xs: "block", md: "none" } }}>
         <FloatingCheckoutCard
           courseDetails={courseDetails}
           selectedPlan={selectedPlan}

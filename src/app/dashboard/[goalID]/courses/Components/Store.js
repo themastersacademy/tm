@@ -8,6 +8,15 @@ import { useRouter, useParams } from "next/navigation";
 import { useCourses } from "@/src/app/context/CourseProvider";
 import LearningTips from "./LearningTips";
 
+function formatDuration(minutes) {
+  if (!minutes || minutes <= 0) return "0m";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} Hours`;
+  return `${h}h ${m}m`;
+}
+
 export default function Store() {
   const { goalID } = useParams();
   const router = useRouter();
@@ -75,15 +84,31 @@ export default function Store() {
                         : [item.language]
                     }
                     lessons={`${item.lessons || 0} Lessons`}
-                    hours={`${item.duration || 0} Hours`}
+                    hours={formatDuration(item.duration)}
                     isPro={item.subscription?.isPro}
                     isFree={item.subscription?.isFree}
                     price={
                       item.subscription?.isFree
                         ? "Free"
                         : item.subscription?.plans?.length > 0
-                          ? `₹${Number(item.subscription.plans[0].priceWithTax).toLocaleString("en-IN")}`
+                          ? (() => {
+                              const plan = item.subscription.plans[0];
+                              const price = Number(plan.priceWithTax);
+                              const discount = Number(plan.discountInPercent) || 0;
+                              const discounted = discount > 0 ? Math.round(price * (1 - discount / 100)) : price;
+                              return `₹${discounted.toLocaleString("en-IN")}`;
+                            })()
                           : null
+                    }
+                    originalPrice={
+                      !item.subscription?.isFree && item.subscription?.plans?.length > 0 && Number(item.subscription.plans[0].discountInPercent) > 0
+                        ? `₹${Number(item.subscription.plans[0].priceWithTax).toLocaleString("en-IN")}`
+                        : null
+                    }
+                    discount={
+                      !item.subscription?.isFree && item.subscription?.plans?.length > 0
+                        ? Number(item.subscription.plans[0].discountInPercent) || null
+                        : null
                     }
                     difficulty={item.difficulty}
                     instructor={item.instructor}

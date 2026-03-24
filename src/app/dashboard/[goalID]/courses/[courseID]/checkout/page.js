@@ -546,7 +546,7 @@ export default function Checkout() {
 
             <Grid container spacing={4}>
               {/* Left Column: Billing & Details */}
-              <Grid item xs={12} lg={8}>
+              <Grid size={{ xs: 12, md: 8 }}>
                 <Stack gap={4}>
                   {isPaidCourseForUser ? (
                     <Stack gap={3}>
@@ -689,7 +689,7 @@ export default function Checkout() {
 
               {/* Right Column: Order Summary */}
               {isPaidCourseForUser && (
-                <Grid item xs={12} lg={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Stack position="sticky" top={24}>
                     <CheckoutPayCard
                       courseDetails={courseDetails}

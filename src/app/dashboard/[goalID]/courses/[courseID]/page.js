@@ -6,11 +6,7 @@ import {
   Stack,
   Typography,
   CircularProgress,
-  Grid,
   Box,
-  Tabs,
-  Tab,
-  Chip,
 } from "@mui/material";
 import {
   ArrowBackIosNew,
@@ -34,6 +30,15 @@ import Script from "next/script";
 import { useSession } from "next-auth/react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+
+function formatDuration(minutes) {
+  if (!minutes || minutes <= 0) return "0m";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} Hours`;
+  return `${h}h ${m}m`;
+}
 
 const MyCourse = () => {
   const router = useRouter();
@@ -276,15 +281,6 @@ const MyCourse = () => {
     [selectedLessonId, isEnrolled, enrollment, courseID, isPlaying],
   );
 
-  const handlePlayPauseClick = (e, shouldPlay) => {
-    e.stopPropagation();
-    if (!playerRef.current) {
-      setError("Video player is not ready.");
-      return;
-    }
-    shouldPlay ? playerRef.current.play() : playerRef.current.pause();
-  };
-
   const handleFileDownload = useCallback(
     async (lessonID) => {
       try {
@@ -316,30 +312,6 @@ const MyCourse = () => {
     },
     [courseID, enrollment, apiHeaders],
   );
-
-  const courseInfoTags = useMemo(
-    () => [
-      {
-        icon: <Translate sx={{ fontSize: 16 }} />,
-        text: courseDetails?.language?.join(", ") || "N/A",
-      },
-      {
-        icon: <PlayLesson sx={{ fontSize: 16 }} />,
-        text: `${courseDetails?.lessons || 0} Lessons`,
-      },
-      {
-        icon: <AccessTimeFilled sx={{ fontSize: 16 }} />,
-        text: `${courseDetails?.duration || 0} Hours`,
-      },
-    ],
-    [courseDetails],
-  );
-
-  const [tabValue, setTabValue] = useState(0);
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
 
   // Calculate Analytics
   const analytics = useMemo(() => {
@@ -397,154 +369,9 @@ const MyCourse = () => {
   }
   const userType = session?.user?.accountType;
 
-  const renderLessonItem = (item, index) => {
-    const isAccessible = isEnrolled || item.isPreview;
-    const isSelected = selectedLessonId === item.id;
-    const progress = progressRef.current[item.id]?.progress || 0;
-    const isCompleted = progressRef.current[item.id]?.isCompleted || false;
-    const lessonTime = progressRef.current[item.id]?.currentTime || 0;
-    const globalIndex = getGlobalIndex(item.id);
-
-    return (
-      <Stack
-        key={item.id}
-        direction="row"
-        alignItems="center"
-        gap={2}
-        onClick={() => handleLessonClick(item, globalIndex)}
-        sx={{
-          p: 2,
-          borderRadius: "16px",
-          bgcolor: isSelected
-            ? "var(--primary-color-acc-2)"
-            : "var(--white)",
-          border: "1px solid",
-          borderColor: isSelected
-            ? "var(--primary-color-acc-1)"
-            : "var(--border-color)",
-          cursor:
-            item.type === "VIDEO" && isAccessible ? "pointer" : "default",
-          opacity: isAccessible ? 1 : 0.6,
-          transition: "all 0.2s",
-          "&:hover": {
-            bgcolor: isSelected
-              ? "var(--primary-color-acc-2)"
-              : "var(--library-expand)",
-            transform: isAccessible ? "translateY(-2px)" : "none",
-          },
-        }}
-      >
-        <Box
-          sx={{
-            width: 48,
-            height: 48,
-            borderRadius: "12px",
-            bgcolor: isSelected
-              ? "var(--primary-color)"
-              : "var(--library-expand)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: isSelected ? "var(--white)" : "var(--text3)",
-            flexShrink: 0,
-          }}
-        >
-          {item.type === "VIDEO" ? (
-            isSelected && isPlaying ? (
-              <PauseCircle sx={{ fontSize: 24 }} />
-            ) : (
-              <PlayCircle sx={{ fontSize: 24 }} />
-            )
-          ) : (
-            <InsertDriveFile sx={{ fontSize: 24 }} />
-          )}
-        </Box>
-        <Stack flex={1} gap={0.5}>
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: "16px",
-              color: isSelected ? "var(--text1)" : "var(--text2)",
-            }}
-          >
-            {globalIndex + 1}. {item.title}
-          </Typography>
-          <Stack direction="row" gap={2} alignItems="center">
-            {item.duration > 0 && (
-              <Typography
-                sx={{
-                  fontSize: "13px",
-                  color: "var(--text3)",
-                  fontWeight: 500,
-                }}
-              >
-                {Math.floor(item.duration / 60)}m {item.duration % 60}s
-              </Typography>
-            )}
-            {lessonTime > 0 && (
-              <Typography
-                sx={{
-                  fontSize: "13px",
-                  color: "var(--primary-color)",
-                  fontWeight: 600,
-                }}
-              >
-                {Math.floor(lessonTime / 60)}m{" "}
-                {Math.floor(lessonTime % 60)}s watched
-              </Typography>
-            )}
-          </Stack>
-        </Stack>
-        <Box>
-          {item.type === "FILE" ? (
-            isAccessible ? (
-              <SaveAlt
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFileDownload(item.id);
-                }}
-                sx={{
-                  color: "var(--text3)",
-                  "&:hover": { color: "var(--primary-color)" },
-                }}
-              />
-            ) : (
-              <Lock sx={{ color: "var(--text4)" }} />
-            )
-          ) : !isAccessible ? (
-            <Lock sx={{ color: "var(--text4)" }} />
-          ) : isCompleted ? (
-            <CheckCircle
-              sx={{ color: "var(--primary-color)", fontSize: 24 }}
-            />
-          ) : progress > 0 ? (
-            <CircularProgress
-              variant="determinate"
-              value={progress}
-              size={24}
-              thickness={5}
-              sx={{ color: "var(--primary-color)" }}
-            />
-          ) : (
-            <Box
-              sx={{
-                width: 24,
-                height: 24,
-                borderRadius: "50%",
-                border: "2px solid var(--border-color)",
-              }}
-            />
-          )}
-        </Box>
-      </Stack>
-    );
-  };
-
-  const renderFlatLessons = (lessons) =>
-    lessons.map((item, index) => renderLessonItem(item, index));
 
   const renderSectionedLessons = () =>
-    sections.map((section) => {
+    sections.map((section, sIndex) => {
       const sectionLessons = (section.lessonIDs || [])
         .map((id) => lessonsById[id])
         .filter(Boolean);
@@ -552,41 +379,181 @@ const MyCourse = () => {
       const completedCount = sectionLessons.filter(
         (l) => progressRef.current[l.id]?.isCompleted,
       ).length;
+      const totalCount = sectionLessons.length;
+      const hasProgress = completedCount > 0;
 
       return (
-        <Box key={section.id}>
+        <Box key={section.id} width="100%">
+          {/* Section Header */}
           <Stack
             direction="row"
             alignItems="center"
             onClick={() => toggleSection(section.id)}
             sx={{
-              p: 2,
-              borderRadius: "16px",
-              bgcolor: "var(--white)",
-              border: "1px solid var(--border-color)",
+              p: "14px 16px",
+              borderRadius: isExpanded ? "10px 10px 0 0" : "10px",
+              bgcolor: isExpanded ? "var(--primary-color)" : "var(--white)",
+              border: "1px solid",
+              borderColor: isExpanded ? "var(--primary-color)" : "var(--border-color)",
               cursor: "pointer",
-              "&:hover": { bgcolor: "var(--library-expand)" },
+              transition: "all 0.2s ease",
+              "&:hover": {
+                bgcolor: isExpanded ? "var(--primary-color)" : "var(--library-expand)",
+              },
             }}
           >
-            {isExpanded ? (
-              <ExpandLess sx={{ fontSize: 20, color: "var(--text3)", mr: 1 }} />
-            ) : (
-              <ExpandMore sx={{ fontSize: 20, color: "var(--text3)", mr: 1 }} />
+            <Box
+              sx={{
+                width: 28,
+                height: 28,
+                borderRadius: "8px",
+                bgcolor: isExpanded ? "rgba(255,255,255,0.2)" : "var(--sec-color-acc-1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                mr: 1.5,
+                flexShrink: 0,
+              }}
+            >
+              {isExpanded ? (
+                <ExpandLess sx={{ fontSize: 18, color: isExpanded ? "white" : "var(--text3)" }} />
+              ) : (
+                <ExpandMore sx={{ fontSize: 18, color: "var(--sec-color)" }} />
+              )}
+            </Box>
+            <Stack flex={1} gap={0.3}>
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  color: isExpanded ? "white" : "var(--text1)",
+                  fontFamily: "Lato",
+                  lineHeight: 1.2,
+                }}
+              >
+                {section.title}
+              </Typography>
+              {totalCount > 0 && (
+                <Typography
+                  sx={{
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: isExpanded ? "rgba(255,255,255,0.7)" : "var(--text4)",
+                  }}
+                >
+                  {completedCount}/{totalCount} lessons {hasProgress ? "completed" : ""}
+                </Typography>
+              )}
+            </Stack>
+            {totalCount > 0 && (
+              <Box
+                sx={{
+                  bgcolor: isExpanded ? "rgba(255,255,255,0.2)" : hasProgress ? "var(--primary-color-acc-2)" : "var(--library-expand)",
+                  px: 1,
+                  py: 0.3,
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: isExpanded ? "white" : hasProgress ? "var(--primary-color)" : "var(--text4)",
+                  ml: 1,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {totalCount} {totalCount === 1 ? "lesson" : "lessons"}
+              </Box>
             )}
-            <Typography
-              sx={{ fontWeight: 700, fontSize: "15px", color: "var(--text1)", flex: 1 }}
-            >
-              {section.title}
-            </Typography>
-            <Typography
-              sx={{ fontSize: "12px", fontWeight: 600, color: "var(--text4)" }}
-            >
-              {completedCount}/{sectionLessons.length} lessons
-            </Typography>
           </Stack>
+
+          {/* Expanded Lessons */}
           {isExpanded && (
-            <Stack gap={1.5} sx={{ mt: 1.5, pl: 1 }}>
-              {sectionLessons.map((item, index) => renderLessonItem(item, index))}
+            <Stack
+              gap={0}
+              sx={{
+                border: "1px solid var(--border-color)",
+                borderTop: "none",
+                borderRadius: "0 0 10px 10px",
+                overflow: "hidden",
+              }}
+            >
+              {sectionLessons.map((item, lIndex) => {
+                const isAccessible = isEnrolled || item.isPreview;
+                const isSelected = selectedLessonId === item.id;
+                const globalIndex = getGlobalIndex(item.id);
+                const progress = progressRef.current[item.id]?.progress || 0;
+                const isCompleted = progressRef.current[item.id]?.isCompleted || false;
+                const isLast = lIndex === sectionLessons.length - 1;
+
+                return (
+                  <Stack
+                    key={item.id}
+                    direction="row"
+                    alignItems="center"
+                    gap={1.5}
+                    onClick={() => {
+                      if (item.type === "VIDEO" && isAccessible) handleLessonClick(item, globalIndex);
+                    }}
+                    sx={{
+                      p: "10px 16px",
+                      bgcolor: isSelected ? "var(--sec-color-acc-1)" : "var(--white)",
+                      borderBottom: isLast ? "none" : "1px solid var(--border-color)",
+                      cursor: item.type === "VIDEO" && isAccessible ? "pointer" : "default",
+                      opacity: isAccessible ? 1 : 0.55,
+                      transition: "background 0.15s",
+                      "&:hover": {
+                        bgcolor: isAccessible
+                          ? isSelected ? "var(--sec-color-acc-1)" : "var(--library-expand)"
+                          : "var(--white)",
+                      },
+                    }}
+                  >
+                    {/* Play/File Icon */}
+                    <Box sx={{ color: isSelected ? "var(--sec-color)" : "var(--text4)", display: "flex", flexShrink: 0 }}>
+                      {item.type === "VIDEO" ? (
+                        isSelected && isPlaying ? (
+                          <PauseCircle sx={{ fontSize: 22 }} />
+                        ) : (
+                          <PlayCircle sx={{ fontSize: 22 }} />
+                        )
+                      ) : (
+                        <InsertDriveFile sx={{ fontSize: 22 }} />
+                      )}
+                    </Box>
+
+                    {/* Title + Duration */}
+                    <Stack flex={1} gap={0}>
+                      <Typography
+                        sx={{
+                          fontSize: "13px",
+                          fontWeight: isSelected ? 700 : 500,
+                          color: isSelected ? "var(--text1)" : "var(--text2)",
+                          fontFamily: "Lato",
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {item.title}
+                      </Typography>
+                      {item.duration > 0 && (
+                        <Typography sx={{ fontSize: "11px", color: "var(--text4)" }}>
+                          {Math.floor(item.duration / 60)}:{String(item.duration % 60).padStart(2, "0")} min
+                        </Typography>
+                      )}
+                    </Stack>
+
+                    {/* Status Icon */}
+                    <Box sx={{ flexShrink: 0, display: "flex" }}>
+                      {!isAccessible ? (
+                        <Lock sx={{ fontSize: 18, color: "var(--text4)" }} />
+                      ) : isCompleted ? (
+                        <CheckCircle sx={{ fontSize: 18, color: "var(--primary-color)" }} />
+                      ) : progress > 0 ? (
+                        <CircularProgress variant="determinate" value={progress} size={18} thickness={5} sx={{ color: "var(--primary-color)" }} />
+                      ) : (
+                        <Box sx={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid var(--border-color)" }} />
+                      )}
+                    </Box>
+                  </Stack>
+                );
+              })}
             </Stack>
           )}
         </Box>
@@ -600,361 +567,415 @@ const MyCourse = () => {
       !courseDetails?.subscription.isPro);
 
   return (
-    <Box sx={{ pb: { xs: 24, md: 8 } }}>
+    <Stack
+      padding={{ xs: "10px", sm: "20px" }}
+      alignItems="center"
+      sx={{
+        marginBottom: isEnrolled
+          ? { xs: "0%", md: "0px" }
+          : { xs: "40%", sm: "20%", md: "0px" },
+      }}
+    >
       <Script
         src="https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js"
         onLoad={initializePlayer}
       />
 
-      {/* Hero Section */}
-      <Box
-        sx={{
-          background:
-            "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%)",
-          pt: { xs: 3, md: 4 },
-          pb: { xs: 10, md: 14 },
-          px: { xs: 2, md: 4 },
-          color: "var(--white)",
-          mb: -10,
-        }}
-      >
-        <Box maxWidth="1400px" mx="auto">
-          {/* Breadcrumb */}
-          <Stack
-            direction="row"
-            alignItems="center"
-            gap={1}
-            sx={{
-              mb: 2,
-              cursor: "pointer",
-              width: "fit-content",
-              opacity: 0.7,
-              "&:hover": { opacity: 1 },
-            }}
+      <Stack gap="20px" width="100%" maxWidth="1200px">
+        {/* Title Bar */}
+        <Stack
+          flexDirection="row"
+          alignItems="center"
+          gap="5px"
+          sx={{
+            border: "1px solid var(--border-color)",
+            backgroundColor: "var(--white)",
+            borderRadius: "10px",
+            padding: "10px 20px",
+            width: "100%",
+            height: "50px",
+          }}
+        >
+          <ArrowBackIosNew
             onClick={() => router.back()}
+            sx={{ cursor: "pointer", fontSize: "18px" }}
+          />
+          <Typography
+            sx={{ fontSize: { xs: "14px", sm: "18px" }, fontFamily: "Lato" }}
           >
-            <ArrowBackIosNew sx={{ fontSize: 12, color: "inherit" }} />
-            <Typography sx={{ fontSize: "13px", fontWeight: 500 }}>
-              Back to Courses
-            </Typography>
-          </Stack>
+            {courseDetails?.title || <Skeleton variant="text" width="120px" />}
+          </Typography>
+        </Stack>
 
-          <Grid container spacing={4} alignItems="flex-end">
-            <Grid item xs={12} md={8}>
-              <Typography
-                sx={{
-                  fontSize: { xs: "24px", md: "32px" },
-                  fontWeight: 800,
-                  lineHeight: 1.2,
-                  mb: 1.5,
-                }}
-              >
-                {courseDetails?.title || <Skeleton width="60%" />}
-              </Typography>
-              <Stack direction="row" gap={3} flexWrap="wrap">
-                <Stack direction="row" gap={1} alignItems="center">
-                  <PlayLesson sx={{ fontSize: 18, opacity: 0.7 }} />
-                  <Typography sx={{ fontWeight: 500, fontSize: "14px" }}>
-                    {lessonList.length} Lessons
-                  </Typography>
+        {/* Main Content: Left (Video + Description) + Right (Checkout + Lectures) */}
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          gap={{ xs: "20px", lg: "30px" }}
+          justifyContent="space-between"
+        >
+          {/* Left Column: Video + Description */}
+          <Stack gap="15px" flex={1} width="100%">
+            {/* Video Player */}
+            <Stack>
+              {videoLoading ? (
+                <Stack
+                  width="100%"
+                  height="500px"
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <CircularProgress
+                    sx={{ color: "var(--primary-color)" }}
+                    size={50}
+                  />
                 </Stack>
-                <Stack direction="row" gap={1} alignItems="center">
-                  <AccessTimeFilled sx={{ fontSize: 18, opacity: 0.7 }} />
-                  <Typography sx={{ fontWeight: 500, fontSize: "14px" }}>
-                    {courseDetails?.duration || 0} Hours
-                  </Typography>
-                </Stack>
-                <Stack direction="row" gap={1} alignItems="center">
-                  <Translate sx={{ fontSize: 18, opacity: 0.7 }} />
-                  <Typography sx={{ fontWeight: 500, fontSize: "14px" }}>
-                    {courseDetails?.language?.join(", ") || "English"}
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Grid>
-          </Grid>
-        </Box>
-      </Box>
-
-      <Box maxWidth="1400px" mx="auto" px={{ xs: 2, md: 4 }}>
-        <Grid container spacing={4}>
-          {/* Left Column: Video & Tabs */}
-          <Grid item xs={12} lg={8}>
-            <Stack gap={3}>
-              {/* Video Player */}
-              <Box
-                sx={{
-                  width: "100%",
-                  aspectRatio: "16/9",
-                  borderRadius: "24px",
-                  overflow: "hidden",
-                  bgcolor: "#000",
-                  boxShadow: "0px 20px 40px rgba(0,0,0,0.3)",
-                  position: "relative",
-                  border: "4px solid var(--white)",
-                  zIndex: 10,
-                }}
-              >
-                {videoLoading ? (
-                  <Stack
-                    height="100%"
-                    justifyContent="center"
-                    alignItems="center"
-                  >
-                    <CircularProgress sx={{ color: "white" }} />
-                  </Stack>
-                ) : videoPreview ? (
+              ) : videoPreview ? (
+                <Stack
+                  sx={{
+                    width: "100%",
+                    aspectRatio: "16 / 9",
+                    borderRadius: "15px",
+                    overflow: "hidden",
+                    backgroundColor: "black",
+                  }}
+                >
                   <iframe
                     ref={iframeRef}
                     id="bunny-stream-embed"
                     src={videoPreview}
-                    style={{ width: "100%", height: "100%", border: "none" }}
+                    style={{
+                      borderRadius: "15px",
+                      width: "100%",
+                      maxWidth: "100%",
+                      height: "100%",
+                      border: "none",
+                    }}
                     allow="autoplay; fullscreen"
                     allowFullScreen
                   />
-                ) : (
-                  <Stack
-                    height="100%"
-                    justifyContent="center"
-                    alignItems="center"
-                    sx={{
-                      bgcolor: "var(--library-expand)",
-                      backgroundImage:
-                        "radial-gradient(var(--border-color) 1px, transparent 1px)",
-                      backgroundSize: "20px 20px",
-                    }}
-                  >
-                    <PlayCircle sx={{ fontSize: 64, color: "var(--text4)" }} />
-                    <Typography
-                      sx={{ mt: 2, color: "var(--text3)", fontWeight: 600 }}
-                    >
-                      Select a lesson to start watching
-                    </Typography>
-                  </Stack>
-                )}
-              </Box>
-
-              {/* Tabs */}
-              <Box>
-                <Tabs
-                  value={tabValue}
-                  onChange={handleTabChange}
+                </Stack>
+              ) : (
+                <Stack
                   sx={{
-                    "& .MuiTabs-indicator": { display: "none" },
-                    "& .MuiTab-root": {
-                      textTransform: "none",
-                      fontWeight: 700,
-                      fontSize: "15px",
-                      mr: 1,
-                      borderRadius: "100px",
-                      minHeight: "40px",
-                      px: 3,
-                      color: "var(--text3)",
-                      "&.Mui-selected": {
-                        color: "var(--white)",
-                        bgcolor: "var(--primary-color)",
-                      },
-                    },
+                    width: "100%",
+                    aspectRatio: "16 / 9",
+                    borderRadius: "15px",
+                    overflow: "hidden",
+                    backgroundColor: "var(--library-expand)",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    position: "relative",
                   }}
                 >
-                  <Tab label="Overview" />
-                  <Tab label="Curriculum" />
-                </Tabs>
-              </Box>
-
-              {/* Tab Content */}
-              <Box sx={{ py: 1 }}>
-                {tabValue === 0 && (
-                  <Stack gap={3}>
-                    {/* Description */}
+                  {courseDetails?.thumbnail ? (
                     <Box
+                      component="img"
+                      src={courseDetails.thumbnail}
+                      alt={courseDetails.title}
                       sx={{
-                        bgcolor: "var(--white)",
-                        p: 4,
-                        borderRadius: "24px",
-                        border: "1px solid var(--border-color)",
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
                       }}
-                    >
+                    />
+                  ) : (
+                    <>
+                      <PlayCircle sx={{ fontSize: 64, color: "var(--text4)" }} />
                       <Typography
-                        sx={{
-                          fontSize: "20px",
-                          fontWeight: 800,
-                          mb: 3,
-                          color: "var(--text1)",
-                        }}
+                        sx={{ mt: 1, color: "var(--text3)", fontWeight: 600, fontSize: "14px" }}
                       >
-                        About this Course
+                        Select a lesson to start watching
                       </Typography>
-                      <MDPreview
-                        value={
-                          courseDetails?.description ||
-                          "No description available."
-                        }
-                      />
-                    </Box>
-                  </Stack>
-                )}
-
-                {tabValue === 1 && (
-                  <Stack gap={2}>
-                    {lessonList.length > 0
-                      ? sections.length > 0
-                        ? renderSectionedLessons()
-                        : renderFlatLessons(lessonList)
-                      : Array.from({ length: 4 }).map((_, i) => (
-                          <LessoncardSkeleton key={i} />
-                        ))}
-                  </Stack>
-                )}
-              </Box>
+                    </>
+                  )}
+                </Stack>
+              )}
             </Stack>
-          </Grid>
 
-          {/* Right Column: Sidebar */}
-          <Grid item xs={12} lg={4}>
-            <Stack gap={3} position="sticky" top={24}>
-              {!isEnrolled ? (
-                <CheckoutCard
-                  courseDetails={courseDetails}
-                  lessonList={lessonList}
-                  isPaidCourseForUser={isPaidCourseForUser}
-                />
-              ) : (
-                <Box
+            {/* Language, Lessons and Duration tags */}
+            <Stack
+              flexDirection="row"
+              width="100%"
+              gap="10px"
+            >
+              {[
+                { icon: <Translate sx={{ fontSize: "16px" }} />, text: courseDetails?.language?.join?.(", ") || courseDetails?.language || "N/A" },
+                { icon: <PlayLesson sx={{ fontSize: "16px" }} />, text: `${courseDetails?.lessons || lessonList.length} Lessons` },
+                { icon: <AccessTimeFilled sx={{ fontSize: "16px" }} />, text: formatDuration(courseDetails?.duration) },
+              ].map((tag, i) => (
+                <Typography
+                  key={i}
                   sx={{
-                    bgcolor: "var(--white)",
-                    p: 3,
-                    borderRadius: "24px",
-                    border: "1px solid var(--border-color)",
-                    boxShadow: "0px 4px 20px rgba(0,0,0,0.05)",
+                    fontFamily: "Lato",
+                    fontSize: { xs: "12px", lg: "13px" },
+                    fontWeight: 500,
+                    backgroundColor: "var(--sec-color-acc-1)",
+                    padding: "6px 12px",
+                    borderRadius: "6px",
+                    color: "var(--sec-color)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  {tag.icon}
+                  {tag.text}
+                </Typography>
+              ))}
+            </Stack>
+
+            {/* About this course — Desktop only */}
+            <Stack
+              sx={{
+                display: { xs: "none", md: "block" },
+              }}
+            >
+              {courseDetails?.description && (
+                <Stack
+                  sx={{
+                    backgroundColor: "var(--white)",
+                    padding: "20px 25px",
+                    borderRadius: "10px",
+                    maxHeight: "500px",
+                    overflow: "auto",
                   }}
                 >
                   <Typography
                     sx={{
                       fontSize: "18px",
-                      fontWeight: 800,
-                      mb: 3,
+                      fontWeight: 700,
+                      mb: 2,
                       color: "var(--text1)",
+                      fontFamily: "Lato",
                     }}
                   >
-                    Course Analytics
+                    About this course
                   </Typography>
-
-                  <Stack gap={2.5}>
-                    <Box>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        mb={1}
-                      >
-                        <Typography
-                          sx={{
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            color: "var(--text3)",
-                          }}
-                        >
-                          Progress
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: "14px",
-                            fontWeight: 700,
-                            color: "var(--text1)",
-                          }}
-                        >
-                          {analytics.progressPercentage}%
-                        </Typography>
-                      </Stack>
-                      <Box
-                        sx={{
-                          width: "100%",
-                          height: 8,
-                          bgcolor: "var(--library-expand)",
-                          borderRadius: "4px",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            width: `${analytics.progressPercentage}%`,
-                            height: "100%",
-                            bgcolor: "#3b82f6",
-                            borderRadius: "4px",
-                            transition: "width 0.5s ease",
-                          }}
-                        />
-                      </Box>
-                    </Box>
-
-                    <Stack direction="row" gap={2}>
-                      <Box
-                        flex={1}
-                        sx={{
-                          p: 2,
-                          bgcolor: "#f8fafc",
-                          borderRadius: "16px",
-                          border: "1px solid #e2e8f0",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            color: "#64748b",
-                            mb: 0.5,
-                          }}
-                        >
-                          Time Spent
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: "18px",
-                            fontWeight: 800,
-                            color: "#1e293b",
-                          }}
-                        >
-                          {analytics.timeSpent}
-                        </Typography>
-                      </Box>
-                      <Box
-                        flex={1}
-                        sx={{
-                          p: 2,
-                          bgcolor: "#f8fafc",
-                          borderRadius: "16px",
-                          border: "1px solid #e2e8f0",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            color: "#64748b",
-                            mb: 0.5,
-                          }}
-                        >
-                          Completed
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: "18px",
-                            fontWeight: 800,
-                            color: "#1e293b",
-                          }}
-                        >
-                          {analytics.completedLessons}/{analytics.totalLessons}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </Stack>
-                </Box>
+                  <MDPreview value={courseDetails.description} />
+                </Stack>
               )}
             </Stack>
-          </Grid>
-        </Grid>
-      </Box>
-    </Box>
+          </Stack>
+
+          {/* Right Column: Checkout/Analytics + Info Tags + Lectures */}
+          <Stack
+            gap="20px"
+            alignItems="stretch"
+            width={{ xs: "100%", md: "350px" }}
+            minWidth={{ md: "350px" }}
+            sx={{ marginBottom: { xs: "60px", md: "0px" } }}
+          >
+            {/* Checkout Card or Analytics */}
+            {!isEnrolled ? (
+              <CheckoutCard
+                courseDetails={courseDetails}
+                lessonList={lessonList}
+                isPaidCourseForUser={isPaidCourseForUser}
+              />
+            ) : (
+              <Stack
+                sx={{
+                  bgcolor: "var(--white)",
+                  p: 2.5,
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  mb={1.5}
+                >
+                  <Typography
+                    sx={{ fontSize: "14px", fontWeight: 600, color: "var(--text3)" }}
+                  >
+                    Progress
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: "14px", fontWeight: 700, color: "var(--text1)" }}
+                  >
+                    {analytics.progressPercentage}%
+                  </Typography>
+                </Stack>
+                <Box
+                  sx={{
+                    width: "100%",
+                    height: 6,
+                    bgcolor: "var(--library-expand)",
+                    borderRadius: "3px",
+                    overflow: "hidden",
+                    mb: 1.5,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: `${analytics.progressPercentage}%`,
+                      height: "100%",
+                      bgcolor: "var(--primary-color)",
+                      borderRadius: "3px",
+                      transition: "width 0.5s ease",
+                    }}
+                  />
+                </Box>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography sx={{ fontSize: "12px", color: "var(--text3)" }}>
+                    {analytics.timeSpent} watched
+                  </Typography>
+                  <Typography sx={{ fontSize: "12px", color: "var(--text3)" }}>
+                    {analytics.completedLessons}/{analytics.totalLessons} lessons
+                  </Typography>
+                </Stack>
+              </Stack>
+            )}
+
+            {/* Lectures List */}
+            <Stack
+              width="100%"
+              gap="15px"
+            >
+              <Stack
+                width="100%"
+                flexDirection="row"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography
+                  sx={{
+                    fontSize: { xs: "18px", sm: "20px" },
+                    fontWeight: 700,
+                    fontFamily: "Lato",
+                  }}
+                >
+                  Lectures
+                </Typography>
+                <Typography sx={{ fontSize: "16px", color: "var(--text3)" }}>
+                  {selectedLessonIndex}/{lessonList.length}
+                </Typography>
+              </Stack>
+
+              {lessonList.length > 0
+                ? sections.length > 0
+                  ? renderSectionedLessons()
+                  : lessonList.map((item, index) => {
+                      const isAccessible = isEnrolled || item.isPreview;
+                      const isSelected = selectedLessonId === item.id;
+                      const progress = progressRef.current[item.id]?.progress || 0;
+                      const isCompleted = progressRef.current[item.id]?.isCompleted || false;
+
+                      return (
+                        <LessonCard
+                          key={item.id}
+                          onClick={() => {
+                            if (item.type === "VIDEO" && isAccessible) {
+                              handleLessonClick(item, index);
+                            }
+                          }}
+                          style={{
+                            cursor:
+                              item.type === "VIDEO" && isAccessible
+                                ? "pointer"
+                                : "not-allowed",
+                            opacity: isAccessible ? 1 : 0.6,
+                          }}
+                          LessonName={
+                            <span style={{ color: "var(--text1)" }}>
+                              {item.title}
+                            </span>
+                          }
+                          duration={item.duration}
+                          iconStart={
+                            item.type === "VIDEO" ? (
+                              isSelected && isPlaying ? (
+                                <PauseCircle
+                                  sx={{ color: isAccessible ? "var(--sec-color)" : "var(--primary-color)" }}
+                                />
+                              ) : (
+                                <PlayCircle
+                                  sx={{ color: isAccessible ? "var(--sec-color)" : "var(--primary-color)" }}
+                                />
+                              )
+                            ) : (
+                              <InsertDriveFile
+                                sx={{ color: isAccessible ? "var(--sec-color)" : "var(--primary-color)" }}
+                              />
+                            )
+                          }
+                          iconEnd={
+                            item.type === "FILE" ? (
+                              isAccessible ? (
+                                <SaveAlt
+                                  sx={{ color: "var(--sec-color)", cursor: "pointer" }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleFileDownload(item.id);
+                                  }}
+                                />
+                              ) : (
+                                <Lock sx={{ color: "var(--primary-color)" }} />
+                              )
+                            ) : !isAccessible ? (
+                              <Lock sx={{ color: "var(--primary-color)" }} />
+                            ) : isCompleted ? (
+                              <CheckCircle sx={{ color: "var(--primary-color)", fontSize: 22 }} />
+                            ) : progress > 0 ? (
+                              <CircularProgress
+                                variant="determinate"
+                                value={progress}
+                                size={22}
+                                thickness={5}
+                                sx={{ color: "var(--primary-color)" }}
+                              />
+                            ) : null
+                          }
+                          isPreview={item.isPreview}
+                          isEnrolled={isEnrolled}
+                          isSelected={isSelected}
+                          now={isSelected}
+                        />
+                      );
+                    })
+                : Array.from({ length: 4 }).map((_, i) => (
+                    <LessoncardSkeleton key={i} />
+                  ))}
+            </Stack>
+
+            {/* About this course — Mobile only */}
+            <Stack
+              sx={{
+                display: { xs: "block", md: "none" },
+                width: "100%",
+              }}
+            >
+              {courseDetails?.description && (
+                <Stack
+                  sx={{
+                    backgroundColor: "var(--white)",
+                    padding: "20px 25px",
+                    borderRadius: "10px",
+                    maxHeight: "500px",
+                    overflow: "auto",
+                    marginTop: "20px",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "18px",
+                      fontWeight: 700,
+                      mb: 2,
+                      color: "var(--text1)",
+                      fontFamily: "Lato",
+                    }}
+                  >
+                    About this course
+                  </Typography>
+                  <MDPreview value={courseDetails.description} />
+                </Stack>
+              )}
+            </Stack>
+          </Stack>
+        </Stack>
+      </Stack>
+    </Stack>
   );
 };
 
