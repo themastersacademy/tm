@@ -559,11 +559,11 @@ export default function Checkout() {
                       >
                         Billing Address
                       </Typography>
-                      {billingInfoList
-                        .filter((info) => info && info.firstName)
-                        .map((info, index) => (
+                      {billingInfoList.map((info, index) => {
+                        if (!info || !info.firstName) return null;
+                        return (
                           <AddressCard
-                            key={index}
+                            key={info.id || index}
                             billingInfo={info}
                             title={`Address ${index + 1}`}
                             onEdit={editBillingInfo}
@@ -572,7 +572,8 @@ export default function Checkout() {
                             isSelected={selectedAddressIndex === index}
                             onSelect={() => handleAddressSelect(index)}
                           />
-                        ))}
+                        );
+                      })}
                       <BillingInformation
                         billingInfo={billingInfo}
                         setBillingInfo={setBillingInfo}

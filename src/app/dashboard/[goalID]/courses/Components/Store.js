@@ -75,15 +75,7 @@ export default function Store() {
                         : [item.language]
                     }
                     lessons={`${item.lessons || 0} Lessons`}
-                    hours={
-                      (() => {
-                        const mins = item.duration || 0;
-                        if (mins < 60) return `${mins} min`;
-                        const h = Math.floor(mins / 60);
-                        const m = mins % 60;
-                        return m > 0 ? `${h} hrs ${m} min` : `${h} hrs`;
-                      })()
-                    }
+                    hours={`${item.duration || 0} Hours`}
                     isPro={item.subscription?.isPro}
                     isFree={item.subscription?.isFree}
                     price={
