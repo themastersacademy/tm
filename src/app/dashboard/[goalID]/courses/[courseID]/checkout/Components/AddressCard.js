@@ -73,7 +73,7 @@ export default function AddressCard({
         <Stack direction="row" alignItems="flex-start" gap={2}>
           <Radio
             checked={isSelected}
-            onChange={handleToggleSelect}
+            onChange={() => {}}
             sx={{
               p: 0,
               mt: 0.5,
