@@ -7,6 +7,12 @@ export async function POST(req) {
       const userID = session.user.id;
       const { oldPassword, newPassword } = await req.json();
 
+      if (!oldPassword) {
+        return Response.json(
+          { success: false, message: "Current password is required" },
+          { status: 400 }
+        );
+      }
       const { default: validatePasswordFn } = await import("@/src/utils/passwordValidator");
       if (!newPassword) {
         return Response.json(

@@ -3,11 +3,11 @@ import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
 export async function POST(req) {
   const { lessonID, courseID, enrollmentID } = await req.json();
-  if (!lessonID || !courseID) {
+  if (!lessonID || !courseID || !enrollmentID) {
     return Response.json({
       success: false,
-      message: "Missing lessonID or courseID",
-    });
+      message: "Missing lessonID, courseID, or enrollmentID",
+    }, { status: 400 });
   }
 
   return withAuth(async (session) => {

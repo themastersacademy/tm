@@ -24,6 +24,7 @@ import { useSession } from "next-auth/react";
 import { useExams } from "../../context/ExamProvider";
 import { useParams, useRouter } from "next/navigation";
 import CourseCard from "@/src/Components/CourseCard/CourseCard";
+import { formatDuration } from "@/src/utils/formatDuration";
 import { useCourses } from "../../context/CourseProvider";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import CourseCardSkeleton from "@/src/Components/SkeletonCards/CourseCardSkeleton";
@@ -592,7 +593,7 @@ export default function Home() {
                               title={item.title || "Untitled Course"}
                               thumbnail={item.thumbnail}
                               lessons={`${item.lessons || 0} Lessons`}
-                              hours={`${item.duration || 0} min`}
+                              hours={formatDuration(item.duration)}
                               Language={item.language || "N/A"}
                               actionButton={
                                 <Button

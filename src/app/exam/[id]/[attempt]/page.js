@@ -318,7 +318,8 @@ export default function Exam() {
           } else {
             router.push(`/exam/${examID}/${attemptID}/result`);
           }
-        });
+        })
+        .catch((err) => console.error("View question error:", err));
     }
   }, [
     getUserAnswer,
@@ -420,7 +421,8 @@ export default function Exam() {
           .then((data) => {
             setClientPerfAtFetch(performance.now());
             setServerTimestamp(data.serverTimestamp);
-          });
+          })
+          .catch((err) => console.error("Mark question error:", err));
       }
     },
     [updateLocalUserAnswer, saveAnswer, examID, attemptID],

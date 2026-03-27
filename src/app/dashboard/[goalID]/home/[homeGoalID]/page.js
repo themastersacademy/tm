@@ -24,6 +24,7 @@ import GoalHead from "@/src/Components/GoalHead/GoalHead";
 import SecondaryCard from "@/src/Components/SecondaryCard/SecondaryCard";
 import SecondaryCardSkeleton from "@/src/Components/SkeletonCards/SecondaryCardSkeleton";
 import CourseCard from "@/src/Components/CourseCard/CourseCard";
+import { formatDuration } from "@/src/utils/formatDuration";
 import CourseCardSkeleton from "@/src/Components/SkeletonCards/CourseCardSkeleton";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import MDPreview from "@/src/Components/MarkdownPreview/MarkdownPreview";
@@ -426,7 +427,7 @@ export default function HomeGoalID() {
                           thumbnail={course.thumbnail}
                           Language={course.language}
                           lessons={`${course.lessons} Lessons`}
-                          hours={`${course.duration} min`}
+                          hours={formatDuration(course.duration)}
                           progress={course.progress}
                           actionButton={
                             <Button

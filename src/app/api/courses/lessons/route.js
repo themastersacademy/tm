@@ -3,7 +3,7 @@ import { getAllLessons } from "@/src/libs/courses/lessonsController";
 export async function POST(req, res) {
   const { courseID } = await req.json();
   if (!courseID) {
-    return Response.json({ success: false, message: "Missing courseID" });
+    return Response.json({ success: false, message: "Missing courseID" }, { status: 400 });
   }
   try {
     const lessons = await getAllLessons({ courseID });
@@ -13,6 +13,6 @@ export async function POST(req, res) {
     return Response.json({
       success: false,
       message: "Failed to fetch lessons",
-    });
+    }, { status: 500 });
   }
 }

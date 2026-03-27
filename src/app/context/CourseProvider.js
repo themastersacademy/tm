@@ -93,7 +93,6 @@ export function CourseProvider({ children }) {
   const refetch = useCallback(() => {
     mutateEnrolled();
     mutateStore();
-    mutateCourseList();
     mutateLiveCourses();
   }, [mutateEnrolled, mutateStore, mutateLiveCourses]);
 

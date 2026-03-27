@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import CourseCardSkeleton from "@/src/Components/SkeletonCards/CourseCardSkeleton";
 import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import { useCourses } from "@/src/app/context/CourseProvider";
+import { formatDuration } from "@/src/utils/formatDuration";
 import CourseStats from "./CourseStats";
 import ContinueLearning from "./ContinueLearning";
 import AchievementCard from "./AchievementCard";
@@ -104,7 +105,7 @@ export default function MyCourses() {
                       title={item.title || "Untitled Course"}
                       thumbnail={item.thumbnail}
                       lessons={`${item.lessons || 0} Lessons`}
-                      hours={`${item.duration || 0} min`}
+                      hours={formatDuration(item.duration)}
                       Language={
                         Array.isArray(item.language)
                           ? item.language

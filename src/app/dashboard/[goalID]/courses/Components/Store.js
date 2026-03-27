@@ -7,15 +7,7 @@ import NoDataFound from "@/src/Components/NoDataFound/NoDataFound";
 import { useRouter, useParams } from "next/navigation";
 import { useCourses } from "@/src/app/context/CourseProvider";
 import LearningTips from "./LearningTips";
-
-function formatDuration(minutes) {
-  if (!minutes || minutes <= 0) return "0m";
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m} min`;
-  if (m === 0) return `${h} Hours`;
-  return `${h}h ${m}m`;
-}
+import { formatDuration } from "@/src/utils/formatDuration";
 
 export default function Store() {
   const { goalID } = useParams();

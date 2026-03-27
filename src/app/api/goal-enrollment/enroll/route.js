@@ -1,4 +1,4 @@
-import { createGoalEnrollment } from "@/src/libs/goalEnrollment/goalEnrollController";
+import { createGoalEnrollment, getAllGoalEnrollments } from "@/src/libs/goalEnrollment/goalEnrollController";
 import { getSession } from "@/src/utils/serverSession";
 
 export async function POST(req) {
@@ -14,7 +14,7 @@ export async function POST(req) {
     return Response.json({
       success: false,
       message: error.message,
-    });
+    }, { status: 500 });
   }
 }
 
@@ -30,6 +30,6 @@ export async function GET(req) {
     return Response.json({
       success: false,
       message: error.message,
-    });
+    }, { status: 500 });
   }
 }
