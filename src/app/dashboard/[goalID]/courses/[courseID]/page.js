@@ -108,6 +108,27 @@ const MyCourse = () => {
         player.setCurrentTime(currentTime);
       });
 
+      // Intercept the player's fullscreen button — fullscreen our container instead
+      const handleFsMessage = (e) => {
+        try {
+          const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+          if (
+            data?.event === "fullscreenchange" ||
+            data?.method === "fullscreen" ||
+            data?.context?.event === "fullscreenchange"
+          ) {
+            const container = videoContainerRef.current;
+            if (!container) return;
+            if (!document.fullscreenElement) {
+              container.requestFullscreen().catch(() => {});
+            } else {
+              document.exitFullscreen().catch(() => {});
+            }
+          }
+        } catch {}
+      };
+      window.addEventListener("message", handleFsMessage);
+
       player.on("play", () => setIsPlaying(true));
       player.on("pause", () => {
         setIsPlaying(false);
@@ -719,7 +740,7 @@ const MyCourse = () => {
                     >
                       <Typography
                         sx={{
-                          color: "rgba(255, 255, 255, 0.09)",
+                          color: "rgba(255, 255, 255, 0.18)",
                           fontSize: { xs: "12px", sm: "15px", md: "18px" },
                           fontWeight: 700,
                           fontFamily: "monospace",
