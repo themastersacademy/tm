@@ -394,11 +394,11 @@ export default function ProSubscription() {
 
   return (
     <Stack>
-      {paymentLoading && (
+      {paymentLoading && paymentInfo && (
         <PaymentLoadingOverlay
           {...paymentInfo}
-          setPaymentLoading={setPaymentLoading}
-          description={`hello`}
+          onClose={() => setPaymentLoading(false)}
+          description={`Pro Subscription`}
           billingInfo={billingInfoList[selectedAddressIndex]}
         />
       )}

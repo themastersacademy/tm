@@ -483,10 +483,10 @@ export default function Checkout() {
 
   return (
     <Stack>
-      {paymentLoading && (
+      {paymentLoading && paymentInfo && (
         <PaymentLoadingOverlay
           {...paymentInfo}
-          setPaymentLoading={setPaymentLoading}
+          onClose={() => setPaymentLoading(false)}
           description={`Payment for ${courseDetails?.title}`}
           billingInfo={billingInfoList[selectedAddressIndex]}
         />

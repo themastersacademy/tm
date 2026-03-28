@@ -19,11 +19,15 @@ export default function PaymentOverlay({
   const [scriptLoaded, setScriptLoaded] = useState(!!window.Razorpay);
   const [error, setError] = useState(null);
   const rzpRef = useRef(null);
+  const errorShownRef = useRef(false);
 
   useEffect(() => {
     if (error) {
-      enqueueSnackbar(error, { variant: "error" });
-      onClose && onClose();
+      if (!errorShownRef.current) {
+        errorShownRef.current = true;
+        enqueueSnackbar(error, { variant: "error" });
+        onClose && onClose();
+      }
       return;
     }
 
