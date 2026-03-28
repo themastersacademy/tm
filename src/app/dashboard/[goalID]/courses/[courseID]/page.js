@@ -64,6 +64,7 @@ const MyCourse = () => {
 
   const progressRef = useRef({});
   const [renderTick, setRenderTick] = useState(0);
+  const [watermarkPos, setWatermarkPos] = useState({ top: 30, left: 20 });
   const lastTickRef = useRef(0); // Persist last tick timestamp
 
   const apiHeaders = useMemo(
@@ -277,6 +278,18 @@ const MyCourse = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isPlaying]);
+
+  // Watermark: drift to random position every 8 seconds
+  useEffect(() => {
+    if (!videoPreview) return;
+    const interval = setInterval(() => {
+      setWatermarkPos({
+        top: Math.floor(Math.random() * 70) + 5,   // 5% to 75%
+        left: Math.floor(Math.random() * 50) + 5,  // 5% to 55%
+      });
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [videoPreview]);
 
   const handleLessonClick = useCallback(
     (item, index) => {
@@ -658,6 +671,7 @@ const MyCourse = () => {
                     borderRadius: "15px",
                     overflow: "hidden",
                     backgroundColor: "black",
+                    position: "relative",
                   }}
                 >
                   <iframe
@@ -674,6 +688,34 @@ const MyCourse = () => {
                     allow="autoplay; fullscreen"
                     allowFullScreen
                   />
+                  {/* Anti-piracy watermark — drifts to random position */}
+                  {session?.user?.email && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: `${watermarkPos.top}%`,
+                        left: `${watermarkPos.left}%`,
+                        pointerEvents: "none",
+                        zIndex: 2,
+                        transition: "top 2s ease-in-out, left 2s ease-in-out",
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          color: "rgba(255, 255, 255, 0.09)",
+                          fontSize: { xs: "12px", sm: "15px", md: "18px" },
+                          fontWeight: 700,
+                          fontFamily: "monospace",
+                          letterSpacing: "1.5px",
+                          userSelect: "none",
+                          transform: "rotate(-20deg)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {session.user.email}
+                      </Typography>
+                    </Box>
+                  )}
                 </Stack>
               ) : (
                 <Stack
