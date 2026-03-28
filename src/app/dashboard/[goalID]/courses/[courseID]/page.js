@@ -59,6 +59,7 @@ const MyCourse = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const playerRef = useRef(null);
   const iframeRef = useRef(null);
+  const videoContainerRef = useRef(null);
   const [lessonProgress, setLessonProgress] = useState({});
   const { data: session } = useSession();
 
@@ -258,26 +259,36 @@ const MyCourse = () => {
     }
   }, [videoPreview, initializePlayer]);
 
-  // Keyboard controls: spacebar to toggle play/pause
+  // Toggle fullscreen on the video container (keeps watermark visible)
+  const toggleFullscreen = useCallback(() => {
+    const container = videoContainerRef.current;
+    if (!container) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      container.requestFullscreen().catch(() => {});
+    }
+  }, []);
+
+  // Keyboard controls: Space = play/pause, F = fullscreen
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ignore if user is typing in an input/textarea
       const tag = e.target.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
       if (e.code === "Space" && playerRef.current) {
         e.preventDefault();
-        if (isPlaying) {
-          playerRef.current.pause();
-        } else {
-          playerRef.current.play();
-        }
+        isPlaying ? playerRef.current.pause() : playerRef.current.play();
+      }
+      if (e.code === "KeyF") {
+        e.preventDefault();
+        toggleFullscreen();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isPlaying]);
+  }, [isPlaying, toggleFullscreen]);
 
   // Watermark: drift to random position every 8 seconds
   useEffect(() => {
@@ -665,6 +676,8 @@ const MyCourse = () => {
                 </Stack>
               ) : videoPreview ? (
                 <Stack
+                  ref={videoContainerRef}
+                  onDoubleClick={toggleFullscreen}
                   sx={{
                     width: "100%",
                     aspectRatio: "16 / 9",
@@ -672,6 +685,11 @@ const MyCourse = () => {
                     overflow: "hidden",
                     backgroundColor: "black",
                     position: "relative",
+                    cursor: "pointer",
+                    "&:fullscreen": {
+                      borderRadius: 0,
+                      "& iframe": { borderRadius: 0 },
+                    },
                   }}
                 >
                   <iframe
@@ -685,8 +703,7 @@ const MyCourse = () => {
                       height: "100%",
                       border: "none",
                     }}
-                    allow="autoplay; fullscreen"
-                    allowFullScreen
+                    allow="autoplay"
                   />
                   {/* Anti-piracy watermark — drifts to random position */}
                   {session?.user?.email && (
