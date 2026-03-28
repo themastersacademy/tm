@@ -258,21 +258,31 @@ const MyCourse = () => {
     }
   }, [videoPreview, initializePlayer]);
 
-  // Toggle fullscreen on the video container (keeps watermark visible)
+  // Toggle fullscreen + lock landscape on mobile
   const toggleFullscreen = useCallback(() => {
     const container = videoContainerRef.current;
     if (!container) return;
+
     if (document.fullscreenElement) {
+      // Exit fullscreen → unlock orientation
+      screen.orientation?.unlock?.();
       document.exitFullscreen().catch(() => {});
     } else {
-      container.requestFullscreen().catch(() => {});
+      // Enter fullscreen → lock landscape on mobile
+      container.requestFullscreen().then(() => {
+        screen.orientation?.lock?.("landscape").catch(() => {});
+      }).catch(() => {});
     }
   }, []);
 
-  // Track fullscreen state changes
+  // Track fullscreen state changes + unlock orientation on exit
   useEffect(() => {
     const handleFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const fs = !!document.fullscreenElement;
+      setIsFullscreen(fs);
+      if (!fs) {
+        screen.orientation?.unlock?.();
+      }
     };
     document.addEventListener("fullscreenchange", handleFsChange);
     return () => document.removeEventListener("fullscreenchange", handleFsChange);
