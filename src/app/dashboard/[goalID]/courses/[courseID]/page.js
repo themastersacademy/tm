@@ -257,6 +257,27 @@ const MyCourse = () => {
     }
   }, [videoPreview, initializePlayer]);
 
+  // Keyboard controls: spacebar to toggle play/pause
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing in an input/textarea
+      const tag = e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      if (e.code === "Space" && playerRef.current) {
+        e.preventDefault();
+        if (isPlaying) {
+          playerRef.current.pause();
+        } else {
+          playerRef.current.play();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPlaying]);
+
   const handleLessonClick = useCallback(
     (item, index) => {
       if (item.type !== "VIDEO" || (!item.isPreview && !isEnrolled)) return;
