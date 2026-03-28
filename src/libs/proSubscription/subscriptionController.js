@@ -92,8 +92,8 @@ export async function createProSubscription({
   const plan = subscriptionPlan.data;
 
   const priceBreakdown = calculatePriceBreakdownWithCoupon(
-    plan.priceWithTax,
-    plan.discountInPercent,
+    Number(plan.priceWithTax) || 0,
+    Number(plan.discountInPercent) || 0,
     18,
     couponDetails
   );
