@@ -59,16 +59,23 @@ export default function Checkout() {
 
   const courseEnroll = async () => {
     if (paymentLoading) return; // Prevent double-clicks
+    setPaymentLoading(true); // Set loading IMMEDIATELY to prevent double-clicks
 
     const selectedPlanIndex = courseDetails?.subscription?.plans?.findIndex(
       (plan) =>
-        plan.duration === selectedPlan.duration &&
+        String(plan.duration) === String(selectedPlan.duration) &&
         plan.type === selectedPlan.type &&
-        plan.priceWithTax === selectedPlan.priceWithTax &&
-        plan.discountInPercent === selectedPlan.discountInPercent
+        String(plan.priceWithTax) === String(selectedPlan.priceWithTax) &&
+        String(plan.discountInPercent) === String(selectedPlan.discountInPercent)
     );
 
-    setPaymentLoading(true); // Set loading BEFORE fetch to prevent double-clicks
+    if (selectedPlanIndex === -1) {
+      setPaymentLoading(false);
+      enqueueSnackbar("Selected plan not found. Please try again.", {
+        variant: "error",
+      });
+      return;
+    }
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/checkout/course-enroll`,
@@ -103,37 +110,43 @@ export default function Checkout() {
 
   const fetchCourseDetails = useCallback(async () => {
     setIsLoading(true);
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/courses`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          courseID: courseID,
-          goalID: goalID,
-        }),
-      }
-    );
-    const data = await response.json();
-    if (data.success) {
-      setCourseDetails(data.data);
-      const index = parseInt(planIndex, 10);
-      if (
-        !isNaN(index) &&
-        index >= 0 &&
-        index < data.data.subscription.plans.length
-      ) {
-        setSelectedPlan(data.data.subscription.plans[index]);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/courses`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            courseID: courseID,
+            goalID: goalID,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setCourseDetails(data.data);
+        const plans = data.data.subscription?.plans || [];
+        const index = parseInt(planIndex, 10);
+        if (!isNaN(index) && index >= 0 && index < plans.length) {
+          setSelectedPlan(plans[index]);
+        } else if (plans.length > 0) {
+          setSelectedPlan(plans[0]);
+        }
       } else {
-        setSelectedPlan(data.data.subscription.plans[0]);
+        enqueueSnackbar(data.message || "Failed to load course", {
+          variant: "error",
+        });
+        router.back();
       }
+    } catch (error) {
+      enqueueSnackbar("Failed to load course details", { variant: "error" });
+      router.back();
+    } finally {
       setIsLoading(false);
-    } else {
-      console.error("Failed to fetch course details:", data.message);
     }
-  }, [courseID, goalID, planIndex]);
+  }, [courseID, goalID, planIndex, enqueueSnackbar, router]);
 
   const applyCoupon = async (couponCode) => {
     const response = await fetch(

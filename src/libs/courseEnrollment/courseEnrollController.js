@@ -80,11 +80,20 @@ export async function enrollInCourse({
 
   const courseDetails = courseResult.data;
   const subscriptionPlan = courseDetails.subscription;
+
+  if (
+    !Array.isArray(subscriptionPlan?.plans) ||
+    subscriptionPlanIndex < 0 ||
+    subscriptionPlanIndex >= subscriptionPlan.plans.length
+  ) {
+    throw new Error("Invalid subscription plan");
+  }
+
   const plan = subscriptionPlan.plans[subscriptionPlanIndex];
 
   const priceBreakdown = calculatePriceBreakdownWithCoupon(
-    plan.priceWithTax,
-    plan.discountInPercent,
+    Number(plan.priceWithTax) || 0,
+    Number(plan.discountInPercent) || 0,
     18,
     couponDetails
   );

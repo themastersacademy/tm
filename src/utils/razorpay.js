@@ -8,7 +8,7 @@ export const razorpay = new Razorpay({
 
 export async function createOrder(amount, receipt, notes = {}) {
   const options = {
-    amount: amount * 100,
+    amount: Math.round(amount * 100),
     currency: "INR",
     receipt,
     notes,

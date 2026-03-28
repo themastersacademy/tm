@@ -25,8 +25,8 @@ export async function createTransaction({
   userMeta,
   itemName,
 }) {
-  if (!userID || !document || typeof amount !== "number" || !userMeta) {
-    throw new Error("createTransaction: missing or invalid parameters");
+  if (!userID || !document || typeof amount !== "number" || isNaN(amount) || amount <= 0 || !userMeta) {
+    throw new Error("createTransaction: missing or invalid parameters (amount must be a positive number)");
   }
   const now = Date.now();
   const transactionID = randomUUID();
