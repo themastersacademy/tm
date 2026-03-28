@@ -10,5 +10,5 @@ export default function generateBunnyVideoURL(videoID) {
     .update(process.env.BUNNY_STREAM_TOKEN + videoID + expiry)
     .digest("hex");
 
-  return `https://iframe.mediadelivery.net/embed/${libraryID}/${videoID}?token=${token}&expires=${expiry}&autoplay=true&loop=false&muted=false&preload=true&responsive=true`;
+  return `https://iframe.mediadelivery.net/embed/${libraryID}/${videoID}?token=${token}&expires=${expiry}&autoplay=true&loop=false&muted=false&preload=true&responsive=true&showSpeed=true`;
 }

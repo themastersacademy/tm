@@ -21,6 +21,10 @@ import {
   CheckCircle,
   ExpandMore,
   ExpandLess,
+  Fullscreen,
+  FullscreenExit,
+  PlayArrow,
+  Pause,
 } from "@mui/icons-material";
 import LessonCard from "@/src/Components/LessonCard.js/LessonCard";
 import CheckoutCard from "@/src/Components/CheckoutCard.js/CheckoutCard";
@@ -66,6 +70,9 @@ const MyCourse = () => {
   const progressRef = useRef({});
   const [renderTick, setRenderTick] = useState(0);
   const [watermarkPos, setWatermarkPos] = useState({ top: 30, left: 20 });
+  const [showControls, setShowControls] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const controlsTimerRef = useRef(null);
   const lastTickRef = useRef(0); // Persist last tick timestamp
 
   const apiHeaders = useMemo(
@@ -262,42 +269,25 @@ const MyCourse = () => {
     }
   }, []);
 
-  // Intercept the Bunny player's native fullscreen:
-  // When the iframe goes fullscreen via its own button, exit and re-enter
-  // on the container so the watermark stays visible.
+  // Track fullscreen state changes
   useEffect(() => {
-    let redirecting = false;
-    const handleFullscreenChange = () => {
-      const fsEl = document.fullscreenElement;
-      const container = videoContainerRef.current;
-      const iframe = iframeRef.current;
-
-      // If the iframe went fullscreen (not our container), redirect
-      if (fsEl === iframe && !redirecting) {
-        redirecting = true;
-        document.exitFullscreen().then(() => {
-          // Use requestAnimationFrame to stay within user-activation window
-          requestAnimationFrame(() => {
-            container?.requestFullscreen().then(() => {
-              redirecting = false;
-            }).catch(() => {
-              redirecting = false;
-            });
-          });
-        }).catch(() => {
-          redirecting = false;
-        });
-      }
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
     };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
 
-  // When iframe steals focus (user clicks inside player), pull focus back
-  // to the container after a short delay so keyboard shortcuts keep working.
+  // Show controls overlay, auto-hide after 3s
+  const flashControls = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+    controlsTimerRef.current = setTimeout(() => setShowControls(false), 3000);
+  }, []);
+
+  // When iframe steals focus, pull it back to the container
   useEffect(() => {
     const handleWindowBlur = () => {
-      // Small delay to let the click event complete inside the iframe first
       setTimeout(() => {
         if (document.activeElement === iframeRef.current || document.activeElement === document.body) {
           videoContainerRef.current?.focus({ preventScroll: true });
@@ -308,7 +298,7 @@ const MyCourse = () => {
     return () => window.removeEventListener("blur", handleWindowBlur);
   }, []);
 
-  // Keyboard controls on the video container: Space = play/pause, F = fullscreen
+  // Keyboard: Space = play/pause, F = fullscreen
   const handleContainerKeyDown = useCallback(
     (e) => {
       if (e.code === "Space") {
@@ -715,11 +705,19 @@ const MyCourse = () => {
                   tabIndex={0}
                   onKeyDown={handleContainerKeyDown}
                   onDoubleClick={toggleFullscreen}
-                  onClick={() => videoContainerRef.current?.focus()}
+                  onClick={(e) => {
+                    // Single tap on mobile: show controls
+                    // Click on desktop: focus container for keyboard
+                    videoContainerRef.current?.focus({ preventScroll: true });
+                    // Don't flash controls if user clicked on the controls themselves
+                    if (e.target === e.currentTarget || e.target.tagName === "IFRAME") {
+                      flashControls();
+                    }
+                  }}
                   sx={{
                     width: "100%",
                     aspectRatio: "16 / 9",
-                    borderRadius: "15px",
+                    borderRadius: isFullscreen ? 0 : "15px",
                     overflow: "hidden",
                     backgroundColor: "black",
                     position: "relative",
@@ -731,6 +729,10 @@ const MyCourse = () => {
                       height: "100vh",
                       "& iframe": { borderRadius: 0 },
                     },
+                    // Show controls on hover (desktop)
+                    "&:hover .video-controls": {
+                      opacity: 1,
+                    },
                   }}
                 >
                   <iframe
@@ -738,15 +740,47 @@ const MyCourse = () => {
                     id="bunny-stream-embed"
                     src={videoPreview}
                     style={{
-                      borderRadius: "15px",
+                      borderRadius: isFullscreen ? 0 : "15px",
                       width: "100%",
                       maxWidth: "100%",
                       height: "100%",
                       border: "none",
                     }}
-                    allow="autoplay; fullscreen"
-                    allowFullScreen
+                    allow="autoplay"
                   />
+
+                  {/* Custom fullscreen button — top-right, always clickable */}
+                  <Box
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFullscreen();
+                    }}
+                    sx={{
+                      position: "absolute",
+                      top: { xs: 8, sm: 12 },
+                      right: { xs: 8, sm: 12 },
+                      width: { xs: 40, sm: 44 },
+                      height: { xs: 40, sm: 44 },
+                      borderRadius: "10px",
+                      backgroundColor: "rgba(0,0,0,0.5)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      backdropFilter: "blur(8px)",
+                      transition: "background 0.2s",
+                      zIndex: 4,
+                      "&:hover": { backgroundColor: "rgba(0,0,0,0.7)" },
+                      "&:active": { transform: "scale(0.93)" },
+                    }}
+                  >
+                    {isFullscreen ? (
+                      <FullscreenExit sx={{ color: "white", fontSize: { xs: 22, sm: 26 } }} />
+                    ) : (
+                      <Fullscreen sx={{ color: "white", fontSize: { xs: 22, sm: 26 } }} />
+                    )}
+                  </Box>
+
                   {/* Anti-piracy watermark — drifts to random position */}
                   {session?.user?.email && (
                     <Box
