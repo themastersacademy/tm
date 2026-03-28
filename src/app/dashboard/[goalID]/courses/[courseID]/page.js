@@ -108,27 +108,6 @@ const MyCourse = () => {
         player.setCurrentTime(currentTime);
       });
 
-      // Intercept the player's fullscreen button — fullscreen our container instead
-      const handleFsMessage = (e) => {
-        try {
-          const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
-          if (
-            data?.event === "fullscreenchange" ||
-            data?.method === "fullscreen" ||
-            data?.context?.event === "fullscreenchange"
-          ) {
-            const container = videoContainerRef.current;
-            if (!container) return;
-            if (!document.fullscreenElement) {
-              container.requestFullscreen().catch(() => {});
-            } else {
-              document.exitFullscreen().catch(() => {});
-            }
-          }
-        } catch {}
-      };
-      window.addEventListener("message", handleFsMessage);
-
       player.on("play", () => setIsPlaying(true));
       player.on("pause", () => {
         setIsPlaying(false);
@@ -145,12 +124,7 @@ const MyCourse = () => {
             progress >= 100,
         };
 
-        // Re-render throttled to once every second
-        // const now = Date.now();
-        // if (now - lastTickRef.current > 1000) {
-        setRenderTick((t) => t + 1); // force re-render
-        //   lastTickRef.current = now;
-        // }
+        setRenderTick((t) => t + 1);
       });
 
       player.on("ended", () => {
@@ -160,10 +134,7 @@ const MyCourse = () => {
           isCompleted: true,
         };
         progressRef.current[selectedLessonId] = progressData;
-
-        // if (lessonList.find((l) => l.id === selectedLessonId)?.isPreview) {
         saveProgressToDB(selectedLessonId, progressData);
-        // }
 
         setIsPlaying(false);
         setRenderTick((t) => t + 1);
@@ -285,31 +256,74 @@ const MyCourse = () => {
     const container = videoContainerRef.current;
     if (!container) return;
     if (document.fullscreenElement) {
-      document.exitFullscreen();
+      document.exitFullscreen().catch(() => {});
     } else {
       container.requestFullscreen().catch(() => {});
     }
   }, []);
 
-  // Keyboard controls: Space = play/pause, F = fullscreen
+  // Intercept the Bunny player's native fullscreen:
+  // When the iframe goes fullscreen via its own button, exit and re-enter
+  // on the container so the watermark stays visible.
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      const tag = e.target.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    let redirecting = false;
+    const handleFullscreenChange = () => {
+      const fsEl = document.fullscreenElement;
+      const container = videoContainerRef.current;
+      const iframe = iframeRef.current;
 
-      if (e.code === "Space" && playerRef.current) {
+      // If the iframe went fullscreen (not our container), redirect
+      if (fsEl === iframe && !redirecting) {
+        redirecting = true;
+        document.exitFullscreen().then(() => {
+          // Use requestAnimationFrame to stay within user-activation window
+          requestAnimationFrame(() => {
+            container?.requestFullscreen().then(() => {
+              redirecting = false;
+            }).catch(() => {
+              redirecting = false;
+            });
+          });
+        }).catch(() => {
+          redirecting = false;
+        });
+      }
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  // When iframe steals focus (user clicks inside player), pull focus back
+  // to the container after a short delay so keyboard shortcuts keep working.
+  useEffect(() => {
+    const handleWindowBlur = () => {
+      // Small delay to let the click event complete inside the iframe first
+      setTimeout(() => {
+        if (document.activeElement === iframeRef.current || document.activeElement === document.body) {
+          videoContainerRef.current?.focus({ preventScroll: true });
+        }
+      }, 100);
+    };
+    window.addEventListener("blur", handleWindowBlur);
+    return () => window.removeEventListener("blur", handleWindowBlur);
+  }, []);
+
+  // Keyboard controls on the video container: Space = play/pause, F = fullscreen
+  const handleContainerKeyDown = useCallback(
+    (e) => {
+      if (e.code === "Space") {
         e.preventDefault();
-        isPlaying ? playerRef.current.pause() : playerRef.current.play();
+        if (playerRef.current) {
+          isPlaying ? playerRef.current.pause() : playerRef.current.play();
+        }
       }
       if (e.code === "KeyF") {
         e.preventDefault();
         toggleFullscreen();
       }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isPlaying, toggleFullscreen]);
+    },
+    [isPlaying, toggleFullscreen],
+  );
 
   // Watermark: drift to random position every 8 seconds
   useEffect(() => {
@@ -698,7 +712,10 @@ const MyCourse = () => {
               ) : videoPreview ? (
                 <Stack
                   ref={videoContainerRef}
+                  tabIndex={0}
+                  onKeyDown={handleContainerKeyDown}
                   onDoubleClick={toggleFullscreen}
+                  onClick={() => videoContainerRef.current?.focus()}
                   sx={{
                     width: "100%",
                     aspectRatio: "16 / 9",
@@ -707,8 +724,11 @@ const MyCourse = () => {
                     backgroundColor: "black",
                     position: "relative",
                     cursor: "pointer",
+                    outline: "none",
                     "&:fullscreen": {
                       borderRadius: 0,
+                      width: "100vw",
+                      height: "100vh",
                       "& iframe": { borderRadius: 0 },
                     },
                   }}
@@ -724,7 +744,8 @@ const MyCourse = () => {
                       height: "100%",
                       border: "none",
                     }}
-                    allow="autoplay"
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
                   />
                   {/* Anti-piracy watermark — drifts to random position */}
                   {session?.user?.email && (
