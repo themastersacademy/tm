@@ -8,6 +8,9 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 
 export async function userProfileSetup({ userID, name, phoneNumber, gender }) {
+  if (!userID) {
+    throw new Error("User ID is required");
+  }
   const TableName = `${process.env.AWS_DB_NAME}users`;
   const Key = {
     pKey: `USER#${userID}`,
@@ -82,11 +85,13 @@ export async function userProfileSetup({ userID, name, phoneNumber, gender }) {
       message: "User profile updated successfully",
     };
   } catch (error) {
-    throw new Error(error);
+    console.error("userProfileSetup error:", error);
+    throw error;
   }
 }
 
 export async function getFullUserByID(userID) {
+  if (!userID) return null;
   const TableName = `${process.env.AWS_DB_NAME}users`;
   const Key = {
     pKey: `USER#${userID}`,
@@ -95,37 +100,43 @@ export async function getFullUserByID(userID) {
   const { Item: user } = await dynamoDB.send(
     new GetCommand({ TableName, Key })
   );
-  return user;
+  return user || null;
 }
 
 export async function updateUserProfile(userID, data) {
+  if (!userID) throw new Error("User ID is required");
+  if (!data || typeof data !== "object") {
+    throw new Error("Invalid profile data");
+  }
+
   const TableName = `${process.env.AWS_DB_NAME}users`;
   const Key = {
     pKey: `USER#${userID}`,
     sKey: `USER#${userID}`,
   };
 
-  // Build update expression dynamically
-  let UpdateExpression = "set";
-  const ExpressionAttributeNames = {};
-  const ExpressionAttributeValues = {};
+  // Filter out undefined/null values — DynamoDB rejects undefined and
+  // treats null differently than "field not set"
+  const cleanData = Object.fromEntries(
+    Object.entries(data).filter(
+      ([, v]) => v !== undefined && v !== null && v !== ""
+    )
+  );
 
-  const fields = Object.keys(data);
-  fields.forEach((field, index) => {
-    const attributeName = `#${field}`;
-    const attributeValue = `:${field}`;
-
-    UpdateExpression += ` ${attributeName} = ${attributeValue}`;
-    if (index < fields.length - 1) UpdateExpression += ",";
-
-    ExpressionAttributeNames[attributeName] = field;
-    ExpressionAttributeValues[attributeValue] = data[field];
-  });
-
-  // If no fields to update, return success
+  const fields = Object.keys(cleanData);
   if (fields.length === 0) {
     return { success: true, message: "No changes to update" };
   }
+
+  // Build update expression dynamically
+  const setParts = fields.map((field) => `#${field} = :${field}`);
+  const UpdateExpression = `set ${setParts.join(", ")}`;
+  const ExpressionAttributeNames = Object.fromEntries(
+    fields.map((f) => [`#${f}`, f])
+  );
+  const ExpressionAttributeValues = Object.fromEntries(
+    fields.map((f) => [`:${f}`, cleanData[f]])
+  );
 
   try {
     await dynamoDB.send(

@@ -1,18 +1,10 @@
 import { getFullUserByID } from "@/src/libs/user/userProfile";
 import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
-export async function GET(req) {
+export async function GET() {
   return withAuth(async (session) => {
     try {
-      const userID = session.user.id;
-      if (!userID) {
-        return Response.json(
-          { success: false, message: "User ID is required" },
-          { status: 400 }
-        );
-      }
-
-      const userProfileData = await getFullUserByID(userID);
+      const userProfileData = await getFullUserByID(session.id);
       if (!userProfileData) {
         return Response.json(
           { success: false, message: "User profile data not found" },
@@ -20,15 +12,12 @@ export async function GET(req) {
         );
       }
 
-      return Response.json(
-        {
-          success: true,
-          data: userProfileData,
-        },
-        { status: 200 }
-      );
+      return Response.json({
+        success: true,
+        data: userProfileData,
+      });
     } catch (error) {
       return handleError(error);
     }
-  }, req);
+  });
 }

@@ -4,8 +4,8 @@ import { changePassword } from "@/src/libs/auth/auth";
 export async function POST(req) {
   return withAuth(async (session) => {
     try {
-      const userID = session.user.id;
-      const { oldPassword, newPassword } = await req.json();
+      const body = await req.json().catch(() => null);
+      const { oldPassword, newPassword } = body || {};
 
       if (!oldPassword) {
         return Response.json(
@@ -28,7 +28,7 @@ export async function POST(req) {
         );
       }
 
-      await changePassword({ userID, oldPassword, newPassword });
+      await changePassword({ userID: session.id, oldPassword, newPassword });
 
       return Response.json({
         success: true,
@@ -37,5 +37,5 @@ export async function POST(req) {
     } catch (error) {
       return handleError(error);
     }
-  }, req);
+  });
 }

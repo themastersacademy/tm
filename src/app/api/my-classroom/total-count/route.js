@@ -1,15 +1,13 @@
 import { getTotalClassroomJoins } from "@/src/libs/myClassroom/batchController";
 import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
-export async function GET(req) {
+export async function GET() {
   return withAuth(async (session) => {
     try {
-      const userID = session.user.id;
-      const result = await getTotalClassroomJoins(userID);
-      return Response.json(result, { status: 200 });
+      const result = await getTotalClassroomJoins(session.id);
+      return Response.json(result);
     } catch (error) {
       return handleError(error);
     }
   });
 }
-

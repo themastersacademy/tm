@@ -5,19 +5,11 @@ import {
 } from "@/src/libs/courseEnrollment/courseEnrollController";
 import { getFullUserByID } from "@/src/libs/user/userProfile";
 
-export async function GET(req) {
+export async function GET() {
   return withAuth(async (session) => {
     try {
-      const userID = session.user.id;
-
-      // Fetch user profile
-      const userProfile = await getFullUserByID(userID);
-
-      // Fetch enrollments
-      const enrollments = await getUserEnrollmentsRaw(userID);
-
-      // Fetch course details to get lesson counts
-      const courseIDs = [...new Set(enrollments.map((e) => e.courseID))];
+      const userProfile = await getFullUserByID(session.id);
+      const enrollments = (await getUserEnrollmentsRaw(session.id)) || [];
       // Note: getCourseInBatch requires goalID, but enrollments might be from different goals.
       // We'll try to group by goalID or just fetch individually if needed.
       // Actually courseEnrollController's getCourseInBatch takes (courseIDs, goalID).
@@ -83,5 +75,5 @@ export async function GET(req) {
     } catch (error) {
       return handleError(error);
     }
-  }, req);
+  });
 }

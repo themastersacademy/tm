@@ -4,15 +4,14 @@ import {
   getFullUserByID,
 } from "@/src/libs/user/userProfile";
 
-export async function GET(req) {
+export async function GET() {
   return withAuth(async (session) => {
     try {
-      const userID = session.user.id;
-      const user = await getFullUserByID(userID);
+      const user = await getFullUserByID(session.id);
 
       return Response.json({
         success: true,
-        data: user.preferences || {
+        data: user?.preferences || {
           emailNotifications: true,
           courseUpdates: true,
           examReminders: true,
@@ -22,21 +21,20 @@ export async function GET(req) {
     } catch (error) {
       return handleError(error);
     }
-  }, req);
+  });
 }
 
 export async function POST(req) {
   return withAuth(async (session) => {
     try {
-      const userID = session.user.id;
-      const data = await req.json();
-
-      // We need to update user preferences.
-      // updateUserProfile in userProfile.js currently only updates specific fields.
-      // We should update it or create a new function.
-      // For now, let's assume we'll update userProfile.js to handle 'preferences'.
-
-      await updateUserProfile(userID, { preferences: data });
+      const data = await req.json().catch(() => null);
+      if (!data || typeof data !== "object") {
+        return Response.json(
+          { success: false, message: "Invalid preferences data" },
+          { status: 400 }
+        );
+      }
+      await updateUserProfile(session.id, { preferences: data });
 
       return Response.json({
         success: true,
@@ -45,5 +43,5 @@ export async function POST(req) {
     } catch (error) {
       return handleError(error);
     }
-  }, req);
+  });
 }
