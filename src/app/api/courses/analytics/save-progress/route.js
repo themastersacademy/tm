@@ -4,9 +4,10 @@ import { withAuth, handleError } from "@/src/utils/sessionHandler";
 export async function POST(request) {
   return withAuth(async (session) => {
     try {
-      const { courseID, lessonProgress } = await request.json();
+      const body = await request.json().catch(() => null);
+      const { courseID, lessonProgress } = body || {};
 
-      if (!courseID || !lessonProgress) {
+      if (!courseID || !lessonProgress || typeof lessonProgress !== "object") {
         return Response.json(
           {
             success: false,

@@ -210,7 +210,7 @@ export async function getValidCourseEnrollment(userID, courseID) {
   };
 }
 
-export async function verifyCourseEnrollment(enrollmentID, userID) {
+export async function verifyCourseEnrollment(enrollmentID, userID, courseID) {
   if (!enrollmentID) return false;
 
   try {
@@ -225,20 +225,28 @@ export async function verifyCourseEnrollment(enrollmentID, userID) {
           "#status": "status",
           "#expiresAt": "expiresAt",
           "#userID": "userID",
+          "#courseID": "courseID",
         },
-        ProjectionExpression: "#status, #expiresAt, #userID", // only fetch what we need
+        ProjectionExpression: "#status, #expiresAt, #userID, #courseID",
       })
     );
 
-    // must exist, be active, not yet expired, AND belong to the user (if userID is provided)
-    const isOwner = userID ? Item?.userID === userID : true;
+    if (!Item) return false;
 
-    return Boolean(
-      Item &&
-        isOwner &&
-        Item.status?.toUpperCase() === "ACTIVE" &&
-        typeof Item.expiresAt === "number" &&
-        Item.expiresAt > Date.now()
+    // Must belong to the user (if userID is provided)
+    if (userID && Item.userID !== userID) return false;
+
+    // Must be for the specified course (if courseID is provided).
+    // This closes a cross-course access bug: without this check, a user
+    // could present any of their active enrollments to access lessons in
+    // a different course they never paid for.
+    if (courseID && Item.courseID !== courseID) return false;
+
+    // Must be active and not expired
+    return (
+      Item.status?.toUpperCase() === "ACTIVE" &&
+      typeof Item.expiresAt === "number" &&
+      Item.expiresAt > Date.now()
     );
   } catch (err) {
     console.error("verifyCourseEnrollment error:", err);

@@ -1,58 +1,51 @@
 import { dynamoDB } from "@/src/utils/awsAgent";
-import { PutCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
 const USER_TABLE = `${process.env.AWS_DB_NAME}users`;
 
 export async function saveLessonProgress({ userID, courseID, lessonProgress }) {
+  if (!userID || !courseID) {
+    return { success: false, message: "Missing userID or courseID" };
+  }
+  if (!lessonProgress || typeof lessonProgress !== "object") {
+    return { success: false, message: "Invalid progress data" };
+  }
+
   const now = Date.now();
   const pKey = `COURSE_ANALYTICS#${courseID}#${userID}`;
   const sKey = userID;
-  const gsi1pKey = `COURSE_ANALYTICS`;
-  const gsi1sKey = `COURSE_ANALYTICS#${userID}`;
 
   try {
-    // Check if analytics record exists
-    const existingRecord = await dynamoDB.send(
-      new GetCommand({
+    // Single atomic upsert: sets LessonProgress every time, but only
+    // initializes GSI keys / courseID / userID / createdAt on first write.
+    // Eliminates the check-then-write race present in the previous version.
+    await dynamoDB.send(
+      new UpdateCommand({
         TableName: USER_TABLE,
         Key: { pKey, sKey },
+        UpdateExpression: `
+          SET LessonProgress = :progressData,
+              updatedAt = :now,
+              createdAt = if_not_exists(createdAt, :now),
+              courseID = if_not_exists(courseID, :courseID),
+              userID = if_not_exists(userID, :userID),
+              #g1pk = if_not_exists(#g1pk, :g1pk),
+              #g1sk = if_not_exists(#g1sk, :g1sk)
+        `,
+        ExpressionAttributeNames: {
+          "#g1pk": "GSI1-pKey",
+          "#g1sk": "GSI1-sKey",
+        },
+        ExpressionAttributeValues: {
+          ":progressData": lessonProgress,
+          ":now": now,
+          ":courseID": courseID,
+          ":userID": userID,
+          ":g1pk": "COURSE_ANALYTICS",
+          ":g1sk": `COURSE_ANALYTICS#${userID}`,
+        },
       })
     );
-
-    if (existingRecord.Item) {
-      // Update existing record
-      await dynamoDB.send(
-        new UpdateCommand({
-          TableName: USER_TABLE,
-          Key: { pKey, sKey },
-          UpdateExpression:
-            "SET LessonProgress = :progressData, updatedAt = :now",
-          ExpressionAttributeValues: {
-            ":progressData": lessonProgress,
-            ":now": now,
-          },
-        })
-      );
-    } else {
-      // Create new record
-      await dynamoDB.send(
-        new PutCommand({
-          TableName: USER_TABLE,
-          Item: {
-            pKey,
-            sKey,
-            "GSI1-pKey": gsi1pKey,
-            "GSI1-sKey": gsi1sKey,
-            courseID,
-            userID,
-            LessonProgress: lessonProgress,
-            createdAt: now,
-            updatedAt: now,
-          },
-          ConditionExpression: "attribute_not_exists(pKey)",
-        })
-      );
-    }
 
     return {
       success: true,
@@ -63,7 +56,6 @@ export async function saveLessonProgress({ userID, courseID, lessonProgress }) {
     return {
       success: false,
       message: "Failed to save lesson progress",
-      error: error.message,
     };
   }
 }

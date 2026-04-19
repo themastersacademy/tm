@@ -135,13 +135,14 @@ const MyCourse = () => {
       });
 
       player.on("ended", () => {
-        const progressData = {
+        progressRef.current[selectedLessonId] = {
           progress: 100,
           currentTime: 0,
           isCompleted: true,
         };
-        progressRef.current[selectedLessonId] = progressData;
-        saveProgressToDB(selectedLessonId, progressData);
+        // Force an immediate save by bypassing the 30s throttle
+        saveProgressToDB();
+        setLastUpdatedAt(Date.now());
 
         setIsPlaying(false);
         setRenderTick((t) => t + 1);
@@ -222,9 +223,14 @@ const MyCourse = () => {
       setLessonList(lessonsData.data);
       setSections(lessonsData.sections || []);
 
-      if (progressData.success) {
-        progressRef.current = { ...progressData.data };
-        setRenderTick((t) => t + 1); // re-render to show existing progress
+      if (progressData.success && progressData.data) {
+        // Merge server progress with any local progress to avoid clobbering
+        // in-flight unsaved state if this fetch races with player events.
+        progressRef.current = {
+          ...progressData.data,
+          ...progressRef.current,
+        };
+        setRenderTick((t) => t + 1);
       }
 
       const firstPreview = lessonsData.data.find(
@@ -641,10 +647,10 @@ const MyCourse = () => {
     });
 
   const isPaidCourseForUser =
-    (userType === "FREE" && !courseDetails?.subscription.isFree) ||
+    (userType === "FREE" && !courseDetails?.subscription?.isFree) ||
     (userType === "PRO" &&
-      !courseDetails?.subscription.isFree &&
-      !courseDetails?.subscription.isPro);
+      !courseDetails?.subscription?.isFree &&
+      !courseDetails?.subscription?.isPro);
 
   return (
     <Stack

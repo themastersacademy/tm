@@ -4,7 +4,8 @@ import { withAuth, handleError } from "@/src/utils/sessionHandler";
 export async function POST(request) {
   return withAuth(async (session) => {
     try {
-      const { courseID } = await request.json();
+      const body = await request.json().catch(() => null);
+      const courseID = body?.courseID;
       if (!courseID) {
         return Response.json(
           {

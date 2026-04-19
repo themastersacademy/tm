@@ -69,6 +69,7 @@ export async function getAllLessons({ courseID }) {
       title: item.title,
       type: item.type,
       isPreview: item.isPreview,
+      duration: item.duration || 0,
     }));
 
     return {
@@ -121,7 +122,11 @@ export async function getLessonVideoURL({
       };
     }
 
-    const isEnrolled = await verifyCourseEnrollment(enrollmentID, userID);
+    const isEnrolled = await verifyCourseEnrollment(
+      enrollmentID,
+      userID,
+      courseID
+    );
     if (!lesson.isPreview && !isEnrolled) {
       return {
         success: false,
@@ -204,7 +209,11 @@ export async function getLessonFileURL({
       };
     }
 
-    const isEnrolled = await verifyCourseEnrollment(enrollmentID, userID);
+    const isEnrolled = await verifyCourseEnrollment(
+      enrollmentID,
+      userID,
+      courseID
+    );
     if (!lesson.isPreview && !isEnrolled) {
       return {
         success: false,
