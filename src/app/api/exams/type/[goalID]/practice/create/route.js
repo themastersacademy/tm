@@ -19,12 +19,9 @@ export async function POST(req, { params }) {
         );
       }
       const { subjectID, difficultyLevel } = body;
-      if (!subjectID || !difficultyLevel) {
+      if (!subjectID) {
         return Response.json(
-          {
-            success: false,
-            message: "Subject ID and difficulty level are required",
-          },
+          { success: false, message: "Subject is required" },
           { status: 400 }
         );
       }
