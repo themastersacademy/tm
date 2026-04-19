@@ -7,7 +7,8 @@ export async function POST(request) {
   const ip = getClientIP(request);
   const { allowed, retryAfterMs } = checkRateLimit(`update-password:${ip}`, 5, 300000);
   if (!allowed) return rateLimitResponse(retryAfterMs);
-  const { password, token } = await request.json();
+  const body = await request.json().catch(() => null);
+  const { password, token } = body || {};
   if (!password || !token) {
     return Response.json(
       { success: false, message: "Password and token are required" },

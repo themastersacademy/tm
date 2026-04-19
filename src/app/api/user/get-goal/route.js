@@ -1,19 +1,13 @@
 import { getAllGoalEnrollments } from "@/src/libs/goalEnrollment/goalEnrollController";
-import { getSession } from "@/src/utils/serverSession";
+import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
-export async function GET(req) {
-  const session = await getSession();
-  if (!session.isAuthenticated) {
-    return session.unauthorized("Please log in to continue");
-  }
-  const userID = session.id;
-  try {
-    const goals = await getAllGoalEnrollments({userID});
-    return Response.json(goals);
-  } catch (error) {
-    return Response.json({
-      success: false,
-      message: error.message,
-    });
-  }
+export async function GET() {
+  return withAuth(async (session) => {
+    try {
+      const goals = await getAllGoalEnrollments({ userID: session.id });
+      return Response.json(goals);
+    } catch (error) {
+      return handleError(error);
+    }
+  });
 }

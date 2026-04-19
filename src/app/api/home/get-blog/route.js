@@ -1,25 +1,23 @@
 import { getGoalContent } from "@/src/libs/home/goalDetailsController";
+import { handleError } from "@/src/utils/sessionHandler";
 
 export async function POST(req) {
-  const { goalID, blogID } = await req.json();
-
-  if (!goalID || !blogID) {
-    return Response.json({
-      success: false,
-      message: "Missing required fields",
-      data: null,
-    });
-  }
-
   try {
+    const body = await req.json().catch(() => null);
+    const { goalID, blogID } = body || {};
+    if (!goalID || !blogID) {
+      return Response.json(
+        {
+          success: false,
+          message: "Missing required fields",
+          data: null,
+        },
+        { status: 400 }
+      );
+    }
     const result = await getGoalContent({ goalID, blogID });
-
     return Response.json(result);
   } catch (error) {
-    return Response.json({
-      success: false,
-      message: error.message,
-      data: null,
-    });
+    return handleError(error);
   }
 }

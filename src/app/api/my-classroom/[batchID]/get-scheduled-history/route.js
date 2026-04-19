@@ -3,10 +3,16 @@ import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
 export async function GET(req, { params }) {
   const { batchID } = await params;
+  if (!batchID) {
+    return Response.json(
+      { success: false, message: "Batch ID is required" },
+      { status: 400 }
+    );
+  }
   return withAuth(async (session) => {
     try {
       const response = await getScheduledExamAttemptsByUserID(
-        session.user.id,
+        session.id,
         batchID
       );
       return Response.json(response);

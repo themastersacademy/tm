@@ -1,33 +1,22 @@
 import { updateBatchRollNo } from "@/src/libs/myClassroom/batchController";
-import { getSession } from "@/src/utils/serverSession";
-import { NextResponse } from "next/server";
+import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
 export async function POST(req) {
-  const session = await getSession();
-  if (!session?.isAuthenticated) {
-    return NextResponse.json(
-      { success: false, message: "Unauthorized" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    const { batchID, rollNo } = await req.json();
-
-    if (!batchID || !rollNo) {
-      return NextResponse.json(
-        { success: false, message: "Batch ID and Roll No are required" },
-        { status: 400 }
-      );
+  return withAuth(async (session) => {
+    try {
+      const body = await req.json().catch(() => null);
+      const { batchID, rollNo } = body || {};
+      if (!batchID || !rollNo) {
+        return Response.json(
+          { success: false, message: "Batch ID and Roll No are required" },
+          { status: 400 }
+        );
+      }
+      const result = await updateBatchRollNo(session.id, batchID, rollNo);
+      return Response.json(result);
+    } catch (error) {
+      console.error("Error updating roll number:", error);
+      return handleError(error);
     }
-
-    const result = await updateBatchRollNo(session.user.id, batchID, rollNo);
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error("Error updating roll number:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
+  });
 }

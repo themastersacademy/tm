@@ -125,6 +125,7 @@ const Footer = () => {
                 }}
               >
                 <TextField
+                  id="footer-newsletter-email"
                   fullWidth
                   placeholder="Enter your email address"
                   variant="outlined"

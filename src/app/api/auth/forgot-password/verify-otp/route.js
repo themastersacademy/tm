@@ -7,7 +7,8 @@ export async function POST(request) {
   const { allowed, retryAfterMs } = checkRateLimit(`forgot-verify-otp:${ip}`, 5, 60000);
   if (!allowed) return rateLimitResponse(retryAfterMs);
 
-  const { email, otp } = await request.json();
+  const body = await request.json().catch(() => null);
+  const { email, otp } = body || {};
   if (!email || !otp) {
     return Response.json(
       { success: false, message: "Email and OTP are required" },

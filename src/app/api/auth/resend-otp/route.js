@@ -7,7 +7,8 @@ export async function POST(request) {
   const { allowed, retryAfterMs } = checkRateLimit(`resend-otp:${ip}`, 3, 120000);
   if (!allowed) return rateLimitResponse(retryAfterMs);
 
-  const { email } = await request.json();
+  const body = await request.json().catch(() => null);
+  const { email } = body || {};
   if (!email) {
     return Response.json(
       { success: false, message: "Email is required" },
@@ -18,6 +19,7 @@ export async function POST(request) {
     const result = await resendOTP({ email });
     return Response.json(result);
   } catch (error) {
+    console.error("Resend OTP error:", error);
     return Response.json(
       { success: false, message: "Failed to send OTP. Please try again." },
       { status: 500 }

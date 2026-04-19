@@ -1,31 +1,10 @@
 import { getUserBatches } from "@/src/libs/myClassroom/batchController";
-import { getSession } from "@/src/utils/serverSession";
+import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
-// Shared auth wrapper
-async function withAuth(handler) {
-  const session = await getSession();
-  if (!session?.isAuthenticated) {
-    return session.unauthorized("Please log in to continue");
-  }
-  return handler(session);
-}
-
-// Consistent error handler
-function handleError(error) {
-  console.error("Exam History API Error:", error);
-  return Response.json(
-    {
-      success: false,
-      message: error.message || "An unexpected error occurred",
-    },
-    { status: 500 }
-  );
-}
-
-export async function GET(req) {
+export async function GET() {
   return withAuth(async (session) => {
     try {
-      const response = await getUserBatches(session.user.id);
+      const response = await getUserBatches(session.id);
       return Response.json(response);
     } catch (error) {
       return handleError(error);

@@ -8,7 +8,14 @@ export async function POST(req) {
   const { allowed, retryAfterMs } = checkRateLimit(`register:${ip}`, 5, 60000);
   if (!allowed) return rateLimitResponse(retryAfterMs);
 
-  const { email, password } = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body) {
+    return Response.json(
+      { success: false, message: "Invalid request body" },
+      { status: 400 }
+    );
+  }
+  const { email, password } = body;
 
   // Server-side email validation
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -37,6 +44,7 @@ export async function POST(req) {
     const user = await createUser({ email, password });
     return Response.json(user);
   } catch (error) {
+    console.error("Registration error:", error);
     return Response.json(
       { success: false, message: "Registration failed. Please try again." },
       { status: 500 }
