@@ -1,27 +1,5 @@
-import { seededShuffle } from "@/src/utils/seededShuffle";
 import { getExamAttemptsByUserID } from "@/src/libs/exams/attemptController";
-import { getSession } from "@/src/utils/serverSession";
-
-// Shared auth wrapper
-async function withAuth(handler) {
-  const session = await getSession();
-  if (!session?.isAuthenticated) {
-    return session.unauthorized("Please log in to continue");
-  }
-  return handler(session);
-}
-
-// Consistent error handler
-function handleError(error) {
-  console.error("Exam History API Error:", error);
-  return Response.json(
-    {
-      success: false,
-      message: error.message || "An unexpected error occurred",
-    },
-    { status: 500 }
-  );
-}
+import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -35,9 +13,3 @@ export async function GET(req) {
     }
   });
 }
-
-// export async function POST(req) {
-//   const { seed, array } = await req.json();
-//   const shuffledArray = seededShuffle(array, seed);
-//   return Response.json({ shuffledArray });
-// }

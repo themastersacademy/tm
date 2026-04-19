@@ -2,51 +2,43 @@ import {
   getExamByID,
   getPreviousAttempt,
 } from "@/src/libs/exams/examController";
-import { getSession } from "@/src/utils/serverSession";
+import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
 export async function GET(req, { params }) {
   const { examID } = await params;
-  const session = await getSession();
-
-  if (!session?.isAuthenticated || !session.id) {
-    return session.unauthorized("Please log in to continue");
-  }
-
   if (!examID) {
     return Response.json(
-      {
-        success: false,
-        message: "Exam ID is required",
-      },
+      { success: false, message: "Exam ID is required" },
       { status: 400 }
     );
   }
-  try {
-    const response = await getExamByID(examID);
 
-    // Check for active attempt
+  return withAuth(async (session) => {
     try {
-      const previousAttempt = await getPreviousAttempt(session.id, examID);
-      if (previousAttempt) {
-        if (previousAttempt.status === "IN_PROGRESS") {
-          response.data.activeAttempt = previousAttempt;
-        } else if (previousAttempt.status === "COMPLETED") {
-          response.data.completedAttempt = previousAttempt;
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching previous attempt:", err);
-      // Don't fail the whole request if this optional check fails
-    }
+      const response = await getExamByID(examID);
 
-    return Response.json(response);
-  } catch (error) {
-    return Response.json(
-      {
-        success: false,
-        message: error.message,
-      },
-      { status: 500 }
-    );
-  }
+      // Guard: getExamByID may return { success: false } when exam not found
+      if (!response?.success || !response?.data) {
+        return Response.json(response, { status: 404 });
+      }
+
+      // Check for active attempt — optional, never fail the whole request
+      try {
+        const previousAttempt = await getPreviousAttempt(session.id, examID);
+        if (previousAttempt) {
+          if (previousAttempt.status === "IN_PROGRESS") {
+            response.data.activeAttempt = previousAttempt;
+          } else if (previousAttempt.status === "COMPLETED") {
+            response.data.completedAttempt = previousAttempt;
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching previous attempt:", err?.message);
+      }
+
+      return Response.json(response);
+    } catch (error) {
+      return handleError(error);
+    }
+  });
 }

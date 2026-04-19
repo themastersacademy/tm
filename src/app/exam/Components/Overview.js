@@ -13,9 +13,7 @@ export default function Overview({ result }) {
     {
       label: "Score",
       value: `${result?.obtainedMarks || 0}/${result?.totalMarks || 0}`,
-      subValue: `${((result?.obtainedMarks / result?.totalMarks) * 100).toFixed(
-        1
-      )}%`,
+      subValue: `${(result?.totalMarks ? ((result.obtainedMarks / result.totalMarks) * 100).toFixed(1) : "0.0")}%`,
       color: "var(--primary-color)",
       bgColor: "var(--primary-color-acc-2)",
       icon: (

@@ -29,53 +29,71 @@ function scoreAnswer(meta, selectedOptions = [], blankAnswers = []) {
   let pMark = 0;
   let nMark = 0;
 
+  if (!meta || !meta.type) {
+    return { isCorrect, pMark, nMark };
+  }
+
+  const metaPMark = Number(meta.pMark) || 0;
+  const metaNMark = Number(meta.nMark) || 0;
+  const opts = Array.isArray(selectedOptions) ? selectedOptions : [];
+  const blanks = Array.isArray(blankAnswers) ? blankAnswers : [];
+
   switch (meta.type) {
     case "MCQ": {
-      const sel = selectedOptions[0];
-      if (sel != null && meta.correct[0]?.id === sel) {
+      const sel = opts[0];
+      if (sel != null && meta.correct?.[0]?.id === sel) {
         isCorrect = true;
-        pMark = meta.pMark;
-      } else {
-        nMark = meta.nMark;
+        pMark = metaPMark;
+      } else if (sel != null) {
+        nMark = metaNMark;
       }
       break;
     }
     case "MSQ": {
-      const correctIds = new Set(meta.correct.map((c) => c.id));
-      const pickedIds = new Set(selectedOptions);
+      const correctArr = Array.isArray(meta.correct) ? meta.correct : [];
+      const correctIds = new Set(correctArr.map((c) => c.id));
+      const pickedIds = new Set(opts);
+      if (pickedIds.size === 0) break;
       const exactMatch =
         pickedIds.size === correctIds.size &&
         [...pickedIds].every((id) => correctIds.has(id));
 
       if (exactMatch) {
         isCorrect = true;
-        pMark = meta.pMark;
+        pMark = metaPMark;
       } else {
-        nMark = meta.nMark;
+        nMark = metaNMark;
       }
       break;
     }
     case "FIB": {
-      // Ignore all‑blank submissions
-      if (blankAnswers.length === 0 || blankAnswers.every((b) => !b.trim())) {
+      const metaBlanks = Array.isArray(meta.blanks) ? meta.blanks : [];
+      if (
+        metaBlanks.length === 0 ||
+        blanks.length === 0 ||
+        blanks.every((b) => !String(b || "").trim())
+      ) {
         break;
       }
-      const allCorrect = meta.blanks.every((blankMeta, idx) => {
-        const ans = (blankAnswers[idx] || "").trim().toLowerCase();
-        return blankMeta.correctAnswers
-          .map((s) => s.trim().toLowerCase())
+      const allCorrect = metaBlanks.every((blankMeta, idx) => {
+        const ans = String(blanks[idx] || "").trim().toLowerCase();
+        const correctAnswers = Array.isArray(blankMeta?.correctAnswers)
+          ? blankMeta.correctAnswers
+          : [];
+        return correctAnswers
+          .map((s) => String(s || "").trim().toLowerCase())
           .includes(ans);
       });
-      if (allCorrect && blankAnswers.length === meta.blanks.length) {
+      if (allCorrect && blanks.length === metaBlanks.length) {
         isCorrect = true;
-        pMark = meta.pMark;
+        pMark = metaPMark;
       } else {
-        nMark = meta.nMark;
+        nMark = metaNMark;
       }
       break;
     }
     default:
-      throw new Error(`Unsupported question type: ${meta.type}`);
+      return { isCorrect, pMark, nMark };
   }
 
   return { isCorrect, pMark, nMark };
@@ -120,9 +138,14 @@ async function writeAnswers(attemptID, userAnswers) {
 async function checkExamAttempt(attempt) {
   const { startTimeStamp, duration, status } = attempt;
   const now = Date.now();
-  const timeLimit = startTimeStamp + duration * 1000 * 60;
+  const timeLimit = startTimeStamp + (duration || 0) * 1000 * 60;
   if (now > timeLimit && status === "IN_PROGRESS") {
-    await submitExam(attempt.id, "AUTO");
+    try {
+      await submitExam(attempt.id, "AUTO");
+    } catch (err) {
+      // Auto-submit may race with another process; ignore and signal expiry below
+      console.warn("Auto-submit during expiry check failed:", err?.message);
+    }
     throw new Error("Exam attempt expired");
   }
   if (status === "COMPLETED") {
@@ -220,23 +243,29 @@ export async function questionResponse(
   timeSpentMs = 0,
   userID
 ) {
+  if (!attemptID || !questionID || !userID) {
+    throw new Error("Missing required parameters");
+  }
+
   // 1) Load attempt data with ownership check
   const attempt = await fetchAttemptForUser(attemptID, userID);
-  const { userAnswers, answerList } = attempt;
+  const { userAnswers = [], answerList = [] } = attempt;
 
   // Check if the exam attempt is expired
   await checkExamAttempt(attempt);
 
   // Server-side time enforcement: reject if past deadline
   const now = Date.now();
-  const deadline = attempt.startTimeStamp + attempt.duration * 60000;
+  const deadline = attempt.startTimeStamp + (attempt.duration || 0) * 60000;
   if (now > deadline) {
     await submitExam(attemptID, "AUTO");
     throw new Error("Exam time has expired");
   }
 
   // 2) Map metadata by questionID for O(1) lookup
-  const metaById = Object.fromEntries(answerList.map((q) => [q.questionID, q]));
+  const metaById = Object.fromEntries(
+    (answerList || []).map((q) => [q.questionID, q])
+  );
 
   // 3) Locate user answer slot
   const uaIdx = userAnswers.findIndex((a) => a.questionID === questionID);
@@ -313,9 +342,9 @@ export async function submitExam(attemptID, endedBy = "USER", userID) {
     throw new Error("Attempt not found");
   }
 
-  // Prevent double submission
+  // Already completed — return success so the client can redirect to results
   if (attempt.status === "COMPLETED") {
-    throw new Error("Exam already submitted");
+    return { success: true, alreadySubmitted: true };
   }
 
   const { userAnswers = [], answerList = [], settings = {} } = attempt;
@@ -328,7 +357,7 @@ export async function submitExam(attemptID, endedBy = "USER", userID) {
 
   // 2) Compute aggregates in two passes
   // possibleMarks = sum of pMark
-  const possibleMarks = answerList.reduce((sum, q) => sum + q.pMark, 0);
+  const possibleMarks = answerList.reduce((sum, q) => sum + (q.pMark || 0), 0);
 
   // From userAnswers, tally attempted/correct/wrong/skipped and obtainedMarks
   const {
@@ -375,81 +404,105 @@ export async function submitExam(attemptID, endedBy = "USER", userID) {
 
   // 4) Single UpdateCommand with ALL_NEW and conditional to prevent double submission
   const now = Date.now();
-  const { Attributes: updated } = await dynamoDB.send(
-    new UpdateCommand({
-      TableName: USER_TABLE,
-      Key: {
-        pKey: `EXAM_ATTEMPT#${attemptID}`,
-        sKey: "EXAM_ATTEMPTS",
-      },
-      ConditionExpression: "#st <> :completed",
-      UpdateExpression: `
-        SET #st      = :status,
-            endedAt  = :now,
-            totalQuestions        = :totalQuestions,
-            endedBy               = :endedBy,
-            totalAttemptedAnswers = :totalAttemptedAnswers,
-            totalCorrectAnswers   = :totalCorrectAnswers,
-            totalWrongAnswers     = :totalWrongAnswers,
-            totalSkippedAnswers   = :totalSkippedAnswers,
-            obtainedMarks         = :obtainedMarks,
-            totalMarks            = :possibleMarks,
-            mCoinRewardEarned     = :mCoinRewardEarned,
-            updatedAt             = :now,
-            userAnswers           = :userAnswers
-      `,
-      ExpressionAttributeNames: {
-        "#st": "status",
-      },
-      ExpressionAttributeValues: {
-        ":completed": "COMPLETED",
-        ":status": "COMPLETED",
-        ":now": now,
-        ":totalQuestions": answerList.length,
-        ":endedBy": endedBy,
-        ":totalAttemptedAnswers": totalAttemptedAnswers,
-        ":totalCorrectAnswers": totalCorrectAnswers,
-        ":totalWrongAnswers": totalWrongAnswers,
-        ":totalSkippedAnswers": totalSkippedAnswers,
-        ":obtainedMarks": obtainedMarks,
-        ":possibleMarks": possibleMarks,
-        ":mCoinRewardEarned": mCoinRewardEarned,
-        ":userAnswers": uniqueUserAnswers,
-      },
-      ReturnValues: "ALL_NEW",
-    })
-  );
+  try {
+    const { Attributes: updated } = await dynamoDB.send(
+      new UpdateCommand({
+        TableName: USER_TABLE,
+        Key: {
+          pKey: `EXAM_ATTEMPT#${attemptID}`,
+          sKey: "EXAM_ATTEMPTS",
+        },
+        ConditionExpression: "#st <> :completed",
+        UpdateExpression: `
+          SET #st      = :status,
+              endedAt  = :now,
+              totalQuestions        = :totalQuestions,
+              endedBy               = :endedBy,
+              totalAttemptedAnswers = :totalAttemptedAnswers,
+              totalCorrectAnswers   = :totalCorrectAnswers,
+              totalWrongAnswers     = :totalWrongAnswers,
+              totalSkippedAnswers   = :totalSkippedAnswers,
+              obtainedMarks         = :obtainedMarks,
+              totalMarks            = :possibleMarks,
+              mCoinRewardEarned     = :mCoinRewardEarned,
+              updatedAt             = :now,
+              userAnswers           = :userAnswers
+        `,
+        ExpressionAttributeNames: {
+          "#st": "status",
+        },
+        ExpressionAttributeValues: {
+          ":completed": "COMPLETED",
+          ":status": "COMPLETED",
+          ":now": now,
+          ":totalQuestions": answerList.length,
+          ":endedBy": endedBy,
+          ":totalAttemptedAnswers": totalAttemptedAnswers,
+          ":totalCorrectAnswers": totalCorrectAnswers,
+          ":totalWrongAnswers": totalWrongAnswers,
+          ":totalSkippedAnswers": totalSkippedAnswers,
+          ":obtainedMarks": obtainedMarks,
+          ":possibleMarks": possibleMarks,
+          ":mCoinRewardEarned": mCoinRewardEarned,
+          ":userAnswers": uniqueUserAnswers,
+        },
+        ReturnValues: "ALL_NEW",
+      })
+    );
 
-  if (!updated) {
-    throw new Error("Failed to complete the exam");
+    if (!updated) {
+      throw new Error("Failed to complete the exam");
+    }
+
+    // 5) Return the newly updated item directly (strip answerList from response)
+    const { answerList: _removed, ...safeData } = updated;
+    return {
+      success: true,
+      data: safeData,
+    };
+  } catch (err) {
+    // Race condition: another request already completed the exam
+    if (err.name === "ConditionalCheckFailedException") {
+      return { success: true, alreadySubmitted: true };
+    }
+    throw err;
   }
-
-  // 5) Return the newly updated item directly (strip answerList from response)
-  const { answerList: _removed, ...safeData } = updated;
-  return {
-    success: true,
-    data: safeData,
-  };
 }
 
 // ——————————————————————————————————————————
 // 5) Update Violation Count
 // ——————————————————————————————————————————
-export async function updateViolationCount(attemptID, count) {
-  await dynamoDB.send(
-    new UpdateCommand({
-      TableName: USER_TABLE,
-      Key: {
-        pKey: `EXAM_ATTEMPT#${attemptID}`,
-        sKey: "EXAM_ATTEMPTS",
-      },
-      UpdateExpression: "SET violationCount = :count, updatedAt = :now",
-      ExpressionAttributeValues: {
-        ":count": count,
-        ":now": Date.now(),
-      },
-    })
-  );
+export async function updateViolationCount(attemptID, count, userID) {
+  if (!attemptID) throw new Error("Attempt ID is required");
+  if (typeof count !== "number" || count < 0 || !Number.isFinite(count)) {
+    throw new Error("Invalid violation count");
+  }
+  if (!userID) throw new Error("User ID is required");
+
+  try {
+    await dynamoDB.send(
+      new UpdateCommand({
+        TableName: USER_TABLE,
+        Key: {
+          pKey: `EXAM_ATTEMPT#${attemptID}`,
+          sKey: "EXAM_ATTEMPTS",
+        },
+        // Only allow the owner to update their own violation count
+        ConditionExpression: "userID = :uid",
+        UpdateExpression: "SET violationCount = :count, updatedAt = :now",
+        ExpressionAttributeValues: {
+          ":count": count,
+          ":now": Date.now(),
+          ":uid": userID,
+        },
+      })
+    );
+  } catch (err) {
+    if (err.name === "ConditionalCheckFailedException") {
+      throw new Error("Attempt not found");
+    }
+    throw err;
+  }
   return { success: true };
 }
 
@@ -491,48 +544,63 @@ export async function getExamAttemptsResult(attemptID, userID) {
     throw new Error("Exam not yet submitted");
   }
 
-  // 2) Load the S3 blob
-  const getObjectParams = {
-    Bucket: process.env.AWS_BUCKET_NAME,
-    Key: Item.blobBucketKey,
-  };
-  const object = await s3.send(new GetObjectCommand(getObjectParams));
+  // 2) Load the S3 blob — never fail the whole result if the blob is unavailable
+  let questions = [];
+  if (Item.blobBucketKey && process.env.AWS_BUCKET_NAME) {
+    try {
+      const object = await s3.send(
+        new GetObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: Item.blobBucketKey,
+        })
+      );
+      const jsonString = await streamToString(object.Body);
+      const json = JSON.parse(jsonString);
+      questions = Array.isArray(json?.sections) ? json.sections : [];
+    } catch (err) {
+      console.error("Failed to load exam blob for result:", err?.message);
+      // Keep questions as [] — client will render overview without question analysis
+    }
+  }
 
-  // 3) Convert the body stream to a string
-  const jsonString = await streamToString(object.Body);
-
-  const json = JSON.parse(jsonString);
-
-  // 4) Strip answerList from Item before returning
-  const { answerList: _removed, ...safeItem } = Item;
+  // 3) Conditionally include answerList based on exam settings
+  const { answerList, ...safeItem } = Item;
+  const viewResult = safeItem.settings?.isShowResult !== false;
 
   return {
     success: true,
     data: {
       ...safeItem,
-      questions: json.sections,
+      questions,
+      userAnswers: Array.isArray(safeItem.userAnswers) ? safeItem.userAnswers : [],
+      ...(viewResult && Array.isArray(answerList) ? { answerList } : {}),
     },
   };
 }
 
 export async function getExamAttemptsByUserID(userID, goalID) {
-  const { Items } = await dynamoDB.send(
-    new QueryCommand({
-      TableName: USER_TABLE,
-      IndexName: "GSI1-index",
-      KeyConditionExpression: "#gsi1pKey = :pKey AND #gsi1sKey = :sKey",
-      ExpressionAttributeNames: {
-        "#gsi1pKey": "GSI1-pKey",
-        "#gsi1sKey": "GSI1-sKey",
-      },
-      ExpressionAttributeValues: {
-        ":pKey": "EXAM_ATTEMPTS",
-        ":sKey": `EXAM_ATTEMPT@${userID}`,
-        ":goalID": goalID,
-      },
-      FilterExpression: "goalID = :goalID",
-    })
-  );
+  if (!userID) throw new Error("User ID is required");
+
+  const params = {
+    TableName: USER_TABLE,
+    IndexName: "GSI1-index",
+    KeyConditionExpression: "#gsi1pKey = :pKey AND #gsi1sKey = :sKey",
+    ExpressionAttributeNames: {
+      "#gsi1pKey": "GSI1-pKey",
+      "#gsi1sKey": "GSI1-sKey",
+    },
+    ExpressionAttributeValues: {
+      ":pKey": "EXAM_ATTEMPTS",
+      ":sKey": `EXAM_ATTEMPT@${userID}`,
+    },
+  };
+
+  if (goalID) {
+    params.FilterExpression = "goalID = :goalID";
+    params.ExpressionAttributeValues[":goalID"] = goalID;
+  }
+
+  const { Items = [] } = await dynamoDB.send(new QueryCommand(params));
 
   return {
     success: true,

@@ -1,32 +1,28 @@
 import { getGroupExamByID } from "@/src/libs/exams/examTypeController";
-import { getSession } from "@/src/utils/serverSession";
+import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
 export async function POST(req, { params }) {
-  const session = await getSession();
-  if (!session?.isAuthenticated) {
-    return session.unauthorized("Please log in to continue");
-  }
   const { goalID } = await params;
-  const { groupID } = await req.json();
-  if (!goalID || !groupID) {
+  if (!goalID) {
     return Response.json(
-      {
-        success: false,
-        message: "Group ID and Goal ID are required",
-      },
+      { success: false, message: "Goal ID is required" },
       { status: 400 }
     );
   }
-  try {
-    const response = await getGroupExamByID(groupID, goalID);
-    return Response.json(response);
-  } catch (error) {
-    return Response.json(
-      {
-        success: false,
-        message: error.message,
-      },
-      { status: 500 }
-    );
-  }
+  return withAuth(async () => {
+    try {
+      const body = await req.json().catch(() => null);
+      const groupID = body?.groupID;
+      if (!groupID) {
+        return Response.json(
+          { success: false, message: "Group ID is required" },
+          { status: 400 }
+        );
+      }
+      const response = await getGroupExamByID(groupID, goalID);
+      return Response.json(response);
+    } catch (error) {
+      return handleError(error);
+    }
+  });
 }

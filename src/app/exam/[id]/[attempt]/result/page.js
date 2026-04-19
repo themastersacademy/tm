@@ -22,21 +22,34 @@ export default function Result() {
   const [answerList, setAnswerList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userAnswerList, setUserAnswerList] = useState([]);
+  const [loadError, setLoadError] = useState(null);
   let questionIndex = 0;
   const isMobile = useMediaQuery("(max-width: 400px)");
 
   const fetchResult = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
     try {
-      const res = await fetch(`/api/exams/${params.id}/${params.attempt}/result`);
-      const data = await res.json();
-      if (data.success) {
+      const res = await fetch(
+        `/api/exams/${params.id}/${params.attempt}/result`,
+      );
+      const data = await res.json().catch(() => null);
+      if (data?.success && data?.data) {
         setResult(data.data);
-        setQuestionList(data.data.questions);
-        setAnswerList(data.data.answerList);
-        setUserAnswerList(data.data.userAnswers);
+        setQuestionList(
+          Array.isArray(data.data.questions) ? data.data.questions : [],
+        );
+        setAnswerList(
+          Array.isArray(data.data.answerList) ? data.data.answerList : [],
+        );
+        setUserAnswerList(
+          Array.isArray(data.data.userAnswers) ? data.data.userAnswers : [],
+        );
       } else {
+        setLoadError(data?.message || "Failed to load result");
       }
     } catch (error) {
+      setLoadError("Network error. Please check your connection.");
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +65,52 @@ export default function Result() {
   return (
     <Box sx={{ bgcolor: "#f8fafc", minHeight: "100vh", pb: 4 }}>
       {isLoading && <Loading />}
-      {!isLoading && (
+      {!isLoading && loadError && (
+        <Stack
+          alignItems="center"
+          justifyContent="center"
+          sx={{ minHeight: "100vh", p: 4, textAlign: "center" }}
+          gap={2}
+        >
+          <Typography variant="h5" color="error" fontWeight={700}>
+            Unable to load result
+          </Typography>
+          <Typography color="text.secondary">{loadError}</Typography>
+          <Stack
+            direction="row"
+            gap={2}
+            onClick={fetchResult}
+            sx={{
+              cursor: "pointer",
+              px: 3,
+              py: 1,
+              borderRadius: "8px",
+              bgcolor: "var(--primary-color)",
+              color: "white",
+              fontWeight: 600,
+              mt: 1,
+            }}
+          >
+            Retry
+          </Stack>
+          <Stack
+            direction="row"
+            gap={2}
+            onClick={() => router.push(`/dashboard?path=history`)}
+            sx={{
+              cursor: "pointer",
+              px: 3,
+              py: 1,
+              borderRadius: "8px",
+              color: "var(--text3)",
+              fontWeight: 600,
+            }}
+          >
+            Back to History
+          </Stack>
+        </Stack>
+      )}
+      {!isLoading && !loadError && (
         <Box sx={{ maxWidth: "1000px", mx: "auto", p: { xs: 2, md: 4 } }}>
           {/* Header */}
           <Stack

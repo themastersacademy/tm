@@ -219,7 +219,25 @@ export async function startExam({ examID, userID }) {
   const previousAttempt = await getPreviousAttempt(userID, examID);
 
   if (previousAttempt) {
-    throw new Error("You have already started this exam.");
+    if (previousAttempt.status === "IN_PROGRESS") {
+      return {
+        success: true,
+        data: {
+          attemptID: previousAttempt.id,
+          resumed: true,
+        },
+      };
+    }
+    if (previousAttempt.status === "COMPLETED") {
+      return {
+        success: false,
+        message: "You have already completed this exam.",
+        data: {
+          attemptID: previousAttempt.id,
+          completed: true,
+        },
+      };
+    }
   }
 
   if (exam.startTimeStamp > now) {
@@ -394,13 +412,18 @@ export async function getExamAttemptByID(id, userID) {
   if (Item.blobBucketKey) {
     // Duration is in minutes, convert to seconds. Add buffer.
     const urlExpiry = (Item.duration || 180) * 60 + 300;
-    const freshUrl = await getFileURL({
-      path: Item.blobBucketKey,
-      expiry: urlExpiry,
-    });
-    // getFileURL returns string on success, object on failure
-    if (typeof freshUrl === "string") {
-      Item.blobSignedUrl = freshUrl;
+    try {
+      const freshUrl = await getFileURL({
+        path: Item.blobBucketKey,
+        expiry: urlExpiry,
+      });
+      // getFileURL returns string on success, object on failure
+      if (typeof freshUrl === "string") {
+        Item.blobSignedUrl = freshUrl;
+      }
+    } catch (err) {
+      console.error("Failed to regenerate signed URL:", err?.message);
+      // Keep stale signedUrl — client may still succeed if not yet expired
     }
   }
 

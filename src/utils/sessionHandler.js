@@ -3,17 +3,27 @@ import { getSession } from "@/src/utils/serverSession";
 export async function withAuth(handler) {
   const session = await getSession();
   if (!session?.isAuthenticated) {
-    return session.unauthorized("Please log in to continue");
+    return Response.json(
+      { success: false, message: "Please log in to continue" },
+      { status: 401 }
+    );
   }
-  return handler(session);
+  try {
+    return await handler(session);
+  } catch (error) {
+    return handleError(error);
+  }
 }
 
-// Consistent error handler
 export function handleError(error) {
-  console.error("CourseEnroll API Error:", error);
-  const status = Number(error?.statusCode || error?.status) || 500;
-  return Response.json({
-    success: false,
-    message: error.message || "An unexpected error occurred",
-  }, { status });
+  console.error("API Error:", error);
+  const rawStatus = Number(error?.statusCode || error?.status);
+  const status = Number.isFinite(rawStatus) && rawStatus >= 400 ? rawStatus : 500;
+  return Response.json(
+    {
+      success: false,
+      message: error?.message || "An unexpected error occurred",
+    },
+    { status }
+  );
 }

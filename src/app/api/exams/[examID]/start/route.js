@@ -4,15 +4,14 @@ import { withAuth, handleError } from "@/src/utils/sessionHandler";
 export async function GET(req, { params }) {
   const { examID } = await params;
   if (!examID) {
-    return Response.json({
-      success: false,
-      message: "Exam ID is required",
-    });
+    return Response.json(
+      { success: false, message: "Exam ID is required" },
+      { status: 400 }
+    );
   }
   return withAuth(async (session) => {
-    const userID = session.user.id;
     try {
-      const response = await startExam({ userID, examID });
+      const response = await startExam({ userID: session.id, examID });
       return Response.json(response);
     } catch (error) {
       return handleError(error);

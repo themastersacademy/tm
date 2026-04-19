@@ -3,10 +3,27 @@ import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
 export async function POST(req, { params }) {
   const { attemptID } = await params;
+  if (!attemptID) {
+    return Response.json(
+      { success: false, message: "Attempt ID is required" },
+      { status: 400 }
+    );
+  }
   return withAuth(async (session) => {
     try {
-      const { questionID, bookmarked } = await req.json();
-      const result = await toggleBookmark(attemptID, questionID, bookmarked, session.id);
+      const body = await req.json().catch(() => null);
+      if (!body?.questionID) {
+        return Response.json(
+          { success: false, message: "Question ID is required" },
+          { status: 400 }
+        );
+      }
+      const result = await toggleBookmark(
+        attemptID,
+        body.questionID,
+        Boolean(body.bookmarked),
+        session.id
+      );
       return Response.json(result);
     } catch (error) {
       return handleError(error);

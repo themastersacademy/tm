@@ -30,11 +30,11 @@ export default function QuestionPreview({
     setExpanded((prev) => !prev);
   };
 
-  const userAnswer = userAnswerList.find(
+  const userAnswer = userAnswerList?.find(
     (answer) => answer.questionID === result.questionID
   );
 
-  const answerInfo = answerList.find(
+  const answerInfo = answerList?.find(
     (ans) => ans.questionID === result.questionID
   );
 

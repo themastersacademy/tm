@@ -4,10 +4,10 @@ import { withAuth, handleError } from "@/src/utils/sessionHandler";
 export async function GET(req, { params }) {
   const { examID, attemptID } = await params;
   if (!examID || !attemptID) {
-    return Response.json({
-      success: false,
-      message: "Exam ID and attempt ID are required",
-    });
+    return Response.json(
+      { success: false, message: "Exam ID and attempt ID are required" },
+      { status: 400 }
+    );
   }
   return withAuth(async (session) => {
     try {

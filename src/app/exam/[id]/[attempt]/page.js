@@ -77,33 +77,53 @@ export default function Exam() {
   );
 
   const submitExam = useCallback(
-    (endedBy) => {
+    async (endedBy) => {
       setIsSubmitting(true);
-      fetch(`/api/exams/${examID}/${attemptID}/submit-exam`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          endedBy,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            router.push(`/exam/${examID}/${attemptID}/result`);
-            if (document.fullscreenElement) {
-              toggleFullScreen();
-            }
-          } else {
-            setIsSubmitting(false);
-            enqueueSnackbar("Exam submission failed", { variant: "error" });
+      const goToResult = () => {
+        if (document.fullscreenElement) {
+          toggleFullScreen();
+        }
+        router.push(`/exam/${examID}/${attemptID}/result`);
+      };
+
+      let lastError = null;
+      // Retry transient failures up to 3 times before giving up
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await fetch(
+            `/api/exams/${examID}/${attemptID}/submit-exam`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ endedBy }),
+            },
+          );
+          const data = await res.json().catch(() => null);
+
+          if (data?.success) {
+            goToResult();
+            return;
           }
-        })
-        .catch(() => {
-          setIsSubmitting(false);
-          enqueueSnackbar("Something went wrong", { variant: "error" });
-        });
+
+          // Non-retryable: e.g. "Attempt not found", validation errors
+          if (res.status === 400 || res.status === 401 || res.status === 404) {
+            setIsSubmitting(false);
+            enqueueSnackbar(data?.message || "Exam submission failed", {
+              variant: "error",
+            });
+            return;
+          }
+
+          lastError = data?.message || `Server responded with ${res.status}`;
+        } catch (err) {
+          lastError = err?.message || "Network error";
+        }
+        // Backoff: 500ms, 1500ms
+        await new Promise((r) => setTimeout(r, 500 + attempt * 1000));
+      }
+
+      setIsSubmitting(false);
+      enqueueSnackbar(lastError || "Something went wrong", { variant: "error" });
     },
     [examID, attemptID, router],
   );
@@ -294,13 +314,17 @@ export default function Exam() {
     if (!getUserAnswer(questionID) && questionID) {
       fetch(`/api/exams/${examID}/${attemptID}/view-question`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ questionID }),
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
+        .then(async (res) => {
+          const data = await res.json().catch(() => null);
+          return { status: res.status, data };
+        })
+        .then(({ status, data }) => {
+          if (data?.success) {
             setUserAnswers((prev) => {
-              const newQuestionData = data.data.find(
+              const newQuestionData = (data.data || []).find(
                 (q) => q.questionID === questionID,
               );
               if (!newQuestionData) return prev;
@@ -315,8 +339,20 @@ export default function Exam() {
             });
             setClientPerfAtFetch(performance.now());
             setServerTimestamp(data.serverTimestamp);
-          } else {
+            return;
+          }
+          // Only redirect for terminal states (expired/completed/not-found/auth-lost)
+          const msg = String(data?.message || "").toLowerCase();
+          const isTerminal =
+            status === 401 ||
+            status === 404 ||
+            msg.includes("expired") ||
+            msg.includes("already completed") ||
+            msg.includes("not found");
+          if (isTerminal) {
             router.push(`/exam/${examID}/${attemptID}/result`);
+          } else {
+            console.error("View question non-terminal error:", data?.message);
           }
         })
         .catch((err) => console.error("View question error:", err));
@@ -371,6 +407,7 @@ export default function Exam() {
     (questionID, job, selectedOptions, blankAnswers, timeSpentMs) => {
       fetch(`/api/exams/${examID}/${attemptID}/question-response`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           questionID,
           selectedOptions:
@@ -379,18 +416,30 @@ export default function Exam() {
           timeSpentMs,
         }),
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
+        .then(async (res) => ({
+          status: res.status,
+          data: await res.json().catch(() => null),
+        }))
+        .then(({ status, data }) => {
+          if (data?.success) {
             setClientPerfAtFetch(performance.now());
             setServerTimestamp(data.serverTimestamp);
+            return;
+          }
+          const msg = String(data?.message || "").toLowerCase();
+          const isTerminal =
+            status === 401 ||
+            msg.includes("expired") ||
+            msg.includes("already completed");
+          if (isTerminal) {
+            router.push(`/exam/${examID}/${attemptID}/result`);
           } else {
-            console.error("Failed to save answer");
+            console.error("Failed to save answer:", data?.message);
           }
         })
         .catch((err) => console.error("Save answer error:", err));
     },
-    [examID, attemptID],
+    [examID, attemptID, router],
   );
 
   const updateUserAnswer = useCallback(
@@ -667,7 +716,7 @@ export default function Exam() {
         </Box>
       )}
 
-      {questions.settings.isFullScreenMode && !isFsEnabled && (
+      {questions?.settings?.isFullScreenMode && !isFsEnabled && (
         <FullscreenPrompt onEnable={toggleFullScreen} />
       )}
 

@@ -2,11 +2,23 @@ import { viewQuestion } from "@/src/libs/exams/attemptController";
 import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
 export async function POST(req, { params }) {
-  const { examID, attemptID } = await params;
+  const { attemptID } = await params;
+  if (!attemptID) {
+    return Response.json(
+      { success: false, message: "Attempt ID is required" },
+      { status: 400 }
+    );
+  }
   return withAuth(async (session) => {
     try {
-      const { questionID } = await req.json();
-      const result = await viewQuestion(attemptID, questionID, session.id);
+      const body = await req.json().catch(() => null);
+      if (!body?.questionID) {
+        return Response.json(
+          { success: false, message: "Question ID is required" },
+          { status: 400 }
+        );
+      }
+      const result = await viewQuestion(attemptID, body.questionID, session.id);
       return Response.json(result);
     } catch (error) {
       return handleError(error);
