@@ -109,6 +109,9 @@ export async function verifyPayment({
       pKey: transaction.pKey,
       sKey: transaction.sKey,
     },
+    // Only transition from pending — prevents double-processing if a
+    // concurrent verify/status-check already completed the transaction.
+    ConditionExpression: "#status = :pendingStatus",
     UpdateExpression:
       "set paymentDetails = :paymentDetails, #status = :status, updatedAt = :updatedAt",
     ExpressionAttributeNames: {
@@ -128,10 +131,24 @@ export async function verifyPayment({
       },
       ":status": transactionStatus,
       ":updatedAt": now,
+      ":pendingStatus": "pending",
     },
   };
 
-  await dynamoDB.send(new UpdateCommand(updateTransactionParams));
+  try {
+    await dynamoDB.send(new UpdateCommand(updateTransactionParams));
+  } catch (err) {
+    if (err.name === "ConditionalCheckFailedException") {
+      // Another concurrent request already finalized this transaction —
+      // treat as success to avoid double side effects (already done below).
+      return {
+        success: true,
+        message: "Payment already verified",
+        status: "completed",
+      };
+    }
+    throw err;
+  }
 
   if (payment.status === "captured") {
     const document = transaction.document;
@@ -285,15 +302,23 @@ export async function cancelTransaction({
     ExpressionAttributeNames: {
       "#status": "status",
     },
-    ConditionExpression: "#status <> :completedStatus",
+    // Only cancel if still pending — never cancel a completed payment.
+    ConditionExpression: "#status = :pendingStatus",
     ExpressionAttributeValues: {
       ":status": "cancelled",
       ":updatedAt": now,
-      ":completedStatus": "completed",
+      ":pendingStatus": "pending",
     },
   };
 
-  await dynamoDB.send(new UpdateCommand(updateParams));
+  try {
+    await dynamoDB.send(new UpdateCommand(updateParams));
+  } catch (err) {
+    if (err.name === "ConditionalCheckFailedException") {
+      throw new Error("Cannot cancel — transaction is no longer pending");
+    }
+    throw err;
+  }
 
   return {
     success: true,
@@ -372,7 +397,9 @@ export async function checkAndUpdateTransactionStatus({
     newStatus = "cancelled"; // Any other order status (e.g., expired)
   }
 
-  // Update transaction status in DynamoDB if changed
+  // Update transaction status in DynamoDB if changed — but only if it's
+  // still pending, so we don't overwrite a completion from verifyPayment
+  // that raced with this status check.
   if (transaction.status !== newStatus) {
     const updateParams = {
       TableName: USER_TABLE,
@@ -380,6 +407,7 @@ export async function checkAndUpdateTransactionStatus({
         pKey: transaction.pKey,
         sKey: transaction.sKey,
       },
+      ConditionExpression: "#status = :currentStatus",
       UpdateExpression: "set #status = :status, updatedAt = :updatedAt",
       ExpressionAttributeNames: {
         "#status": "status",
@@ -387,10 +415,25 @@ export async function checkAndUpdateTransactionStatus({
       ExpressionAttributeValues: {
         ":status": newStatus,
         ":updatedAt": now,
+        ":currentStatus": transaction.status,
       },
     };
 
-    await dynamoDB.send(new UpdateCommand(updateParams));
+    try {
+      await dynamoDB.send(new UpdateCommand(updateParams));
+    } catch (err) {
+      if (err.name === "ConditionalCheckFailedException") {
+        // Transaction was updated concurrently — re-read and return its
+        // current state so the caller doesn't act on stale data.
+        const fresh = await getTransaction({ razorpayOrderId });
+        return {
+          success: true,
+          message: `Transaction status is ${fresh.status}`,
+          status: fresh.status,
+        };
+      }
+      throw err;
+    }
   }
 
   return {

@@ -4,33 +4,19 @@ import {
   deleteBillingInfo,
   updateBillingInfo,
 } from "@/src/libs/checkout/billingInfoController";
-import { getSession } from "@/src/utils/serverSession";
-
-// Shared auth wrapper
-async function withAuth(handler) {
-  const session = await getSession();
-  if (!session?.isAuthenticated) {
-    return session.unauthorized("Please log in to continue");
-  }
-  return handler(session);
-}
-
-// Consistent error handler
-function handleError(error) {
-  console.error("BillingInfo API Error:", error);
-  return Response.json(
-    {
-      success: false,
-      message: error.message || "An unexpected error occurred",
-    },
-    { status: 500 }
-  );
-}
+import { withAuth, handleError } from "@/src/utils/sessionHandler";
 
 export async function POST(req) {
   return withAuth(async (session) => {
     try {
-      const { billingInfo } = await req.json();
+      const body = await req.json().catch(() => null);
+      const billingInfo = body?.billingInfo;
+      if (!billingInfo) {
+        return Response.json(
+          { success: false, message: "Billing info is required" },
+          { status: 400 }
+        );
+      }
       const result = await addBillingInfo({ billingInfo, userID: session.id });
       return Response.json(result);
     } catch (error) {
@@ -53,7 +39,14 @@ export async function GET() {
 export async function DELETE(req) {
   return withAuth(async (session) => {
     try {
-      const { billingInfoID } = await req.json();
+      const body = await req.json().catch(() => null);
+      const billingInfoID = body?.billingInfoID;
+      if (!billingInfoID) {
+        return Response.json(
+          { success: false, message: "Billing info ID is required" },
+          { status: 400 }
+        );
+      }
       const result = await deleteBillingInfo({
         userID: session.id,
         billingInfoID,
@@ -68,7 +61,17 @@ export async function DELETE(req) {
 export async function PUT(req) {
   return withAuth(async (session) => {
     try {
-      const { billingInfoID, billingInfo } = await req.json();
+      const body = await req.json().catch(() => null);
+      const { billingInfoID, billingInfo } = body || {};
+      if (!billingInfoID || !billingInfo) {
+        return Response.json(
+          {
+            success: false,
+            message: "Billing info ID and data are required",
+          },
+          { status: 400 }
+        );
+      }
       const result = await updateBillingInfo({
         userID: session.id,
         billingInfoID,

@@ -4,8 +4,8 @@ import { withAuth, handleError } from "@/src/utils/sessionHandler";
 export async function POST(req) {
   return withAuth(async (session) => {
     try {
-      const { couponCode, subscriptionPlanID, billingInfoIndex } =
-        await req.json();
+      const body = await req.json().catch(() => null);
+      const { couponCode, subscriptionPlanID, billingInfoIndex } = body || {};
 
       if (
         subscriptionPlanID === undefined ||
@@ -14,7 +14,7 @@ export async function POST(req) {
         billingInfoIndex === null
       ) {
         return Response.json(
-          { error: "Missing required parameters" },
+          { success: false, message: "Missing required parameters" },
           { status: 400 }
         );
       }
@@ -25,7 +25,7 @@ export async function POST(req) {
         couponCode,
         billingInfoIndex,
       });
-      return Response.json(result, { status: 200 });
+      return Response.json(result);
     } catch (error) {
       return handleError(error);
     }

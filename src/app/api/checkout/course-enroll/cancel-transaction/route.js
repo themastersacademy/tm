@@ -4,7 +4,8 @@ import { withAuth, handleError } from "@/src/utils/sessionHandler";
 export async function POST(req) {
   return withAuth(async (session) => {
     try {
-      const { transactionID, razorpayOrderId } = await req.json();
+      const body = await req.json().catch(() => null);
+      const { transactionID, razorpayOrderId } = body || {};
 
       if (!transactionID || !razorpayOrderId) {
         return Response.json(
@@ -16,10 +17,10 @@ export async function POST(req) {
       const result = await cancelTransaction({
         transactionID,
         razorpayOrderId,
-        userID: session.id, // Extract userID from session
+        userID: session.id,
       });
 
-      return Response.json(result, { status: 200 });
+      return Response.json(result);
     } catch (error) {
       return handleError(error);
     }
