@@ -99,12 +99,13 @@ function scoreAnswer(meta, selectedOptions = [], blankAnswers = []) {
   return { isCorrect, pMark, nMark };
 }
 
-// helper to fetch the attempt item
+// helper to fetch the attempt item (ConsistentRead ensures we see the latest writes)
 async function fetchAttempt(attemptID) {
   const result = await dynamoDB.send(
     new GetCommand({
       TableName: USER_TABLE,
       Key: { pKey: `EXAM_ATTEMPT#${attemptID}`, sKey: "EXAM_ATTEMPTS" },
+      ConsistentRead: true,
     })
   );
   if (!result.Item) throw new Error("Attempt not found");
@@ -139,17 +140,20 @@ async function checkExamAttempt(attempt) {
   const { startTimeStamp, duration, status } = attempt;
   const now = Date.now();
   const timeLimit = startTimeStamp + (duration || 0) * 1000 * 60;
-  if (now > timeLimit && status === "IN_PROGRESS") {
+  if (status === "COMPLETED") {
+    throw new Error("Exam attempt already completed");
+  }
+  // Allow a small grace period (30s) for in-flight answer saves that arrive
+  // just after the timer expires. The client will submit after flushing saves.
+  const GRACE_PERIOD_MS = 30_000;
+  if (now > timeLimit + GRACE_PERIOD_MS && status === "IN_PROGRESS") {
+    // Well past deadline — force auto-submit as a safety net
     try {
       await submitExam(attempt.id, "AUTO");
     } catch (err) {
-      // Auto-submit may race with another process; ignore and signal expiry below
       console.warn("Auto-submit during expiry check failed:", err?.message);
     }
     throw new Error("Exam attempt expired");
-  }
-  if (status === "COMPLETED") {
-    throw new Error("Exam attempt already completed");
   }
 }
 // ——————————————————————————————————————————
@@ -254,11 +258,13 @@ export async function questionResponse(
   // Check if the exam attempt is expired
   await checkExamAttempt(attempt);
 
-  // Server-side time enforcement: reject if past deadline
+  // Server-side time enforcement: allow a grace period for in-flight saves
+  // that arrive just after the client timer expires. The client waits for
+  // all pending saves before submitting, so these saves must be accepted.
+  const SAVE_GRACE_PERIOD_MS = 30_000;
   const now = Date.now();
   const deadline = attempt.startTimeStamp + (attempt.duration || 0) * 60000;
-  if (now > deadline) {
-    await submitExam(attemptID, "AUTO");
+  if (now > deadline + SAVE_GRACE_PERIOD_MS) {
     throw new Error("Exam time has expired");
   }
 

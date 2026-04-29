@@ -8,7 +8,8 @@ export async function POST(request) {
   if (!allowed) return rateLimitResponse(retryAfterMs);
 
   const body = await request.json().catch(() => null);
-  const { email, otp } = body || {};
+  const { email: rawEmail, otp } = body || {};
+  const email = rawEmail?.trim().toLowerCase();
   if (!email || !otp) {
     return Response.json(
       { success: false, message: "Email and OTP are required" },

@@ -8,7 +8,8 @@ export async function POST(request) {
   if (!allowed) return rateLimitResponse(retryAfterMs);
 
   const body = await request.json().catch(() => null);
-  const { email } = body || {};
+  const { email: rawEmail } = body || {};
+  const email = rawEmail?.trim().toLowerCase();
   if (!email) {
     return Response.json(
       { success: false, message: "Email is required" },

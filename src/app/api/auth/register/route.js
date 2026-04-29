@@ -15,7 +15,10 @@ export async function POST(req) {
       { status: 400 }
     );
   }
-  const { email, password } = body;
+  const { email: rawEmail, password } = body;
+
+  // Sanitize email: trim whitespace and normalize to lowercase
+  const email = rawEmail?.trim().toLowerCase();
 
   // Server-side email validation
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

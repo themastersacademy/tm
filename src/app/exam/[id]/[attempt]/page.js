@@ -16,7 +16,7 @@ import ExamHeader from "../../Components/ExamHeader";
 import MobileSectionDraw from "../../Components/MobileSectionDraw";
 import ExamSection from "../../Components/ExamSection";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { usePreventNavigation } from "../../Components/use-prevent-navigation";
 import NavigationGuard from "../../Components/NavigationGuard";
 import { Bookmark, Fullscreen } from "@mui/icons-material";
@@ -47,6 +47,9 @@ export default function Exam() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [isTimeUp, setIsTimeUp] = useState(false);
+
+  // Track all in-flight answer save requests so we can wait for them before submit
+  const pendingSavesRef = useRef(new Set());
 
   const { showDialog, confirmNavigation, cancelNavigation } =
     usePreventNavigation(true);
@@ -85,6 +88,14 @@ export default function Exam() {
         }
         router.push(`/exam/${examID}/${attemptID}/result`);
       };
+
+      // ── CRITICAL FIX: Wait for ALL pending answer saves to finish ──
+      const pending = Array.from(pendingSavesRef.current);
+      if (pending.length > 0) {
+        console.log(`[submit] Waiting for ${pending.length} pending answer save(s)…`);
+        await Promise.allSettled(pending);
+        console.log(`[submit] All pending saves settled. Proceeding with submit.`);
+      }
 
       let lastError = null;
       // Retry transient failures up to 3 times before giving up
@@ -402,10 +413,10 @@ export default function Exam() {
     });
   }, []);
 
-  // Direct Save Function (Debounce removed to prevent data loss on fast switching)
+  // Direct Save Function — tracks in-flight promises so submit can await them
   const saveAnswer = useCallback(
     (questionID, job, selectedOptions, blankAnswers, timeSpentMs) => {
-      fetch(`/api/exams/${examID}/${attemptID}/question-response`, {
+      const savePromise = fetch(`/api/exams/${examID}/${attemptID}/question-response`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -435,9 +446,20 @@ export default function Exam() {
             router.push(`/exam/${examID}/${attemptID}/result`);
           } else {
             console.error("Failed to save answer:", data?.message);
+            enqueueSnackbar("Failed to save answer. Please check your connection.", { variant: "error" });
           }
         })
-        .catch((err) => console.error("Save answer error:", err));
+        .catch((err) => {
+          console.error("Save answer error:", err);
+          enqueueSnackbar("Network error: Answer not saved. Check connection.", { variant: "error" });
+        })
+        .finally(() => {
+          // Remove from pending set once settled (success or failure)
+          pendingSavesRef.current.delete(savePromise);
+        });
+
+      // Track this in-flight save so submitExam can wait for it
+      pendingSavesRef.current.add(savePromise);
     },
     [examID, attemptID, router],
   );
