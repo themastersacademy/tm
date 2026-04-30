@@ -89,12 +89,12 @@ export default function Exam() {
         router.push(`/exam/${examID}/${attemptID}/result`);
       };
 
-      // ── CRITICAL FIX: Wait for ALL pending answer saves to finish ──
+      // Wait for pending answer saves to flush, but cap the wait so a stuck
+      // save (dead WiFi, half-open TCP) cannot block submit indefinitely.
       const pending = Array.from(pendingSavesRef.current);
       if (pending.length > 0) {
-        console.log(`[submit] Waiting for ${pending.length} pending answer save(s)…`);
-        await Promise.allSettled(pending);
-        console.log(`[submit] All pending saves settled. Proceeding with submit.`);
+        const waitCeiling = new Promise((r) => setTimeout(r, 10000));
+        await Promise.race([Promise.allSettled(pending), waitCeiling]);
       }
 
       let lastError = null;
@@ -107,6 +107,7 @@ export default function Exam() {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ endedBy }),
+              signal: AbortSignal.timeout(20000),
             },
           );
           const data = await res.json().catch(() => null);
@@ -426,6 +427,8 @@ export default function Exam() {
           blankAnswers: job === "blankAnswers" ? blankAnswers : undefined,
           timeSpentMs,
         }),
+        // Hard timeout: a stuck save must not block submit-exam's wait-for-pending step.
+        signal: AbortSignal.timeout(15000),
       })
         .then(async (res) => ({
           status: res.status,
