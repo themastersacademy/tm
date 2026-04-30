@@ -5,6 +5,7 @@ import { DynamoDBAdapter } from "@next-auth/dynamodb-adapter";
 import { dynamoDB } from "@/src/utils/awsAgent"; // your AWS configuration file
 import { getUserByEmail } from "@/src/libs/auth/auth";
 import { verifyPassword } from "@/src/utils/crypto";
+import { normalizeEmail } from "@/src/utils/email";
 
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -33,7 +34,7 @@ export const authOptions = {
         }
         const genericError = "Invalid email or password";
 
-        const user = await getUserByEmail(credentials.email);
+        const user = await getUserByEmail(normalizeEmail(credentials.email));
         if (!user) {
           throw new Error(genericError);
         }
@@ -78,7 +79,7 @@ export const authOptions = {
         return {
           id: profile.sub,
           name: profile.name,
-          email: profile.email,
+          email: normalizeEmail(profile.email),
           image: profile.picture,
           role: "user",
           status: "active",

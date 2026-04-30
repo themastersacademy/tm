@@ -1,5 +1,6 @@
 import { verifyOTP } from "@/src/libs/auth/auth";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "@/src/utils/rateLimit";
+import { normalizeEmail } from "@/src/utils/email";
 
 export async function POST(request) {
   // Rate limit: 5 OTP attempts per minute per IP
@@ -8,8 +9,8 @@ export async function POST(request) {
   if (!allowed) return rateLimitResponse(retryAfterMs);
 
   const body = await request.json().catch(() => null);
-  const { email: rawEmail, otp } = body || {};
-  const email = rawEmail?.trim().toLowerCase();
+  const email = normalizeEmail(body?.email);
+  const { otp } = body || {};
   if (!email || !otp) {
     return Response.json(
       { success: false, message: "Email and OTP are required" },

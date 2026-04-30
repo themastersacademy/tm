@@ -18,12 +18,11 @@ import {
 import { randomUUID } from "crypto";
 import { sendOTPToMail } from "@/src/utils/mail";
 import { getValidProSubscription } from "@/src/libs/proSubscription/subscriptionController";
+import { normalizeEmail } from "@/src/utils/email";
 
 const USER_TABLE = `${process.env.AWS_DB_NAME}users`;
 
 export async function getUserByEmail(email) {
-  // Normalize to lowercase — DynamoDB keys are case-sensitive
-  const normalizedEmail = email?.trim().toLowerCase();
   const params = {
     TableName: `${process.env.AWS_DB_NAME}users`,
     IndexName: "GSI1-index",
@@ -33,7 +32,7 @@ export async function getUserByEmail(email) {
       "#gsi1SKey": "GSI1-sKey",
     },
     ExpressionAttributeValues: {
-      ":email": `USER#${normalizedEmail}`,
+      ":email": `USER#${normalizeEmail(email)}`,
     },
   };
 
@@ -43,19 +42,6 @@ export async function getUserByEmail(email) {
   } catch (error) {
     console.error("Error fetching user by email:", error);
     throw error; // propagate real DynamoDB errors — do NOT swallow as null
-  }
-
-  // Fallback: if not found with lowercase, try original case for legacy accounts
-  if ((!result.Items || result.Items.length === 0) && email !== normalizedEmail) {
-    try {
-      const fallbackParams = {
-        ...params,
-        ExpressionAttributeValues: { ":email": `USER#${email.trim()}` },
-      };
-      result = await dynamoDB.send(new QueryCommand(fallbackParams));
-    } catch (error) {
-      console.error("Error in fallback email lookup:", error);
-    }
   }
 
   if (!result.Items || result.Items.length === 0) {
@@ -156,8 +142,7 @@ export async function updateUserEmailVerified(email) {
 }
 
 export async function createUser({ email, name, password }) {
-  // Normalize to lowercase for consistent lookups
-  const normalizedEmail = email?.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(email);
   const existingUser = await getUserByEmail(normalizedEmail);
   //check if user is already verified
   if (existingUser?.emailVerified) {

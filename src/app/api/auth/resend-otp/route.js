@@ -1,5 +1,6 @@
 import { resendOTP } from "@/src/libs/auth/auth";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "@/src/utils/rateLimit";
+import { normalizeEmail } from "@/src/utils/email";
 
 export async function POST(request) {
   // Rate limit: 3 resend attempts per 2 minutes per IP
@@ -8,8 +9,7 @@ export async function POST(request) {
   if (!allowed) return rateLimitResponse(retryAfterMs);
 
   const body = await request.json().catch(() => null);
-  const { email: rawEmail } = body || {};
-  const email = rawEmail?.trim().toLowerCase();
+  const email = normalizeEmail(body?.email);
   if (!email) {
     return Response.json(
       { success: false, message: "Email is required" },

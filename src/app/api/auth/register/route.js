@@ -1,6 +1,7 @@
 import { createUser } from "@/src/libs/auth/auth";
 import validatePassword from "@/src/utils/passwordValidator";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "@/src/utils/rateLimit";
+import { normalizeEmail } from "@/src/utils/email";
 
 export async function POST(req) {
   // Rate limit: 5 registrations per minute per IP
@@ -15,10 +16,8 @@ export async function POST(req) {
       { status: 400 }
     );
   }
-  const { email: rawEmail, password } = body;
-
-  // Sanitize email: trim whitespace and normalize to lowercase
-  const email = rawEmail?.trim().toLowerCase();
+  const email = normalizeEmail(body.email);
+  const { password } = body;
 
   // Server-side email validation
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
