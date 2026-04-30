@@ -356,6 +356,44 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
   }, [storageKey]);
 
   // ------------------------------------------------------------------
+  // beforeunload safety net: when a tab is closed (Cmd+W, browser
+  // crash, parent process kill), use navigator.sendBeacon to fire ONE
+  // last best-effort POST per pending answer. sendBeacon survives the
+  // tab being killed mid-request — the browser hands off the request
+  // to the OS to deliver. Capped at 64KB per beacon by spec.
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let beaconsSent = false;
+    const flushBeacon = () => {
+      if (beaconsSent) return; // pagehide + beforeunload may both fire
+      if (typeof navigator === "undefined" || typeof navigator.sendBeacon !== "function") return;
+      const url = `/api/exams/${examID}/${attemptID}/question-response`;
+      let sentAny = false;
+      for (const [, entry] of queueRef.current.entries()) {
+        if (entry.status === "syncing" || entry.status === "queued" || entry.status === "failed") {
+          try {
+            const blob = new Blob([JSON.stringify(entry.payload)], {
+              type: "application/json",
+            });
+            navigator.sendBeacon(url, blob);
+            sentAny = true;
+          } catch {
+            /* sendBeacon failed — nothing more to do at unload time */
+          }
+        }
+      }
+      if (sentAny) beaconsSent = true;
+    };
+    window.addEventListener("pagehide", flushBeacon);
+    window.addEventListener("beforeunload", flushBeacon);
+    return () => {
+      window.removeEventListener("pagehide", flushBeacon);
+      window.removeEventListener("beforeunload", flushBeacon);
+    };
+  }, [examID, attemptID]);
+
+  // ------------------------------------------------------------------
   // Online/offline event listeners + periodic drain timer.
   // ------------------------------------------------------------------
   useEffect(() => {

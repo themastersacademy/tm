@@ -197,9 +197,41 @@ export default function Exam() {
 
   const [error, setError] = useState(null);
 
+  // Retry helper for the bootstrap fetches. The first 5 seconds of an exam
+  // page load are the most failure-prone (cold WiFi, just-resumed device,
+  // first request to a cold-started Lambda). Without retry, a single blip
+  // = student stuck on error screen. With retry, the page self-heals.
+  const fetchWithRetry = useCallback(
+    async (url, opts = {}, { retries = 5, baseDelay = 800 } = {}) => {
+      let lastErr;
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await fetch(url, {
+            ...opts,
+            signal: abortTimeout(opts.timeoutMs || 15000),
+          });
+          // 4xx terminal — don't retry
+          if (res.status === 404 || res.status === 410 || res.status === 401 || res.status === 403) {
+            return res;
+          }
+          // Other 4xx (incl. 425/429): retry; everything else (5xx, ok): return
+          if (res.ok || res.status < 500) return res;
+          lastErr = new Error(`HTTP ${res.status}`);
+        } catch (err) {
+          lastErr = err;
+        }
+        // Exponential backoff with jitter: 0.8, 1.6, 3.2, 6.4, 12.8s
+        const delay = baseDelay * 2 ** i + Math.random() * 300;
+        await new Promise((r) => setTimeout(r, delay));
+      }
+      throw lastErr || new Error("All retries exhausted");
+    },
+    [],
+  );
+
   const fetchQuestion = useCallback(async () => {
     try {
-      const res = await fetch(`/api/exams/${examID}/${attemptID}`);
+      const res = await fetchWithRetry(`/api/exams/${examID}/${attemptID}`);
       // Terminal states: redirect once instead of letting any future code
       // path retry. Stops "Exam attempt not found" log spam from a stale URL.
       if (res.status === 404 || res.status === 410) {
@@ -218,36 +250,29 @@ export default function Exam() {
           setUserAnswers(attemptInfo.userAnswers);
           setServerTimestamp(attemptInfo.serverTimestamp);
           setClientPerfAtFetch(performance.now());
-          await fetch(`${attemptInfo.blobSignedUrl}`)
-            .then((res) => {
-              if (!res.ok) {
-                console.error("Blob fetch failed:", {
-                  status: res.status,
-                  statusText: res.statusText,
-                  url: attemptInfo.blobSignedUrl,
-                });
-                throw new Error("Failed to load question data");
-              }
-              return res.json();
-            })
-            .then((data) => {
-              if (attemptInfo.seed != null) {
-                const seed = attemptInfo.seed.toString();
-                data.sections = data.sections.map((section, index) => ({
-                  ...section,
-                  questions: seededShuffle(section.questions, `${seed}`),
-                }));
-              }
-              setQuestions(data);
-              setLoading(false);
-            })
-            .catch((err) => {
-              console.error("Blob fetch error:", err);
-              setError(
-                "Failed to load exam content. Please check your connection.",
-              );
-              setLoading(false);
-            });
+          // Blob fetch also gets retry — S3 occasionally 503s under load.
+          try {
+            const blobRes = await fetchWithRetry(`${attemptInfo.blobSignedUrl}`, {}, { retries: 5, baseDelay: 800 });
+            if (!blobRes.ok) {
+              throw new Error(`Blob fetch failed with status ${blobRes.status}`);
+            }
+            const blobData = await blobRes.json();
+            if (attemptInfo.seed != null) {
+              const seed = attemptInfo.seed.toString();
+              blobData.sections = blobData.sections.map((section) => ({
+                ...section,
+                questions: seededShuffle(section.questions, `${seed}`),
+              }));
+            }
+            setQuestions(blobData);
+            setLoading(false);
+          } catch (err) {
+            console.error("Blob fetch error after retries:", err);
+            setError(
+              "Failed to load exam content after multiple attempts. Please check your connection and click Retry.",
+            );
+            setLoading(false);
+          }
         } else if (attemptInfo.status === "COMPLETED") {
           // Server has already finalized this attempt — drop any queue
           // entries left behind so the next student on this computer
@@ -260,11 +285,13 @@ export default function Exam() {
         setLoading(false);
       }
     } catch (err) {
-      console.error("Error fetching exam or blob data:", err);
-      setError("An unexpected error occurred. Please try again.");
+      console.error("Error fetching exam after retries:", err);
+      setError(
+        "Could not load exam after multiple attempts. Please check your connection and click Retry.",
+      );
       setLoading(false);
     }
-  }, [examID, attemptID, router, clearQueue]);
+  }, [examID, attemptID, router, clearQueue, fetchWithRetry]);
 
   useEffect(() => {
     const onFsChange = () => setIsFsEnabled(!!document.fullscreenElement);
