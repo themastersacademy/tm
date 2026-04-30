@@ -149,15 +149,16 @@ export default function Checkout() {
   }, [courseID, goalID, planIndex, enqueueSnackbar, router]);
 
   const applyCoupon = async (couponCode) => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/coupon/${couponCode}`,
-      {
-        method: "GET",
-      }
-    );
-    const data = await response.json();
-    if (data.success) {
-      const coupon = data.data;
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/coupon/${couponCode}`,
+        {
+          method: "GET",
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        const coupon = data.data;
       // Validate coupon applicability
       if (coupon.couponClass === "COURSES") {
         const applicableCourses = (coupon.applicableCourses || []).map((id) =>
@@ -191,8 +192,13 @@ export default function Checkout() {
       enqueueSnackbar("Coupon applied successfully", {
         variant: "success",
       });
-    } else {
-      enqueueSnackbar(data.message, {
+      } else {
+        enqueueSnackbar(data.message, {
+          variant: "error",
+        });
+      }
+    } catch (error) {
+      enqueueSnackbar("Failed to apply coupon. Please try again.", {
         variant: "error",
       });
     }
@@ -490,7 +496,10 @@ export default function Checkout() {
         enqueueSnackbar(data.message, { variant: "error" });
       }
     } catch (err) {
-      console.error("Error in enroll");
+      console.error("Error in enroll", err);
+      enqueueSnackbar(err.message || "Failed to enroll. Please try again.", {
+        variant: "error",
+      });
     }
   };
 

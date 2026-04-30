@@ -427,17 +427,23 @@ export default function FormRecover() {
 
   const handleResendOTP = useCallback(async () => {
     updateFormState({ resendOTPTime: 60 });
-    //Resend OTP has separate api call
-    const result = await fetch("/api/auth/resend-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    const data = await result.json();
-    if (data.success) {
-      updateFormState({ isOTPSent: true, resendOTPTime: 60 });
-    } else {
-      enqueueSnackbar(data.message || "Failed to resend OTP", {
+    try {
+      const result = await fetch("/api/auth/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await result.json();
+      if (data.success) {
+        updateFormState({ isOTPSent: true, resendOTPTime: 60 });
+      } else {
+        enqueueSnackbar(data.message || "Failed to resend OTP", {
+          variant: "error",
+          autoHideDuration: 3000,
+        });
+      }
+    } catch (error) {
+      enqueueSnackbar("Failed to resend OTP. Please check your connection.", {
         variant: "error",
         autoHideDuration: 3000,
       });
