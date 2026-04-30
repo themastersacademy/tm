@@ -21,7 +21,7 @@ import { usePreventNavigation } from "../../Components/use-prevent-navigation";
 import NavigationGuard from "../../Components/NavigationGuard";
 import { Bookmark, Fullscreen } from "@mui/icons-material";
 import LoadingComp from "../../Components/LoadingComp";
-import { enqueueSnackbar } from "notistack";
+import { enqueueSnackbar, closeSnackbar } from "notistack";
 import { seededShuffle } from "@/src/utils/seededShuffle";
 import AntiCheatToast from "../../Components/AntiCheatToast";
 import ViolationDialog from "../../Components/ViolationDialog";
@@ -608,18 +608,30 @@ export default function Exam() {
   }, []);
 
   // Network status: detect online/offline + auto-retry on reconnect.
+  // The persistent "you are offline" snackbar is keyed so we can dismiss it
+  // the moment connection returns. Without this it sticks forever.
+  const offlineSnackbarKeyRef = useRef(null);
   useEffect(() => {
+    const dismissOfflineSnackbar = () => {
+      if (offlineSnackbarKeyRef.current != null) {
+        closeSnackbar(offlineSnackbarKeyRef.current);
+        offlineSnackbarKeyRef.current = null;
+      }
+    };
     const onOnline = () => {
       setIsOnline(true);
+      dismissOfflineSnackbar();
       enqueueSnackbar("Back online. Syncing your answers…", { variant: "success", autoHideDuration: 2500 });
       drainFailedSaves();
     };
     const onOffline = () => {
       setIsOnline(false);
-      enqueueSnackbar("You are offline. Answers won't reach the server until you reconnect.", {
-        variant: "error",
-        persist: true,
-      });
+      // Avoid stacking duplicates if offline fires twice.
+      dismissOfflineSnackbar();
+      offlineSnackbarKeyRef.current = enqueueSnackbar(
+        "You are offline. Answers won't reach the server until you reconnect.",
+        { variant: "error", persist: true },
+      );
     };
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
@@ -630,6 +642,8 @@ export default function Exam() {
       }
     }, 20000);
     return () => {
+      // On unmount also clear the persistent snackbar so it can't outlive the page.
+      dismissOfflineSnackbar();
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
       clearInterval(interval);
