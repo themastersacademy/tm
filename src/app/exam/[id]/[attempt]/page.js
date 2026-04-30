@@ -25,6 +25,8 @@ import { enqueueSnackbar, closeSnackbar } from "notistack";
 import { seededShuffle } from "@/src/utils/seededShuffle";
 import AntiCheatToast from "../../Components/AntiCheatToast";
 import ViolationDialog from "../../Components/ViolationDialog";
+import { useExamSyncQueue } from "../../hooks/useExamSyncQueue";
+import { abortTimeout } from "../../utils/abortTimeout";
 
 export default function Exam() {
   const router = useRouter();
@@ -48,40 +50,28 @@ export default function Exam() {
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [isTimeUp, setIsTimeUp] = useState(false);
 
-  // Track all in-flight answer save requests so we can wait for them before submit
-  const pendingSavesRef = useRef(new Set());
-
-  // Per-question save state for safety-net (online/offline + auto-retry).
-  // failedPayloadsRef[qID] = latest payload we tried but failed to send.
-  // On `online` event we replay every entry. saveStatus drives the UI banner.
-  const failedPayloadsRef = useRef({});
-  const [failedCount, setFailedCount] = useState(0);
-  const [isOnline, setIsOnline] = useState(true);
-  // lastFailReason categorizes WHY the latest save failed so students see a
-  // specific cause (their offline state, slow connection, etc.) and can't
-  // later abuse a vague "system bug" claim.
-  const [lastFailReason, setLastFailReason] = useState(null);
-  // Per-question status: "saving" (in-flight) | "unsynced" (failed) | undefined (saved)
-  // Drives the colored dot on each question button in ExamSection.
-  const [syncStatusByQID, setSyncStatusByQID] = useState({});
-
-  // localStorage key for unsynced answer payloads. Survives refresh/crash.
-  const storageKey = `exam-pending:${examID}:${attemptID}`;
-  const persistQueue = useCallback(() => {
-    try {
-      if (Object.keys(failedPayloadsRef.current).length === 0) {
-        localStorage.removeItem(storageKey);
-      } else {
-        localStorage.setItem(storageKey, JSON.stringify(failedPayloadsRef.current));
-      }
-    } catch {
-      /* localStorage may be unavailable in private mode — fail silently */
-    }
-  }, [storageKey]);
-
-  useEffect(() => {
-    if (typeof navigator !== "undefined") setIsOnline(navigator.onLine ?? true);
-  }, []);
+  // Single source of truth for sync state. The hook owns localStorage
+  // durability, retry/backoff, online/offline detection, and per-question
+  // status. This component just reads its outputs and calls queueAnswer().
+  const handleTerminal = useCallback(
+    ({ status }) => {
+      // 401/404/409/410 from the server during a save → exam is no longer
+      // accepting answers. Redirect to result so we don't keep retrying.
+      router.push(`/exam/${examID}/${attemptID}/result`);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [examID, attemptID],
+  );
+  const {
+    queueAnswer,
+    drainNow,
+    getPendingCount,
+    status: syncStatusByQID,
+    pendingCount,
+    isOnline,
+    lastFailReason,
+    hasFailed,
+  } = useExamSyncQueue({ examID, attemptID, onTerminal: handleTerminal });
 
   const { showDialog, confirmNavigation, cancelNavigation } =
     usePreventNavigation(true);
@@ -115,33 +105,27 @@ export default function Exam() {
     async (endedBy) => {
       setIsSubmitting(true);
       const goToResult = () => {
-        if (document.fullscreenElement) {
-          toggleFullScreen();
-        }
+        if (document.fullscreenElement) toggleFullScreen();
         router.push(`/exam/${examID}/${attemptID}/result`);
       };
 
-      // Last-ditch retry: replay any answers that never got an ack from the
-      // server. Then wait briefly for them to complete before submit.
-      if (Object.keys(failedPayloadsRef.current).length > 0) {
-        drainFailedSaves();
+      // Force a final drain of the queue, then wait briefly for it to settle.
+      // Capped wait — a dead network can never block submit indefinitely.
+      // Read the live queue size via getPendingCount() — React state in
+      // closure would be a stale snapshot during this loop.
+      drainNow();
+      const waitDeadline = Date.now() + 10000;
+      while (getPendingCount() > 0 && Date.now() < waitDeadline) {
+        await new Promise((r) => setTimeout(r, 200));
       }
 
-      // Wait for pending answer saves to flush, but cap the wait so a stuck
-      // save (dead WiFi, half-open TCP) cannot block submit indefinitely.
-      const pending = Array.from(pendingSavesRef.current);
-      if (pending.length > 0) {
-        const waitCeiling = new Promise((r) => setTimeout(r, 10000));
-        await Promise.race([Promise.allSettled(pending), waitCeiling]);
-      }
-
-      // For USER-initiated submits, warn if some answers still aren't acked.
-      // (Auto-submits on time-up always proceed — server has whatever it has.)
-      const stillUnsynced = Object.keys(failedPayloadsRef.current).length;
-      if (endedBy === "USER" && stillUnsynced > 0) {
+      // For USER submits, block + warn if the queue isn't drained. Auto
+      // (time-up) submits always proceed — server has whatever it has.
+      const stillPending = getPendingCount();
+      if (endedBy === "USER" && stillPending > 0) {
         const ok = window.confirm(
-          `${stillUnsynced} answer(s) couldn't be saved to the server (network issue).\n\n` +
-          `Click OK to submit anyway with what was saved, or Cancel to wait and retry.`,
+          `${stillPending} answer(s) haven't reached the server yet (network issue).\n\n` +
+            `Click OK to submit with what was saved, or Cancel to keep waiting and let auto-retry continue.`,
         );
         if (!ok) {
           setIsSubmitting(false);
@@ -150,7 +134,6 @@ export default function Exam() {
       }
 
       let lastError = null;
-      // Retry transient failures up to 3 times before giving up
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const res = await fetch(
@@ -159,37 +142,34 @@ export default function Exam() {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ endedBy }),
-              signal: AbortSignal.timeout(20000),
+              signal: abortTimeout(20000),
             },
           );
           const data = await res.json().catch(() => null);
-
           if (data?.success) {
             goToResult();
             return;
           }
-
-          // Non-retryable: e.g. "Attempt not found", validation errors
           if (res.status === 400 || res.status === 401 || res.status === 404) {
             setIsSubmitting(false);
-            enqueueSnackbar(data?.message || "Exam submission failed", {
-              variant: "error",
-            });
+            enqueueSnackbar(data?.message || "Exam submission failed", { variant: "error" });
             return;
           }
-
+          if (res.status === 409 || res.status === 410) {
+            // Already completed / expired — server has finalized. Go to result.
+            goToResult();
+            return;
+          }
           lastError = data?.message || `Server responded with ${res.status}`;
         } catch (err) {
           lastError = err?.message || "Network error";
         }
-        // Backoff: 500ms, 1500ms
         await new Promise((r) => setTimeout(r, 500 + attempt * 1000));
       }
-
       setIsSubmitting(false);
       enqueueSnackbar(lastError || "Something went wrong", { variant: "error" });
     },
-    [examID, attemptID, router],
+    [examID, attemptID, router, drainNow, getPendingCount],
   );
 
   const handleEndTest = useCallback(
@@ -478,6 +458,8 @@ export default function Exam() {
   // Direct Save Function — tracks in-flight promises so submit can await them.
   // Also records the LATEST payload per question so we can auto-retry on
   // reconnect or before submit if the network was flaky.
+  // Thin wrapper: hand the payload to the queue. The hook owns retry,
+  // backoff, persistence, and the network terminal-redirect contract.
   const saveAnswer = useCallback(
     (questionID, job, selectedOptions, blankAnswers, timeSpentMs) => {
       const payload = {
@@ -486,187 +468,38 @@ export default function Exam() {
         blankAnswers: job === "blankAnswers" ? blankAnswers : undefined,
         timeSpentMs,
       };
-      // Optimistically register this question as having an unconfirmed payload.
-      // Cleared only when the server confirms success.
-      failedPayloadsRef.current[questionID] = payload;
-      setFailedCount(Object.keys(failedPayloadsRef.current).length);
-      setSyncStatusByQID((prev) => ({ ...prev, [questionID]: "saving" }));
-      persistQueue();
-
-      const savePromise = fetch(`/api/exams/${examID}/${attemptID}/question-response`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        // Hard timeout: a stuck save must not block submit-exam's wait-for-pending step.
-        signal: AbortSignal.timeout(15000),
-      })
-        .then(async (res) => ({
-          status: res.status,
-          data: await res.json().catch(() => null),
-        }))
-        .then(({ status, data }) => {
-          if (data?.success) {
-            setClientPerfAtFetch(performance.now());
-            setServerTimestamp(data.serverTimestamp);
-            // Server acknowledged — clear from failed-payloads map.
-            delete failedPayloadsRef.current[questionID];
-            setFailedCount(Object.keys(failedPayloadsRef.current).length);
-            setSyncStatusByQID((prev) => {
-              const next = { ...prev };
-              delete next[questionID];
-              return next;
-            });
-            persistQueue();
-            if (Object.keys(failedPayloadsRef.current).length === 0) {
-              setLastFailReason(null);
-            }
-            return;
-          }
-          const msg = String(data?.message || "").toLowerCase();
-          const isTerminal =
-            status === 401 ||
-            status === 404 ||
-            status === 409 ||
-            status === 410 ||
-            msg.includes("expired") ||
-            msg.includes("already completed") ||
-            msg.includes("not found");
-          if (isTerminal) {
-            // Drop the queue so the periodic drain doesn't keep firing 409s.
-            failedPayloadsRef.current = {};
-            setFailedCount(0);
-            setSyncStatusByQID({});
-            try { localStorage.removeItem(storageKey); } catch {}
-            router.push(`/exam/${examID}/${attemptID}/result`);
-          } else {
-            console.error("Failed to save answer:", data?.message);
-            const reason = `Server error (HTTP ${status}): ${data?.message || "no message"}`;
-            setLastFailReason(reason);
-            setSyncStatusByQID((prev) => ({ ...prev, [questionID]: "unsynced" }));
-            enqueueSnackbar(`Answer not saved — ${reason}. Will retry.`, { variant: "warning" });
-          }
-        })
-        .catch((err) => {
-          console.error("Save answer error:", err);
-          // Classify the cause so students see WHY (no ambiguous "system bug" claims).
-          let reason;
-          if (typeof navigator !== "undefined" && navigator.onLine === false) {
-            reason = "Your device is offline";
-          } else if (err?.name === "TimeoutError" || err?.name === "AbortError") {
-            reason = "Your connection is too slow (request timed out after 15s)";
-          } else if (err?.message?.toLowerCase().includes("failed to fetch")) {
-            reason = "Network connection dropped";
-          } else {
-            reason = `Network error: ${err?.message || err?.name || "unknown"}`;
-          }
-          setLastFailReason(reason);
-          setSyncStatusByQID((prev) => ({ ...prev, [questionID]: "unsynced" }));
-          enqueueSnackbar(`Answer not saved — ${reason}. It is queued and will retry automatically.`, {
-            variant: "warning",
-            autoHideDuration: 4500,
-          });
-        })
-        .finally(() => {
-          // Remove from pending set once settled (success or failure)
-          pendingSavesRef.current.delete(savePromise);
-        });
-
-      // Track this in-flight save so submitExam can wait for it
-      pendingSavesRef.current.add(savePromise);
+      queueAnswer(questionID, payload);
     },
-    [examID, attemptID, router],
+    [queueAnswer],
   );
 
-  // Drain queue: replay every payload still marked as un-acked.
-  const drainFailedSaves = useCallback(() => {
-    const entries = Object.entries(failedPayloadsRef.current);
-    if (entries.length === 0) return;
-    console.log(`[exam] retrying ${entries.length} unsynced answer(s)…`);
-    for (const [qID, p] of entries) {
-      // Resend with same payload. saveAnswer's success handler clears it.
-      saveAnswer(
-        qID,
-        p.selectedOptions !== undefined ? "selectedOptions" : "blankAnswers",
-        p.selectedOptions,
-        p.blankAnswers,
-        p.timeSpentMs,
-      );
-    }
-  }, [saveAnswer]);
-
-  // Hydrate unsynced answers from localStorage on mount. If the student's
-  // tab refreshed, crashed, or was killed mid-exam, their queued payloads
-  // come back here and replay the moment we have network. Runs once.
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (!stored) return;
-      const parsed = JSON.parse(stored);
-      const ids = Object.keys(parsed || {});
-      if (ids.length === 0) return;
-      failedPayloadsRef.current = parsed;
-      setFailedCount(ids.length);
-      const initialStatus = {};
-      for (const id of ids) initialStatus[id] = "unsynced";
-      setSyncStatusByQID(initialStatus);
-      enqueueSnackbar(`Restoring ${ids.length} unsaved answer(s) from your previous session…`, {
-        variant: "info",
-        autoHideDuration: 3500,
-      });
-      // Try to flush after a short delay so React is ready.
-      setTimeout(() => {
-        if (typeof navigator === "undefined" || navigator.onLine !== false) {
-          drainFailedSaves();
-        }
-      }, 500);
-    } catch {
-      /* corrupt localStorage — ignore */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Network status: detect online/offline + auto-retry on reconnect.
-  // The persistent "you are offline" snackbar is keyed so we can dismiss it
-  // the moment connection returns. Without this it sticks forever.
+  // Surface online/offline transitions as snackbars. The hook itself manages
+  // the queue + drain; this useEffect is purely UX feedback.
   const offlineSnackbarKeyRef = useRef(null);
+  const wasOnlineRef = useRef(true);
   useEffect(() => {
-    const dismissOfflineSnackbar = () => {
+    const dismissOffline = () => {
       if (offlineSnackbarKeyRef.current != null) {
         closeSnackbar(offlineSnackbarKeyRef.current);
         offlineSnackbarKeyRef.current = null;
       }
     };
-    const onOnline = () => {
-      setIsOnline(true);
-      dismissOfflineSnackbar();
-      enqueueSnackbar("Back online. Syncing your answers…", { variant: "success", autoHideDuration: 2500 });
-      drainFailedSaves();
-    };
-    const onOffline = () => {
-      setIsOnline(false);
-      // Avoid stacking duplicates if offline fires twice.
-      dismissOfflineSnackbar();
+    if (!isOnline && wasOnlineRef.current) {
+      dismissOffline();
       offlineSnackbarKeyRef.current = enqueueSnackbar(
-        "You are offline. Answers won't reach the server until you reconnect.",
+        "You are offline. Answers stay saved on your device and will sync when you reconnect.",
         { variant: "error", persist: true },
       );
-    };
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-    // Periodic safety drain — every 20s, retry anything stuck unsynced.
-    const interval = setInterval(() => {
-      if (navigator.onLine && Object.keys(failedPayloadsRef.current).length > 0) {
-        drainFailedSaves();
-      }
-    }, 20000);
-    return () => {
-      // On unmount also clear the persistent snackbar so it can't outlive the page.
-      dismissOfflineSnackbar();
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
-      clearInterval(interval);
-    };
-  }, [drainFailedSaves]);
+    } else if (isOnline && !wasOnlineRef.current) {
+      dismissOffline();
+      enqueueSnackbar("Back online. Syncing your answers…", {
+        variant: "success",
+        autoHideDuration: 2500,
+      });
+    }
+    wasOnlineRef.current = isOnline;
+    return dismissOffline;
+  }, [isOnline]);
 
   const updateUserAnswer = useCallback(
     (questionID, job, userAnswer) => {
@@ -814,10 +647,10 @@ export default function Exam() {
           there are answers that haven't been confirmed by the server. The
           reason text removes ambiguity ("connection too slow" vs "server
           error") so students cannot later claim a vague system bug. */}
-      {(!isOnline || failedCount > 0) && (
+      {(!isOnline || pendingCount > 0) && (
         <Box
           sx={{
-            backgroundColor: !isOnline ? "#d32f2f" : "#ed6c02",
+            backgroundColor: !isOnline ? "#d32f2f" : hasFailed ? "#d32f2f" : "#ed6c02",
             color: "#fff",
             padding: "8px 16px",
             fontSize: "13px",
@@ -832,20 +665,26 @@ export default function Exam() {
           <Box>
             {!isOnline ? (
               <>
-                ⚠ <b>You are offline.</b> Your answers are NOT reaching our servers.
-                Please check your WiFi/data and stay on this page — your answers will sync automatically when you reconnect.
+                ⚠ <b>You are offline.</b> Your answers are saved on your device and will
+                sync automatically when you reconnect. Stay on this page.
+              </>
+            ) : hasFailed ? (
+              <>
+                ⚠ <b>{pendingCount} answer{pendingCount === 1 ? "" : "s"} could not be saved
+                after multiple retries.</b>{" "}
+                {lastFailReason ? `Reason: ${lastFailReason}.` : ""} Click <b>Retry now</b>.
               </>
             ) : (
               <>
-                ⚠ <b>{failedCount} answer{failedCount === 1 ? "" : "s"} not yet saved.</b>{" "}
-                {lastFailReason ? `Reason: ${lastFailReason}.` : ""} Auto-retrying…
+                ⚠ <b>{pendingCount} answer{pendingCount === 1 ? "" : "s"} syncing…</b>{" "}
+                {lastFailReason ? `Last error: ${lastFailReason}.` : ""} Auto-retrying.
               </>
             )}
           </Box>
           <Button
             size="small"
             variant="outlined"
-            onClick={drainFailedSaves}
+            onClick={drainNow}
             sx={{
               color: "#fff",
               borderColor: "#fff",
