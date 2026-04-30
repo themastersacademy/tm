@@ -51,6 +51,21 @@ export default function Exam() {
   // Track all in-flight answer save requests so we can wait for them before submit
   const pendingSavesRef = useRef(new Set());
 
+  // Per-question save state for safety-net (online/offline + auto-retry).
+  // failedPayloadsRef[qID] = latest payload we tried but failed to send.
+  // On `online` event we replay every entry. saveStatus drives the UI banner.
+  const failedPayloadsRef = useRef({});
+  const [failedCount, setFailedCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
+  // lastFailReason categorizes WHY the latest save failed so students see a
+  // specific cause (their offline state, slow connection, etc.) and can't
+  // later abuse a vague "system bug" claim.
+  const [lastFailReason, setLastFailReason] = useState(null);
+
+  useEffect(() => {
+    if (typeof navigator !== "undefined") setIsOnline(navigator.onLine ?? true);
+  }, []);
+
   const { showDialog, confirmNavigation, cancelNavigation } =
     usePreventNavigation(true);
 
@@ -89,12 +104,32 @@ export default function Exam() {
         router.push(`/exam/${examID}/${attemptID}/result`);
       };
 
+      // Last-ditch retry: replay any answers that never got an ack from the
+      // server. Then wait briefly for them to complete before submit.
+      if (Object.keys(failedPayloadsRef.current).length > 0) {
+        drainFailedSaves();
+      }
+
       // Wait for pending answer saves to flush, but cap the wait so a stuck
       // save (dead WiFi, half-open TCP) cannot block submit indefinitely.
       const pending = Array.from(pendingSavesRef.current);
       if (pending.length > 0) {
         const waitCeiling = new Promise((r) => setTimeout(r, 10000));
         await Promise.race([Promise.allSettled(pending), waitCeiling]);
+      }
+
+      // For USER-initiated submits, warn if some answers still aren't acked.
+      // (Auto-submits on time-up always proceed — server has whatever it has.)
+      const stillUnsynced = Object.keys(failedPayloadsRef.current).length;
+      if (endedBy === "USER" && stillUnsynced > 0) {
+        const ok = window.confirm(
+          `${stillUnsynced} answer(s) couldn't be saved to the server (network issue).\n\n` +
+          `Click OK to submit anyway with what was saved, or Cancel to wait and retry.`,
+        );
+        if (!ok) {
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       let lastError = null;
@@ -414,19 +449,26 @@ export default function Exam() {
     });
   }, []);
 
-  // Direct Save Function — tracks in-flight promises so submit can await them
+  // Direct Save Function — tracks in-flight promises so submit can await them.
+  // Also records the LATEST payload per question so we can auto-retry on
+  // reconnect or before submit if the network was flaky.
   const saveAnswer = useCallback(
     (questionID, job, selectedOptions, blankAnswers, timeSpentMs) => {
+      const payload = {
+        questionID,
+        selectedOptions: job === "selectedOptions" ? selectedOptions : undefined,
+        blankAnswers: job === "blankAnswers" ? blankAnswers : undefined,
+        timeSpentMs,
+      };
+      // Optimistically register this question as having an unconfirmed payload.
+      // Cleared only when the server confirms success.
+      failedPayloadsRef.current[questionID] = payload;
+      setFailedCount(Object.keys(failedPayloadsRef.current).length);
+
       const savePromise = fetch(`/api/exams/${examID}/${attemptID}/question-response`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          questionID,
-          selectedOptions:
-            job === "selectedOptions" ? selectedOptions : undefined,
-          blankAnswers: job === "blankAnswers" ? blankAnswers : undefined,
-          timeSpentMs,
-        }),
+        body: JSON.stringify(payload),
         // Hard timeout: a stuck save must not block submit-exam's wait-for-pending step.
         signal: AbortSignal.timeout(15000),
       })
@@ -438,6 +480,12 @@ export default function Exam() {
           if (data?.success) {
             setClientPerfAtFetch(performance.now());
             setServerTimestamp(data.serverTimestamp);
+            // Server acknowledged — clear from failed-payloads map.
+            delete failedPayloadsRef.current[questionID];
+            setFailedCount(Object.keys(failedPayloadsRef.current).length);
+            if (Object.keys(failedPayloadsRef.current).length === 0) {
+              setLastFailReason(null);
+            }
             return;
           }
           const msg = String(data?.message || "").toLowerCase();
@@ -449,12 +497,29 @@ export default function Exam() {
             router.push(`/exam/${examID}/${attemptID}/result`);
           } else {
             console.error("Failed to save answer:", data?.message);
-            enqueueSnackbar("Failed to save answer. Please check your connection.", { variant: "error" });
+            const reason = `Server error (HTTP ${status}): ${data?.message || "no message"}`;
+            setLastFailReason(reason);
+            enqueueSnackbar(`Answer not saved — ${reason}. Will retry.`, { variant: "warning" });
           }
         })
         .catch((err) => {
           console.error("Save answer error:", err);
-          enqueueSnackbar("Network error: Answer not saved. Check connection.", { variant: "error" });
+          // Classify the cause so students see WHY (no ambiguous "system bug" claims).
+          let reason;
+          if (typeof navigator !== "undefined" && navigator.onLine === false) {
+            reason = "Your device is offline";
+          } else if (err?.name === "TimeoutError" || err?.name === "AbortError") {
+            reason = "Your connection is too slow (request timed out after 15s)";
+          } else if (err?.message?.toLowerCase().includes("failed to fetch")) {
+            reason = "Network connection dropped";
+          } else {
+            reason = `Network error: ${err?.message || err?.name || "unknown"}`;
+          }
+          setLastFailReason(reason);
+          enqueueSnackbar(`Answer not saved — ${reason}. It is queued and will retry automatically.`, {
+            variant: "warning",
+            autoHideDuration: 4500,
+          });
         })
         .finally(() => {
           // Remove from pending set once settled (success or failure)
@@ -466,6 +531,52 @@ export default function Exam() {
     },
     [examID, attemptID, router],
   );
+
+  // Drain queue: replay every payload still marked as un-acked.
+  const drainFailedSaves = useCallback(() => {
+    const entries = Object.entries(failedPayloadsRef.current);
+    if (entries.length === 0) return;
+    console.log(`[exam] retrying ${entries.length} unsynced answer(s)…`);
+    for (const [qID, p] of entries) {
+      // Resend with same payload. saveAnswer's success handler clears it.
+      saveAnswer(
+        qID,
+        p.selectedOptions !== undefined ? "selectedOptions" : "blankAnswers",
+        p.selectedOptions,
+        p.blankAnswers,
+        p.timeSpentMs,
+      );
+    }
+  }, [saveAnswer]);
+
+  // Network status: detect online/offline + auto-retry on reconnect.
+  useEffect(() => {
+    const onOnline = () => {
+      setIsOnline(true);
+      enqueueSnackbar("Back online. Syncing your answers…", { variant: "success", autoHideDuration: 2500 });
+      drainFailedSaves();
+    };
+    const onOffline = () => {
+      setIsOnline(false);
+      enqueueSnackbar("You are offline. Answers won't reach the server until you reconnect.", {
+        variant: "error",
+        persist: true,
+      });
+    };
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    // Periodic safety drain — every 20s, retry anything stuck unsynced.
+    const interval = setInterval(() => {
+      if (navigator.onLine && Object.keys(failedPayloadsRef.current).length > 0) {
+        drainFailedSaves();
+      }
+    }, 20000);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+      clearInterval(interval);
+    };
+  }, [drainFailedSaves]);
 
   const updateUserAnswer = useCallback(
     (questionID, job, userAnswer) => {
@@ -609,6 +720,55 @@ export default function Exam() {
         userSelect: questions?.settings?.isAntiCheat ? "none" : "auto",
       }}
     >
+      {/* Network-status banner: visible at all times when offline OR when
+          there are answers that haven't been confirmed by the server. The
+          reason text removes ambiguity ("connection too slow" vs "server
+          error") so students cannot later claim a vague system bug. */}
+      {(!isOnline || failedCount > 0) && (
+        <Box
+          sx={{
+            backgroundColor: !isOnline ? "#d32f2f" : "#ed6c02",
+            color: "#fff",
+            padding: "8px 16px",
+            fontSize: "13px",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexShrink: 0,
+            zIndex: 1300,
+          }}
+        >
+          <Box>
+            {!isOnline ? (
+              <>
+                ⚠ <b>You are offline.</b> Your answers are NOT reaching our servers.
+                Please check your WiFi/data and stay on this page — your answers will sync automatically when you reconnect.
+              </>
+            ) : (
+              <>
+                ⚠ <b>{failedCount} answer{failedCount === 1 ? "" : "s"} not yet saved.</b>{" "}
+                {lastFailReason ? `Reason: ${lastFailReason}.` : ""} Auto-retrying…
+              </>
+            )}
+          </Box>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={drainFailedSaves}
+            sx={{
+              color: "#fff",
+              borderColor: "#fff",
+              textTransform: "none",
+              fontSize: "12px",
+              ml: 2,
+              "&:hover": { borderColor: "#fff", backgroundColor: "rgba(255,255,255,0.1)" },
+            }}
+          >
+            Retry now
+          </Button>
+        </Box>
+      )}
       {/* Header */}
       <Box
         sx={{
