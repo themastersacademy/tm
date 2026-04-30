@@ -1072,6 +1072,7 @@ export default function Exam() {
               questionState={questionState}
               handleQuestionSelection={handleQuestionSelection}
               userAnswers={userAnswers}
+              syncStatusByQID={syncStatusByQID}
             />
           </Box>
         </Box>
@@ -1088,6 +1089,7 @@ export default function Exam() {
               questionState={questionState}
               handleQuestionSelection={handleQuestionSelection}
               userAnswers={userAnswers}
+              syncStatusByQID={syncStatusByQID}
             />
           </MobileSectionDraw>
         </Box>
@@ -1190,6 +1192,7 @@ function SectionComponent({
   questionState,
   handleQuestionSelection,
   userAnswers,
+  syncStatusByQID,
 }) {
   return (
     <>
