@@ -65,7 +65,9 @@ export default function Exam() {
   const {
     queueAnswer,
     drainNow,
+    clearQueue,
     getPendingCount,
+    getSessionStats,
     status: syncStatusByQID,
     pendingCount,
     isOnline,
@@ -106,6 +108,9 @@ export default function Exam() {
       setIsSubmitting(true);
       const goToResult = () => {
         if (document.fullscreenElement) toggleFullScreen();
+        // Clear localStorage queue — submit succeeded, no answers left to sync.
+        // Important on shared computers so the next student starts clean.
+        clearQueue();
         router.push(`/exam/${examID}/${attemptID}/result`);
       };
 
@@ -141,7 +146,13 @@ export default function Exam() {
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ endedBy }),
+              // Include client-side session stats so admin can audit
+              // network behavior on the student's device — totalRetryAttempts,
+              // totalNetworkDrops, totalOfflineMs, failedQuestionIDs.
+              body: JSON.stringify({
+                endedBy,
+                clientSessionStats: getSessionStats(),
+              }),
               signal: abortTimeout(20000),
             },
           );
@@ -169,7 +180,7 @@ export default function Exam() {
       setIsSubmitting(false);
       enqueueSnackbar(lastError || "Something went wrong", { variant: "error" });
     },
-    [examID, attemptID, router, drainNow, getPendingCount],
+    [examID, attemptID, router, drainNow, getPendingCount, getSessionStats, clearQueue],
   );
 
   const handleEndTest = useCallback(
@@ -238,6 +249,10 @@ export default function Exam() {
               setLoading(false);
             });
         } else if (attemptInfo.status === "COMPLETED") {
+          // Server has already finalized this attempt — drop any queue
+          // entries left behind so the next student on this computer
+          // doesn't see them.
+          clearQueue();
           router.push(`/exam/${examID}/${attemptID}/result`);
         }
       } else {
@@ -249,7 +264,7 @@ export default function Exam() {
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }
-  }, [examID, attemptID, router]);
+  }, [examID, attemptID, router, clearQueue]);
 
   useEffect(() => {
     const onFsChange = () => setIsFsEnabled(!!document.fullscreenElement);
@@ -472,6 +487,64 @@ export default function Exam() {
     },
     [queueAnswer],
   );
+
+  // Heartbeat: re-fetch the attempt every 60s to pick up:
+  //  - admin time extensions (duration change → countdown updates)
+  //  - admin force-submits (status → COMPLETED → redirect)
+  //  - violation-count changes from anti-cheat
+  // Lightweight — the GET endpoint is idempotent and the response is small.
+  // Only updates fields that actually changed to avoid render storms.
+  useEffect(() => {
+    if (loading || !examData) return; // skip until first load done
+    const tick = async () => {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+      try {
+        const res = await fetch(`/api/exams/${examID}/${attemptID}`, {
+          signal: abortTimeout(10000),
+        });
+        if (res.status === 404 || res.status === 410) return; // handled elsewhere
+        const data = await res.json().catch(() => null);
+        if (!data?.success || !data.data) return;
+        const fresh = data.data;
+        // Status moved to COMPLETED — admin force-submit or auto-submit.
+        if (fresh.status === "COMPLETED") {
+          clearQueue();
+          router.push(`/exam/${examID}/${attemptID}/result`);
+          return;
+        }
+        // Update only when something the UI cares about has changed. This
+        // avoids re-rendering ExamHeader's countdown every 60s if nothing
+        // moved (and re-creates the Countdown component, resetting it).
+        setExamData((prev) => {
+          if (!prev) return fresh;
+          const changed =
+            prev.duration !== fresh.duration ||
+            prev.startTimeStamp !== fresh.startTimeStamp ||
+            prev.violationCount !== fresh.violationCount;
+          if (!changed) return prev;
+          if (prev.duration !== fresh.duration) {
+            const delta = fresh.duration - prev.duration;
+            enqueueSnackbar(
+              delta > 0
+                ? `Exam time extended by ${delta} minute${delta === 1 ? "" : "s"}.`
+                : `Exam time shortened by ${-delta} minute${-delta === 1 ? "" : "s"}.`,
+              { variant: "info", autoHideDuration: 4000 },
+            );
+          }
+          return { ...prev, ...fresh };
+        });
+        // Re-anchor the client perf counter against fresh server time.
+        if (fresh.serverTimestamp) {
+          setServerTimestamp(fresh.serverTimestamp);
+          setClientPerfAtFetch(performance.now());
+        }
+      } catch {
+        /* heartbeat is best-effort; failures fall back to next tick */
+      }
+    };
+    const id = setInterval(tick, 60000);
+    return () => clearInterval(id);
+  }, [examID, attemptID, loading, examData, router, clearQueue]);
 
   // Surface online/offline transitions as snackbars. The hook itself manages
   // the queue + drain; this useEffect is purely UX feedback.

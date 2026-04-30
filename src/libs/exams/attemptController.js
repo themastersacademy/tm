@@ -339,7 +339,7 @@ export async function toggleBookmark(attemptID, questionID, bookmarked, userID) 
 // ——————————————————————————————————————————
 // 4) Submit Exam
 // ——————————————————————————————————————————
-export async function submitExam(attemptID, endedBy = "USER", userID) {
+export async function submitExam(attemptID, endedBy = "USER", userID, clientSessionStats = null) {
   // 1) Load the full attempt
   const attempt = await fetchAttempt(attemptID);
 
@@ -431,6 +431,7 @@ export async function submitExam(attemptID, endedBy = "USER", userID) {
               obtainedMarks         = :obtainedMarks,
               totalMarks            = :possibleMarks,
               mCoinRewardEarned     = :mCoinRewardEarned,
+              clientSessionStats    = :clientSessionStats,
               updatedAt             = :now,
               userAnswers           = :userAnswers
         `,
@@ -451,6 +452,9 @@ export async function submitExam(attemptID, endedBy = "USER", userID) {
           ":possibleMarks": possibleMarks,
           ":mCoinRewardEarned": mCoinRewardEarned,
           ":userAnswers": uniqueUserAnswers,
+          // Forensic record of how the student's network behaved during
+          // the exam. Null for AUTO submissions (server-initiated, no client).
+          ":clientSessionStats": clientSessionStats || null,
         },
         ReturnValues: "ALL_NEW",
       })

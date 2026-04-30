@@ -11,6 +11,43 @@ function backoffDelay(attempts) {
 }
 const PERIODIC_DRAIN_MS = 5000;
 const FETCH_TIMEOUT_MS = 15000;
+// Stale-queue sweep: discard any leftover exam-queue:* localStorage entries
+// on shared-computer systems older than this. Per-attempt keys never collide,
+// but they accumulate forever otherwise.
+const STALE_QUEUE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+const QUEUE_KEY_PREFIX = "exam-queue:";
+
+function cleanupStaleQueues() {
+  if (typeof localStorage === "undefined") return;
+  try {
+    const now = Date.now();
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(QUEUE_KEY_PREFIX)) continue;
+      let parsed;
+      try {
+        parsed = JSON.parse(localStorage.getItem(key) || "{}");
+      } catch {
+        toRemove.push(key);
+        continue;
+      }
+      const newest = Math.max(
+        0,
+        ...Object.values(parsed || {}).map((e) => Number(e?.queuedAt || 0)),
+      );
+      if (newest && now - newest > STALE_QUEUE_TTL_MS) {
+        toRemove.push(key);
+      } else if (!newest) {
+        // Empty/unrecognized shape — drop it.
+        toRemove.push(key);
+      }
+    }
+    for (const k of toRemove) localStorage.removeItem(k);
+  } catch {
+    /* ignore — never crash the exam page on housekeeping */
+  }
+}
 
 function classifyNetworkError(err) {
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
@@ -58,7 +95,7 @@ function classifyNetworkError(err) {
  * }}
  */
 export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
-  const storageKey = `exam-queue:${examID}:${attemptID}`;
+  const storageKey = `${QUEUE_KEY_PREFIX}${examID}:${attemptID}`;
   // Map<qID, { payload, attempts, nextRetryAt, lastError, queuedAt, status }>
   // status: "queued" (waiting), "syncing" (in-flight), "failed" (max retries hit), "terminal" (server says stop)
   const queueRef = useRef(new Map());
@@ -72,6 +109,18 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
   const [statusMap, setStatusMap] = useState({});
   const [lastFailReason, setLastFailReason] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
+
+  // Forensic counters submitted with the final exam payload so admins can
+  // verify or refute student "I answered everything" claims.
+  // Stored in refs (no re-render needed) and read at submit time.
+  const sessionStatsRef = useRef({
+    totalRetryAttempts: 0,
+    totalNetworkDrops: 0,
+    totalOfflineMs: 0,
+    failedQuestionIDs: new Set(),
+    sessionStartedAt: Date.now(),
+    lastOfflineAt: null,
+  });
 
   // Sync the reactive state from queueRef + localStorage in one atomic op.
   const flushState = useCallback(() => {
@@ -138,6 +187,10 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
       } catch (err) {
         const reason = classifyNetworkError(err);
         const attempts = (entry.attempts || 0) + 1;
+        sessionStatsRef.current.totalRetryAttempts++;
+        if (attempts >= MAX_RETRIES) {
+          sessionStatsRef.current.failedQuestionIDs.add(qID);
+        }
         queueRef.current.set(qID, {
           ...entry,
           status: attempts >= MAX_RETRIES ? "failed" : "queued",
@@ -175,6 +228,10 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
       // Other 4xx/5xx: retry with backoff.
       const reason = `Server ${res.status}: ${data?.message || "no message"}`;
       const attempts = (entry.attempts || 0) + 1;
+      sessionStatsRef.current.totalRetryAttempts++;
+      if (attempts >= MAX_RETRIES) {
+        sessionStatsRef.current.failedQuestionIDs.add(qID);
+      }
       queueRef.current.set(qID, {
         ...entry,
         status: attempts >= MAX_RETRIES ? "failed" : "queued",
@@ -241,9 +298,11 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
   );
 
   // ------------------------------------------------------------------
-  // Hydrate from localStorage on mount.
+  // Hydrate from localStorage on mount + sweep stale queues left over from
+  // previous students on shared computers.
   // ------------------------------------------------------------------
   useEffect(() => {
+    cleanupStaleQueues();
     try {
       const stored = localStorage.getItem(storageKey);
       if (!stored) return;
@@ -268,6 +327,16 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Public: explicitly clear this attempt's queue (call on submit success
+  // or when fetchQuestion sees status=COMPLETED).
+  const clearQueue = useCallback(() => {
+    queueRef.current.clear();
+    try { localStorage.removeItem(storageKey); } catch {}
+    setStatusMap({});
+    setPendingCount(0);
+    setLastFailReason(null);
+  }, [storageKey]);
+
   // ------------------------------------------------------------------
   // Online/offline event listeners + periodic drain timer.
   // ------------------------------------------------------------------
@@ -276,6 +345,12 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
     setIsOnline(navigator.onLine ?? true);
     const onOnline = () => {
       setIsOnline(true);
+      // Forensic: accumulate offline duration if we tracked the drop.
+      const stats = sessionStatsRef.current;
+      if (stats.lastOfflineAt != null) {
+        stats.totalOfflineMs += Date.now() - stats.lastOfflineAt;
+        stats.lastOfflineAt = null;
+      }
       // Reset all backoffs so reconnect drains immediately.
       for (const [k, v] of queueRef.current.entries()) {
         if (v.status === "queued") {
@@ -283,12 +358,18 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
         } else if (v.status === "failed") {
           // Give failed entries one more chance on reconnect.
           queueRef.current.set(k, { ...v, status: "queued", nextRetryAt: 0 });
+          sessionStatsRef.current.failedQuestionIDs.delete(k);
         }
       }
       flushState();
       drainNow();
     };
-    const onOffline = () => setIsOnline(false);
+    const onOffline = () => {
+      setIsOnline(false);
+      const stats = sessionStatsRef.current;
+      stats.totalNetworkDrops++;
+      stats.lastOfflineAt = Date.now();
+    };
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
     drainTimerRef.current = setInterval(() => {
@@ -316,12 +397,34 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
     [],
   );
 
+  // Forensic snapshot of this exam session — submitted with the final
+  // submit-exam payload so admin/audit can see network behavior on the
+  // student's device, not just the server-visible save outcomes.
+  const getSessionStats = useCallback(() => {
+    const stats = sessionStatsRef.current;
+    // Include any in-progress offline window in the total.
+    let totalOfflineMs = stats.totalOfflineMs;
+    if (stats.lastOfflineAt != null) {
+      totalOfflineMs += Date.now() - stats.lastOfflineAt;
+    }
+    return {
+      totalRetryAttempts: stats.totalRetryAttempts,
+      totalNetworkDrops: stats.totalNetworkDrops,
+      totalOfflineMs,
+      failedQuestionIDs: [...stats.failedQuestionIDs],
+      sessionDurationMs: Date.now() - stats.sessionStartedAt,
+      finalPendingCount: getPendingCount(),
+    };
+  }, [getPendingCount]);
+
   return {
     queueAnswer,
     drainNow,
+    clearQueue,
     status: statusMap,
     pendingCount,
     getPendingCount,
+    getSessionStats,
     isOnline,
     lastFailReason,
     hasUnsynced,
