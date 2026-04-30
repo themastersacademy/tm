@@ -32,6 +32,9 @@ const BUSINESS_ERROR_MAP = [
   { match: /not authorized|forbidden/i, status: 403, code: "FORBIDDEN" },
   // Validation
   { match: /required|invalid input|invalid request/i, status: 400, code: "BAD_REQUEST" },
+  // Out-of-order client requests (replay from queue before mark-viewed
+  // succeeded, etc) — non-retryable so the queue stops hammering.
+  { match: /not viewed yet|metadata missing/i, status: 422, code: "QUESTION_OUT_OF_ORDER" },
 ];
 
 function classifyError(error) {

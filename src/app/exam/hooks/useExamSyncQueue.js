@@ -164,14 +164,25 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
 
   // ------------------------------------------------------------------
   // sendOne: one network attempt for a single entry. Mutates queueRef.
+  // RACE-SAFE: if the entry is overwritten by queueAnswer while the fetch
+  // is in-flight (student picks a new option for the same question), the
+  // post-fetch update is a no-op so we don't clobber the newer payload.
   // ------------------------------------------------------------------
   const sendOne = useCallback(
     async (qID) => {
       const entry = queueRef.current.get(qID);
       if (!entry || entry.status !== "queued") return;
-      // Mark syncing
+      // Capture the payload reference. If queueRef.get(qID).payload still
+      // === this reference at completion, no concurrent overwrite happened.
+      const sendingPayload = entry.payload;
       queueRef.current.set(qID, { ...entry, status: "syncing" });
       flushState();
+
+      // Helper: did the entry get replaced by a newer queueAnswer call?
+      const wasReplaced = () => {
+        const cur = queueRef.current.get(qID);
+        return !cur || cur.payload !== sendingPayload;
+      };
 
       let res;
       try {
@@ -180,12 +191,59 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(entry.payload),
+            body: JSON.stringify(sendingPayload),
             signal: abortTimeout(FETCH_TIMEOUT_MS),
           },
         );
       } catch (err) {
         const reason = classifyNetworkError(err);
+        // Only update the entry if it wasn't overwritten; otherwise the
+        // newer payload sits in queue ready to be drained next loop.
+        if (!wasReplaced()) {
+          const attempts = (entry.attempts || 0) + 1;
+          sessionStatsRef.current.totalRetryAttempts++;
+          if (attempts >= MAX_RETRIES) {
+            sessionStatsRef.current.failedQuestionIDs.add(qID);
+          }
+          queueRef.current.set(qID, {
+            ...entry,
+            status: attempts >= MAX_RETRIES ? "failed" : "queued",
+            attempts,
+            nextRetryAt: Date.now() + backoffDelay(attempts),
+            lastError: reason,
+          });
+        }
+        setLastFailReason(reason);
+        flushState();
+        return;
+      }
+
+      const data = await res.json().catch(() => null);
+      // Success → drop the entry, but only if it wasn't replaced mid-flight.
+      if (data?.success) {
+        if (!wasReplaced()) {
+          queueRef.current.delete(qID);
+        }
+        // If replaced: leave the newer payload in queue; it'll send next drain.
+        flushState();
+        return;
+      }
+
+      // Terminal server states: redirect (caller decides what to do).
+      // Terminal applies regardless of replacement — the attempt itself
+      // is no longer accepting answers.
+      if (res.status === 401 || res.status === 404 || res.status === 409 || res.status === 410) {
+        queueRef.current.clear();
+        try { localStorage.removeItem(storageKey); } catch {}
+        setStatusMap({});
+        setPendingCount(0);
+        onTerminalRef.current?.({ status: res.status, message: data?.message, code: data?.code });
+        return;
+      }
+
+      // Other 4xx/5xx: retry with backoff (only if not replaced).
+      const reason = `Server ${res.status}: ${data?.message || "no message"}`;
+      if (!wasReplaced()) {
         const attempts = (entry.attempts || 0) + 1;
         sessionStatsRef.current.totalRetryAttempts++;
         if (attempts >= MAX_RETRIES) {
@@ -198,47 +256,7 @@ export function useExamSyncQueue({ examID, attemptID, onTerminal }) {
           nextRetryAt: Date.now() + backoffDelay(attempts),
           lastError: reason,
         });
-        setLastFailReason(reason);
-        flushState();
-        return;
       }
-
-      const data = await res.json().catch(() => null);
-      // Success → drop the entry entirely.
-      if (data?.success) {
-        queueRef.current.delete(qID);
-        flushState();
-        return;
-      }
-
-      // Terminal server states: redirect (caller decides what to do).
-      if (res.status === 401 || res.status === 404 || res.status === 409 || res.status === 410) {
-        queueRef.current.set(qID, { ...entry, status: "terminal", lastError: data?.message });
-        // Drop everything — no point queuing more.
-        for (const k of [...queueRef.current.keys()]) {
-          if (k !== qID) queueRef.current.delete(k);
-        }
-        try { localStorage.removeItem(storageKey); } catch {}
-        setStatusMap({});
-        setPendingCount(0);
-        onTerminalRef.current?.({ status: res.status, message: data?.message, code: data?.code });
-        return;
-      }
-
-      // Other 4xx/5xx: retry with backoff.
-      const reason = `Server ${res.status}: ${data?.message || "no message"}`;
-      const attempts = (entry.attempts || 0) + 1;
-      sessionStatsRef.current.totalRetryAttempts++;
-      if (attempts >= MAX_RETRIES) {
-        sessionStatsRef.current.failedQuestionIDs.add(qID);
-      }
-      queueRef.current.set(qID, {
-        ...entry,
-        status: attempts >= MAX_RETRIES ? "failed" : "queued",
-        attempts,
-        nextRetryAt: Date.now() + backoffDelay(attempts),
-        lastError: reason,
-      });
       setLastFailReason(reason);
       flushState();
     },
