@@ -23,6 +23,7 @@ import { normalizeEmail } from "@/src/utils/email";
 const USER_TABLE = `${process.env.AWS_DB_NAME}users`;
 
 export async function getUserByEmail(email) {
+  const target = normalizeEmail(email);
   const params = {
     TableName: `${process.env.AWS_DB_NAME}users`,
     IndexName: "GSI1-index",
@@ -32,7 +33,7 @@ export async function getUserByEmail(email) {
       "#gsi1SKey": "GSI1-sKey",
     },
     ExpressionAttributeValues: {
-      ":email": `USER#${normalizeEmail(email)}`,
+      ":email": `USER#${target}`,
     },
   };
 
@@ -49,6 +50,35 @@ export async function getUserByEmail(email) {
   }
 
   const user = result.Items[0];
+
+  // Self-heal: enforce invariant `user.email === GSI key`. The NextAuth
+  // DynamoDB adapter's linkAccount path can rewrite GSI without touching
+  // email, leaving the session callback unable to re-find the row by
+  // user.email and causing infinite "loading" on the sign-in form.
+  if (normalizeEmail(user.email) !== target) {
+    try {
+      await dynamoDB.send(
+        new UpdateCommand({
+          TableName: USER_TABLE,
+          Key: { pKey: user.pKey, sKey: user.sKey },
+          UpdateExpression: "SET email = :e, updatedAt = :now",
+          ConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":e": target,
+            ":id": user.id,
+            ":now": Date.now(),
+          },
+        }),
+      );
+      console.warn(
+        `[getUserByEmail] self-healed email field for ${user.id}: ${JSON.stringify(user.email)} -> ${JSON.stringify(target)}`,
+      );
+      user.email = target;
+    } catch (err) {
+      console.error(`[getUserByEmail] self-heal failed for ${user.id}:`, err);
+    }
+  }
+
   const isUpdated = await updateUserProSubscription(user);
   if (!isUpdated) {
     return user;

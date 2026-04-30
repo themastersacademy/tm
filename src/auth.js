@@ -116,30 +116,38 @@ export const authOptions = {
       return token;
     },
     async session({ session, token }) {
-      const user = await getUserByEmail(token.email);
+      // Best-effort fresh DB read for fields that change between sessions
+      // (subscription, name updates). Must NOT throw — a missing or stale row
+      // here used to cause infinite "loading" on the sign-in form.
+      let user = null;
+      try {
+        user = await getUserByEmail(token.email);
+      } catch (err) {
+        console.error("[session] getUserByEmail failed:", err);
+      }
 
-      if (
+      const tokenLacksProfile =
         token.name === "" ||
         token.emailVerified === null ||
         token.emailVerified === undefined ||
-        token.emailVerified === false
-      ) {
-        session.user.name = user.name;
-        session.user.emailVerified = user.emailVerified;
-      } else {
-        session.user.name = token.name;
-        session.user.emailVerified = token.emailVerified;
-      }
-      if (token) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.email = token.email;
-        session.user.image = token.image;
-        session.user.provider = token.provider;
-        session.user.accountType = user.accountType;
-        session.user.subscriptionExpiresAt = user.subscriptionExpiresAt;
-        session.user.subscriptionSource = user.subscriptionSource;
-      }
+        token.emailVerified === false;
+
+      session.user.name = tokenLacksProfile ? (user?.name ?? token.name ?? "") : token.name;
+      session.user.emailVerified = tokenLacksProfile
+        ? (user?.emailVerified ?? token.emailVerified ?? false)
+        : token.emailVerified;
+
+      session.user.id = token.id;
+      session.user.role = token.role;
+      session.user.email = token.email;
+      session.user.image = token.image;
+      session.user.provider = token.provider;
+      session.user.accountType = user?.accountType ?? token.accountType ?? "FREE";
+      session.user.subscriptionExpiresAt =
+        user?.subscriptionExpiresAt ?? token.subscriptionExpiresAt ?? 0;
+      session.user.subscriptionSource =
+        user?.subscriptionSource ?? token.subscriptionSource ?? null;
+
       return session;
     },
     async signIn({ account, profile }) {
