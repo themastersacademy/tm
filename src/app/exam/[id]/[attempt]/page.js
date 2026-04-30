@@ -529,7 +529,20 @@ export default function Exam() {
         const res = await fetch(`/api/exams/${examID}/${attemptID}`, {
           signal: abortTimeout(10000),
         });
-        if (res.status === 404 || res.status === 410) return; // handled elsewhere
+        // Terminal: attempt no longer exists or has expired. Redirect so
+        // the student isn't silently stuck on a dead page while idle.
+        if (res.status === 404 || res.status === 410) {
+          clearQueue();
+          router.push(`/exam/${examID}/${attemptID}/result`);
+          return;
+        }
+        // Session died mid-exam (NextAuth expiry, cookie cleared, etc).
+        // Hard reload so the auth middleware can redirect to login.
+        if (res.status === 401) {
+          if (typeof window !== "undefined") window.location.reload();
+          return;
+        }
+        if (res.status >= 400) return; // other errors: skip this tick, retry next
         const data = await res.json().catch(() => null);
         if (!data?.success || !data.data) return;
         const fresh = data.data;
