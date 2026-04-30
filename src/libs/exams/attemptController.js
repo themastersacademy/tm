@@ -288,27 +288,61 @@ export async function questionResponse(
     blankAnswers
   );
 
-  // 6) Build updated answer
-  const updated = {
+  // 6) Atomic positional update — write ONLY the fields of THIS question's
+  // entry. Concurrent saves for different questions target disjoint paths
+  // and apply without conflict. Two concurrent saves for the SAME question
+  // resolve last-write-wins (latest answer wins, the correct semantic).
+  // This replaces the previous read-modify-write of the entire userAnswers
+  // array, which had a lost-update race when two saves were in flight at
+  // the same time.
+  const nowTs = Date.now();
+  await dynamoDB.send(
+    new UpdateCommand({
+      TableName: USER_TABLE,
+      Key: { pKey: `EXAM_ATTEMPT#${attemptID}`, sKey: "EXAM_ATTEMPTS" },
+      // Guard against a race where the entry got removed/reshuffled between
+      // our fetch and our write. If userAnswers[uaIdx].questionID no longer
+      // matches, abort — caller can retry and recompute the index.
+      ConditionExpression: "userAnswers[" + uaIdx + "].questionID = :qID",
+      UpdateExpression:
+        "SET userAnswers[" + uaIdx + "].selectedOptions = :opts, " +
+        "userAnswers[" + uaIdx + "].blankAnswers   = :blanks, " +
+        "userAnswers[" + uaIdx + "].timeSpentMs    = :ts, " +
+        "userAnswers[" + uaIdx + "].answeredAt     = :now, " +
+        "userAnswers[" + uaIdx + "].isCorrect      = :isCorrect, " +
+        "userAnswers[" + uaIdx + "].pMarkObtained  = :pMark, " +
+        "userAnswers[" + uaIdx + "].nMarkObtained  = :nMark, " +
+        "updatedAt = :now",
+      ExpressionAttributeValues: {
+        ":qID": questionID,
+        ":opts": selectedOptions || [],
+        ":blanks": blankAnswers || [],
+        ":ts": timeSpentMs || 0,
+        ":now": nowTs,
+        ":isCorrect": isCorrect,
+        ":pMark": pMark,
+        ":nMark": nMark,
+      },
+    })
+  );
+
+  // 7) Build the updated entry locally for the response (no extra read)
+  userAnswers[uaIdx] = {
     ...userAnswers[uaIdx],
-    selectedOptions,
-    blankAnswers,
-    timeSpentMs,
-    answeredAt: Date.now(),
+    selectedOptions: selectedOptions || [],
+    blankAnswers: blankAnswers || [],
+    timeSpentMs: timeSpentMs || 0,
+    answeredAt: nowTs,
     isCorrect,
     pMarkObtained: pMark,
     nMarkObtained: nMark,
   };
 
-  // 7) Persist in‑place and write back
-  userAnswers[uaIdx] = updated;
-  await writeAnswers(attemptID, userAnswers);
-
   // 8) Return normalized state
   return {
     success: true,
     data: shapeAnswers(userAnswers),
-    serverTimestamp: Date.now(),
+    serverTimestamp: nowTs,
   };
 }
 
@@ -327,12 +361,27 @@ export async function toggleBookmark(attemptID, questionID, bookmarked, userID) 
   if (idx === -1) {
     throw new Error("Question not viewed yet");
   }
-  userAnswers[idx].markedForReview = bookmarked;
-  await writeAnswers(attemptID, userAnswers);
+  // Atomic positional update — same race-safety reasoning as questionResponse.
+  const nowTs = Date.now();
+  await dynamoDB.send(
+    new UpdateCommand({
+      TableName: USER_TABLE,
+      Key: { pKey: `EXAM_ATTEMPT#${attemptID}`, sKey: "EXAM_ATTEMPTS" },
+      ConditionExpression: "userAnswers[" + idx + "].questionID = :qID",
+      UpdateExpression:
+        "SET userAnswers[" + idx + "].markedForReview = :flag, updatedAt = :now",
+      ExpressionAttributeValues: {
+        ":qID": questionID,
+        ":flag": !!bookmarked,
+        ":now": nowTs,
+      },
+    })
+  );
+  userAnswers[idx].markedForReview = !!bookmarked;
   return {
     success: true,
     data: shapeAnswers(userAnswers),
-    serverTimestamp: Date.now(),
+    serverTimestamp: nowTs,
   };
 }
 
