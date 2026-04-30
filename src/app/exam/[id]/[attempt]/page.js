@@ -209,6 +209,15 @@ export default function Exam() {
   const fetchQuestion = useCallback(async () => {
     try {
       const res = await fetch(`/api/exams/${examID}/${attemptID}`);
+      // Terminal states: redirect once instead of letting any future code
+      // path retry. Stops "Exam attempt not found" log spam from a stale URL.
+      if (res.status === 404 || res.status === 410) {
+        const data = await res.json().catch(() => null);
+        setError(data?.message || "This exam attempt is no longer available.");
+        setLoading(false);
+        setTimeout(() => router.push("/dashboard"), 2000);
+        return;
+      }
       const data = await res.json();
 
       if (data.success) {
@@ -516,9 +525,18 @@ export default function Exam() {
           const msg = String(data?.message || "").toLowerCase();
           const isTerminal =
             status === 401 ||
+            status === 404 ||
+            status === 409 ||
+            status === 410 ||
             msg.includes("expired") ||
-            msg.includes("already completed");
+            msg.includes("already completed") ||
+            msg.includes("not found");
           if (isTerminal) {
+            // Drop the queue so the periodic drain doesn't keep firing 409s.
+            failedPayloadsRef.current = {};
+            setFailedCount(0);
+            setSyncStatusByQID({});
+            try { localStorage.removeItem(storageKey); } catch {}
             router.push(`/exam/${examID}/${attemptID}/result`);
           } else {
             console.error("Failed to save answer:", data?.message);
