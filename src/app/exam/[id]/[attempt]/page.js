@@ -61,6 +61,23 @@ export default function Exam() {
   // specific cause (their offline state, slow connection, etc.) and can't
   // later abuse a vague "system bug" claim.
   const [lastFailReason, setLastFailReason] = useState(null);
+  // Per-question status: "saving" (in-flight) | "unsynced" (failed) | undefined (saved)
+  // Drives the colored dot on each question button in ExamSection.
+  const [syncStatusByQID, setSyncStatusByQID] = useState({});
+
+  // localStorage key for unsynced answer payloads. Survives refresh/crash.
+  const storageKey = `exam-pending:${examID}:${attemptID}`;
+  const persistQueue = useCallback(() => {
+    try {
+      if (Object.keys(failedPayloadsRef.current).length === 0) {
+        localStorage.removeItem(storageKey);
+      } else {
+        localStorage.setItem(storageKey, JSON.stringify(failedPayloadsRef.current));
+      }
+    } catch {
+      /* localStorage may be unavailable in private mode — fail silently */
+    }
+  }, [storageKey]);
 
   useEffect(() => {
     if (typeof navigator !== "undefined") setIsOnline(navigator.onLine ?? true);
@@ -464,6 +481,8 @@ export default function Exam() {
       // Cleared only when the server confirms success.
       failedPayloadsRef.current[questionID] = payload;
       setFailedCount(Object.keys(failedPayloadsRef.current).length);
+      setSyncStatusByQID((prev) => ({ ...prev, [questionID]: "saving" }));
+      persistQueue();
 
       const savePromise = fetch(`/api/exams/${examID}/${attemptID}/question-response`, {
         method: "POST",
@@ -483,6 +502,12 @@ export default function Exam() {
             // Server acknowledged — clear from failed-payloads map.
             delete failedPayloadsRef.current[questionID];
             setFailedCount(Object.keys(failedPayloadsRef.current).length);
+            setSyncStatusByQID((prev) => {
+              const next = { ...prev };
+              delete next[questionID];
+              return next;
+            });
+            persistQueue();
             if (Object.keys(failedPayloadsRef.current).length === 0) {
               setLastFailReason(null);
             }
@@ -499,6 +524,7 @@ export default function Exam() {
             console.error("Failed to save answer:", data?.message);
             const reason = `Server error (HTTP ${status}): ${data?.message || "no message"}`;
             setLastFailReason(reason);
+            setSyncStatusByQID((prev) => ({ ...prev, [questionID]: "unsynced" }));
             enqueueSnackbar(`Answer not saved — ${reason}. Will retry.`, { variant: "warning" });
           }
         })
@@ -516,6 +542,7 @@ export default function Exam() {
             reason = `Network error: ${err?.message || err?.name || "unknown"}`;
           }
           setLastFailReason(reason);
+          setSyncStatusByQID((prev) => ({ ...prev, [questionID]: "unsynced" }));
           enqueueSnackbar(`Answer not saved — ${reason}. It is queued and will retry automatically.`, {
             variant: "warning",
             autoHideDuration: 4500,
@@ -548,6 +575,37 @@ export default function Exam() {
       );
     }
   }, [saveAnswer]);
+
+  // Hydrate unsynced answers from localStorage on mount. If the student's
+  // tab refreshed, crashed, or was killed mid-exam, their queued payloads
+  // come back here and replay the moment we have network. Runs once.
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return;
+      const parsed = JSON.parse(stored);
+      const ids = Object.keys(parsed || {});
+      if (ids.length === 0) return;
+      failedPayloadsRef.current = parsed;
+      setFailedCount(ids.length);
+      const initialStatus = {};
+      for (const id of ids) initialStatus[id] = "unsynced";
+      setSyncStatusByQID(initialStatus);
+      enqueueSnackbar(`Restoring ${ids.length} unsaved answer(s) from your previous session…`, {
+        variant: "info",
+        autoHideDuration: 3500,
+      });
+      // Try to flush after a short delay so React is ready.
+      setTimeout(() => {
+        if (typeof navigator === "undefined" || navigator.onLine !== false) {
+          drainFailedSaves();
+        }
+      }, 500);
+    } catch {
+      /* corrupt localStorage — ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Network status: detect online/offline + auto-retry on reconnect.
   useEffect(() => {
@@ -1115,6 +1173,7 @@ function SectionComponent({
             questionState={questionState}
             handleQuestionSelection={handleQuestionSelection}
             userAnswers={userAnswers}
+            syncStatusByQID={syncStatusByQID}
           />
         ))}
       </Stack>

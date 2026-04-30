@@ -12,31 +12,59 @@ const PaletteItem = memo(
     handleQuestionSelection,
     sectionIndex,
     index,
+    syncStatus,
   }) => {
     const isAnswered =
       userAnswer?.selectedOptions?.length > 0 ||
       userAnswer?.blankAnswers?.length > 0;
     const isMarked = userAnswer?.markedForReview;
+    // syncStatus = "saving" | "unsynced" | undefined (synced)
+    const isUnsynced = syncStatus === "unsynced";
+    const isSaving = syncStatus === "saving";
 
     return (
       <Badge
-        invisible={!isMarked}
+        invisible={!isMarked && !isUnsynced && !isSaving}
         overlap="circular"
         sx={{ justifySelf: "center" }}
         badgeContent={
-          <Bookmark
-            fontSize="small"
-            sx={{
-              color: "var(--sec-color)",
-              fontSize: "12px",
-              padding: "2px",
-              width: "16px",
-              height: "16px",
-              backgroundColor: "var(--sec-color-acc-1)",
-              borderRadius: "50%",
-              border: "1px solid white",
-            }}
-          />
+          isUnsynced ? (
+            <Box
+              title="Not yet saved to server"
+              sx={{
+                width: "12px",
+                height: "12px",
+                borderRadius: "50%",
+                backgroundColor: "#d32f2f",
+                border: "2px solid white",
+              }}
+            />
+          ) : isSaving ? (
+            <Box
+              title="Saving…"
+              sx={{
+                width: "12px",
+                height: "12px",
+                borderRadius: "50%",
+                backgroundColor: "#ed6c02",
+                border: "2px solid white",
+              }}
+            />
+          ) : (
+            <Bookmark
+              fontSize="small"
+              sx={{
+                color: "var(--sec-color)",
+                fontSize: "12px",
+                padding: "2px",
+                width: "16px",
+                height: "16px",
+                backgroundColor: "var(--sec-color-acc-1)",
+                borderRadius: "50%",
+                border: "1px solid white",
+              }}
+            />
+          )
         }
       >
         <Button
@@ -95,6 +123,7 @@ const ExamSection = memo(
     questionState,
     handleQuestionSelection,
     userAnswers,
+    syncStatusByQID,
   }) => {
     return (
       <Stack gap="15px" width="100%" sx={{ backgroundColor: "var(--white)" }}>
@@ -145,6 +174,7 @@ const ExamSection = memo(
                 handleQuestionSelection={handleQuestionSelection}
                 sectionIndex={sectionIndex}
                 index={index}
+                syncStatus={syncStatusByQID?.[question.questionID]}
               />
             );
           })}
