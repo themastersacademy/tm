@@ -63,9 +63,9 @@ export default function Home() {
     if (selectedExam) {
       setIsStartingExam(true);
       router.push(`/exam/${selectedExam.id}`);
+      // Reset loading state after a brief delay so if the user navigates back, it's not stuck spinning
+      setTimeout(() => setIsStartingExam(false), 2000);
     }
-    // Do not close instruction dialog immediately, let it show loading state
-    // setInstructionOpen(false);
   };
 
   useEffect(() => {
@@ -74,10 +74,14 @@ export default function Home() {
 
   useEffect(() => {
     const fetchTotalClassroomJoins = async () => {
-      const response = await fetch("/api/my-classroom/total-count");
-      const data = await response.json();
-      if (data.success) {
-        setTotalClassroomJoins(data.data.count);
+      try {
+        const response = await fetch("/api/my-classroom/total-count");
+        const data = await response.json();
+        if (data.success) {
+          setTotalClassroomJoins(data.data.count);
+        }
+      } catch (error) {
+        console.error("Failed to fetch total classroom joins:", error);
       }
     };
     fetchTotalClassroomJoins();

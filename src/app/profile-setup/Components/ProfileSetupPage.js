@@ -263,6 +263,7 @@ export default function ProfileSetupPage({ isMobile }) {
             fullWidth
             value={name}
             onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
           />
         </Stack>
 
@@ -273,8 +274,10 @@ export default function ProfileSetupPage({ isMobile }) {
           <StyledTextField
             placeholder="+91 99999 99999"
             fullWidth
-            value={`+91 ${phoneNumber}`}
+            value={phoneNumber ? `+91 ${phoneNumber}` : ""}
             onChange={handlePhoneNumberChange}
+            type="tel"
+            autoComplete="tel"
           />
         </Stack>
 
@@ -297,7 +300,7 @@ export default function ProfileSetupPage({ isMobile }) {
           fullWidth
           variant="contained"
           size="large"
-          disabled={loading || !name || !phoneNumber || !gender}
+          disabled={loading || !name || phoneNumber.length !== 10 || !gender}
           onClick={handleSubmit}
           sx={{
             height: "56px",

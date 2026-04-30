@@ -104,6 +104,8 @@ function Form({
           onChange={handleEmailChange}
           onKeyDown={handleKeyDown}
           sx={{ width: "100%" }}
+          type="email"
+          autoComplete="email"
         />
       </Stack>
 
@@ -121,6 +123,7 @@ function Form({
           onChange={handlePasswordChange}
           onKeyDown={handleKeyDown}
           sx={{ width: "100%" }}
+          autoComplete="new-password"
         />
         <StyledTextField
           placeholder="Confirm your new password"
@@ -133,6 +136,7 @@ function Form({
           }
           error={password !== confirmPassword}
           sx={{ width: "100%" }}
+          autoComplete="new-password"
         />
         {validationError && (
           <Typography
