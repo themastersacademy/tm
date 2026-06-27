@@ -10,7 +10,7 @@ import Image from "next/image";
 const Founders = () => {
   const founders = [
     {
-      name: "Mr. Vivekanathan Ragunathan",
+      name: "Mr. Vivekanandan Ragunathan",
       role: "Co-Founder",
       description: (
         <>
@@ -34,7 +34,7 @@ const Founders = () => {
       image: Vivek,
     },
     {
-      name: "Mr. Hariprasanth Ragunathan",
+      name: "Mr. Sathyamoorthy V",
       role: "Co-Founder",
       description: (
         <>
@@ -55,10 +55,10 @@ const Founders = () => {
           students. His passion sparked The Masters Academy.
         </>
       ),
-      image: Hari,
+      image: Sathya,
     },
     {
-      name: "Mr. Sathyamoorthy V",
+      name: "Mr. Hariprasath Ragunathan",
       role: "Co-Founder",
       description: (
         <>
@@ -79,7 +79,7 @@ const Founders = () => {
           students in Engineering tools and government exam prep.
         </>
       ),
-      image: Sathya,
+      image: Hari,
     },
   ];
 

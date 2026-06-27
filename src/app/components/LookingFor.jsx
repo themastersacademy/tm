@@ -6,37 +6,96 @@ import Profile from "@/public/image/profile.png";
 import Image from "next/image";
 
 const LookingFor = () => {
-  const reviews = [
+  // Real student achievements sourced from The Masters Academy profile.
+  const successStories = [
     {
-      description:
-        "Thanks to The Masters Academy, I cleared GATE with excellent scores! The mentors are knowledgeable and truly supportive.",
-      name: "Anjali R",
-      dept: "Mechanical Engineer",
-      location: "Chennai",
+      category: "GATE 2024",
+      highlight: "74 Marks",
+      caption: "GATE Score",
+      name: "Chemuru Udhayakumar",
+      dept: "Electronics & Communication",
+      place: "GATE 2024 Top Scorer",
       profile: Profile,
     },
     {
-      description:
-        "The structured curriculum and expert guidance helped me crack the exam in my first attempt. Highly recommended!",
-      name: "Karthik S",
+      category: "GATE 2024",
+      highlight: "70 Marks",
+      caption: "GATE Score",
+      name: "Naveenkumar S",
+      dept: "Mechanical Engineering",
+      place: "IIT Madras",
+      profile: Profile,
+    },
+    {
+      category: "GATE 2024",
+      highlight: "AIR 65",
+      caption: "65 Marks · GATE",
+      name: "Dinesh Chandran",
+      dept: "Electronics & Communication",
+      place: "IIT Madras",
+      profile: Profile,
+    },
+    {
+      category: "GATE 2024",
+      highlight: "61 Marks",
+      caption: "GATE Score",
+      name: "Sarayu Miththira",
       dept: "Computer Science",
-      location: "Bangalore",
+      place: "IIT Bombay",
       profile: Profile,
     },
     {
-      description:
-        "I am grateful for the personalized attention and doubt-clearing sessions. It made a huge difference in my preparation.",
-      name: "Priya M",
-      dept: "Civil Engineer",
-      location: "Coimbatore",
+      category: "GATE 2024",
+      highlight: "54 Marks",
+      caption: "GATE Score",
+      name: "Ashok",
+      dept: "Mechanical Engineering",
+      place: "IIT Palakkad",
       profile: Profile,
     },
     {
-      description:
-        "The test series was very comprehensive and close to the actual exam pattern. It boosted my confidence significantly.",
-      name: "Rahul V",
-      dept: "Electronics Engineer",
-      location: "Hyderabad",
+      category: "GATE 2024",
+      highlight: "51 Marks",
+      caption: "GATE Score",
+      name: "Shalom Shawag Y",
+      dept: "Mechanical Engineering",
+      place: "IIT Madras",
+      profile: Profile,
+    },
+    {
+      category: "PSU Placement",
+      highlight: "15 LPA",
+      caption: "Annual Package",
+      name: "P. Santhosh Kumar",
+      dept: "Deputy Executive Engineer",
+      place: "NLC India Limited",
+      profile: Profile,
+    },
+    {
+      category: "PSU Placement",
+      highlight: "13 LPA",
+      caption: "Annual Package",
+      name: "Gowtham P",
+      dept: "Airport Authority of India",
+      place: "Coimbatore",
+      profile: Profile,
+    },
+    {
+      category: "PSU Placement",
+      highlight: "12 LPA",
+      caption: "Annual Package",
+      name: "Hemanth Kumar",
+      dept: "Engineer",
+      place: "Hindustan Petroleum (HPCL)",
+      profile: Profile,
+    },
+    {
+      category: "NIT Admission",
+      highlight: "NIT Trichy",
+      caption: "Admission",
+      name: "Harikrishnan",
+      dept: "Mechanical Engineering",
+      place: "National Institute of Technology",
       profile: Profile,
     },
   ];
@@ -73,9 +132,9 @@ const LookingFor = () => {
           maxWidth: "800px",
         }}
       >
-        We’ve got lots of friends, and we’re always{" "}
+        Real results from learners who{" "}
         <Box component="span" sx={{ color: "var(--secondary)" }}>
-          looking for more
+          achieved their dreams
         </Box>
       </Typography>
 
@@ -89,8 +148,8 @@ const LookingFor = () => {
           mb: 6,
         }}
       >
-        Trusted by Thousands, Loved by Many, Real Success Stories from Learners
-        Who Achieved Their Dreams Through Our Coaching
+        From top GATE ranks to PSU placements and NIT admissions — these are the
+        success stories our students built through The Masters Academy.
       </Typography>
 
       <Box
@@ -108,21 +167,22 @@ const LookingFor = () => {
           scrollbarWidth: "none",
         }}
       >
-        {reviews.map((review, index) => (
-          <ReviewCard key={index} review={review} />
+        {successStories.map((story, index) => (
+          <StoryCard key={index} story={story} />
         ))}
       </Box>
     </Container>
   );
 };
 
-const ReviewCard = ({ review }) => {
+const StoryCard = ({ story }) => {
   return (
     <Paper
       elevation={0}
       sx={{
-        minWidth: { xs: "300px", md: "450px" },
-        maxWidth: { xs: "300px", md: "520px" },
+        minWidth: { xs: "280px", md: "360px" },
+        maxWidth: { xs: "280px", md: "380px" },
+        minHeight: { xs: "240px", md: "260px" },
         borderRadius: "24px",
         border: "1px solid #E5E7EB",
         p: 4,
@@ -137,22 +197,55 @@ const ReviewCard = ({ review }) => {
         },
       }}
     >
-      <Typography
-        sx={{
-          fontFamily: "var(--font-satoshi)",
-          fontSize: "16px",
-          color: "#4B5563",
-          lineHeight: 1.6,
-          mb: 4,
-        }}
-      >
-        "{review.description}"
-      </Typography>
+      <Box>
+        <Box
+          component="span"
+          sx={{
+            display: "inline-block",
+            fontFamily: "var(--font-satoshi)",
+            fontWeight: 700,
+            fontSize: "12px",
+            letterSpacing: 0.5,
+            textTransform: "uppercase",
+            color: "#187163",
+            bgcolor: "rgba(24, 113, 99, 0.08)",
+            borderRadius: "50px",
+            px: 1.5,
+            py: 0.5,
+            mb: 2.5,
+          }}
+        >
+          {story.category}
+        </Box>
+
+        <Typography
+          sx={{
+            fontFamily: "var(--font-helvetica)",
+            fontWeight: 700,
+            fontSize: { xs: "32px", md: "40px" },
+            lineHeight: 1.1,
+            color: "var(--secondary)",
+          }}
+        >
+          {story.highlight}
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: "var(--font-satoshi)",
+            fontSize: "14px",
+            color: "var(--text-gray)",
+            mt: 0.5,
+          }}
+        >
+          {story.caption}
+        </Typography>
+      </Box>
 
       <Stack
         direction="row"
         justifyContent="space-between"
         alignItems="flex-end"
+        sx={{ mt: 3 }}
       >
         <Box>
           <Typography
@@ -163,7 +256,7 @@ const ReviewCard = ({ review }) => {
               color: "#111827",
             }}
           >
-            {review.name}
+            {story.name}
           </Typography>
           <Typography
             sx={{
@@ -174,7 +267,7 @@ const ReviewCard = ({ review }) => {
               mt: 0.5,
             }}
           >
-            {review.dept}
+            {story.dept}
           </Typography>
           <Typography
             sx={{
@@ -184,7 +277,7 @@ const ReviewCard = ({ review }) => {
               color: "#9CA3AF",
             }}
           >
-            {review.location}
+            {story.place}
           </Typography>
         </Box>
         <Box
@@ -194,11 +287,12 @@ const ReviewCard = ({ review }) => {
             position: "relative",
             borderRadius: "50%",
             overflow: "hidden",
+            flexShrink: 0,
           }}
         >
           <Image
-            src={review.profile}
-            alt={review.name}
+            src={story.profile}
+            alt={story.name}
             fill
             style={{ objectFit: "cover" }}
           />

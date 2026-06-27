@@ -305,7 +305,7 @@ const Footer = () => {
                     Call Us
                   </Typography>
                   <Typography sx={{ color: "#fff", fontWeight: 500 }}>
-                    99522 25825
+                    99522 25825, 96292 85139
                   </Typography>
                 </Box>
               </Stack>

@@ -1,40 +1,34 @@
 "use client";
 import React from "react";
 import { Box, Typography, Container, Grid, Paper, Chip } from "@mui/material";
-import Person from "@/public/image/successstoryCard.png";
-import Girl1 from "@/public/image/girl_1.png";
-import Girl2 from "@/public/image/girl_2.png";
-import Image from "next/image";
 
 const SuccessStories = () => {
+  // Verified student achievements from The Masters Academy profile.
   const stories = [
     {
-      name: "Sanya Mirzas",
-      rank: "AIR 12 (GATE - CSE)",
+      name: "Naveenkumar S",
+      initials: "NS",
+      rank: "70 Marks (GATE - Mech)",
       exam: "GATE 2024",
-      quote:
-        "The structured curriculum and mock tests were a game changer for me.",
-      image: Girl1,
+      detail: "Secured admission to IIT Madras.",
       color: "#E3F2FD",
       accent: "#2196F3",
     },
     {
-      name: "Priya Venkatesh",
-      rank: "AIR 85 (GATE - EEE)",
-      exam: "GATE 2023",
-      quote:
-        "Expert mentors helped me clear my doubts and concepts thoroughly.",
-      image: Person, // Using the original image
+      name: "Dinesh Chandran",
+      initials: "DC",
+      rank: "AIR 65 · 65 Marks (GATE - ECE)",
+      exam: "GATE 2024",
+      detail: "Secured admission to IIT Madras.",
       color: "#FFF3E0",
       accent: "#FF9800",
     },
     {
-      name: "Sneha Reddy",
-      rank: "Placed at Google",
-      exam: "Campus Placements",
-      quote:
-        "TMA's aptitude training gave me the confidence to crack the interview.",
-      image: Girl2,
+      name: "P. Santhosh Kumar",
+      initials: "PS",
+      rank: "₹15 LPA Placement",
+      exam: "PSU Placement",
+      detail: "Deputy Executive Engineer, NLC India Limited.",
       color: "#E8F5E9",
       accent: "#4CAF50",
     },
@@ -141,31 +135,38 @@ const StoryCard = ({ story }) => {
       <Box
         sx={{
           width: "100%",
-          height: "220px",
+          height: "180px",
           bgcolor: story.color,
           borderRadius: "20px",
           position: "relative",
           mb: 3,
-          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         <Box
           sx={{
-            position: "absolute",
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "100%",
-            height: "90%",
-            maxWidth: "280px",
+            width: 96,
+            height: 96,
+            borderRadius: "50%",
+            bgcolor: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
           }}
         >
-          <Image
-            src={story.image}
-            alt={story.name}
-            fill
-            style={{ objectFit: "contain", objectPosition: "bottom" }}
-          />
+          <Typography
+            sx={{
+              fontFamily: "var(--font-helvetica)",
+              fontWeight: 700,
+              fontSize: "36px",
+              color: story.accent,
+            }}
+          >
+            {story.initials}
+          </Typography>
         </Box>
       </Box>
 
@@ -214,10 +215,9 @@ const StoryCard = ({ story }) => {
           fontSize: "14px",
           color: "#6B7280",
           textAlign: "center",
-          fontStyle: "italic",
         }}
       >
-        "{story.quote}"
+        {story.detail}
       </Typography>
     </Paper>
   );
