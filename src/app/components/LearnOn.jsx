@@ -7,7 +7,7 @@ import Image from "next/image";
 const LearnOn = () => {
   return (
     <Container
-      maxWidth="xl"
+      maxWidth="lg"
       sx={{ mt: { xs: 8, md: 16 }, scrollMarginTop: "10vh" }}
     >
       <Box
@@ -23,7 +23,7 @@ const LearnOn = () => {
       >
         <Grid container alignItems="center" spacing={4}>
           {/* Text Content */}
-          <Grid item xs={12} md={7} sx={{ pb: { xs: 4, md: 6 } }}>
+          <Grid size={{ xs: 12, md: 7 }} sx={{ pb: { xs: 4, md: 6 } }}>
             <Typography
               component="h2"
               sx={{
@@ -65,9 +65,7 @@ const LearnOn = () => {
 
           {/* Image */}
           <Grid
-            item
-            xs={12}
-            md={5}
+            size={{ xs: 12, md: 5 }}
             sx={{ display: "flex", justifyContent: "center" }}
           >
             <Box

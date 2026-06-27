@@ -51,7 +51,7 @@ const Services = () => {
 
   return (
     <Container
-      maxWidth="xl"
+      maxWidth="lg"
       id="about-us"
       sx={{
         mt: { xs: 8, md: 12 },
@@ -112,14 +112,14 @@ const Services = () => {
       <Grid container spacing={3}>
         {/* First Row: 3 Items */}
         {services.slice(0, 3).map((service, index) => (
-          <Grid item xs={12} md={4} key={index}>
+          <Grid size={{ xs: 12, md: 4 }} key={index}>
             <ServiceCard service={service} />
           </Grid>
         ))}
 
         {/* Second Row: 2 Items (Wider) */}
         {services.slice(3, 5).map((service, index) => (
-          <Grid item xs={12} md={6} key={index + 3}>
+          <Grid size={{ xs: 12, md: 6 }} key={index + 3}>
             <ServiceCard service={service} wide />
           </Grid>
         ))}

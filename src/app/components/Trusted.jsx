@@ -13,7 +13,7 @@ const Trusted = () => {
   const logos = [Kpr, Kumaraguru, Bannari, SREC, Panimalar, SRM];
 
   return (
-    <Container maxWidth="xl" sx={{ mt: { xs: 8, md: 16 } }}>
+    <Container maxWidth="lg" sx={{ mt: { xs: 8, md: 16 } }}>
       <Typography
         align="center"
         sx={{

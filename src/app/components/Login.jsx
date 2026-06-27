@@ -16,7 +16,7 @@ const Login = () => {
 
   return (
     <Container
-      maxWidth="xl"
+      maxWidth="lg"
       sx={{
         mt: { xs: 6, md: 10 },
         mb: { xs: 6, md: 10 },
@@ -64,11 +64,10 @@ const Login = () => {
           container
           spacing={{ xs: 4, md: 5 }}
           alignItems="center"
-          position="relative"
-          zIndex={1}
+          sx={{ position: "relative", zIndex: 1 }}
         >
           {/* Left Content */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography
               sx={{
                 fontFamily: "var(--font-satoshi)",
@@ -167,7 +166,7 @@ const Login = () => {
           </Grid>
 
           {/* Right Image */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Box
               sx={{
                 position: "relative",

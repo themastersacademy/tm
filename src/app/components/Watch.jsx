@@ -15,10 +15,10 @@ const Watch = () => {
         mt: { xs: 8, md: 16 },
       }}
     >
-      <Container maxWidth="xl">
+      <Container maxWidth="lg">
         <Grid container spacing={6} alignItems="center">
           {/* Left Content */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Stack gap={4}>
               <Typography
                 component="h2"
@@ -117,7 +117,7 @@ const Watch = () => {
           </Grid>
 
           {/* Right Image */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Box
               sx={{
                 position: "relative",

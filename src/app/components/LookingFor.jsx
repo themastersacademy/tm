@@ -102,7 +102,7 @@ const LookingFor = () => {
 
   return (
     <Container
-      maxWidth="xl"
+      maxWidth="lg"
       id="testimonials"
       sx={{
         mt: { xs: 8, md: 16 },

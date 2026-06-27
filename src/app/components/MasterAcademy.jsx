@@ -10,10 +10,10 @@ import VideoIcon from "@/public/image/video-icon.png";
 
 const MasterAcademy = () => {
   return (
-    <Container maxWidth="xl" sx={{ mt: { xs: 8, md: 16 } }}>
+    <Container maxWidth="lg" sx={{ mt: { xs: 8, md: 16 } }}>
       <Grid container spacing={8} alignItems="center">
         {/* Left Section - Images */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Box
             sx={{
               position: "relative",
@@ -178,7 +178,7 @@ const MasterAcademy = () => {
         </Grid>
 
         {/* Right Section - Content */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Stack gap={3}>
             <Box>
               <Typography
@@ -233,7 +233,7 @@ const MasterAcademy = () => {
                 "Access to Global Learners",
                 "Competitive Compensation",
               ].map((text, index) => (
-                <Grid item xs={12} sm={6} key={index}>
+                <Grid size={{ xs: 12, sm: 6 }} key={index}>
                   <Stack direction="row" gap={1.5} alignItems="center">
                     <TaskAltIcon sx={{ color: "#FEC555" }} />
                     <Typography

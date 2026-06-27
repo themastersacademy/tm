@@ -1,20 +1,11 @@
 "use client";
 
 import React, { useRef } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Container,
-  Stack,
-  IconButton,
-  Card,
-  CardContent,
-} from "@mui/material";
-import AbstractLine from "@/public/image/AbstractLine.png";
+import { Box, Typography, Stack, IconButton } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import Image from "next/image";
+import Section from "./ui/Section";
+import SectionHeading from "./ui/SectionHeading";
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -74,80 +65,34 @@ const OurCourses = () => {
   ];
 
   return (
-    <Container
-      maxWidth="xl"
-      id="courses"
-      sx={{
-        mt: { xs: 8, md: 12 },
-        mb: { xs: 8, md: 12 },
-        scrollMarginTop: "100px",
-      }}
-    >
+    <Section id="courses">
       <Stack
         direction={{ xs: "column", md: "row" }}
-        alignItems={{ xs: "flex-start", md: "center" }}
+        alignItems={{ xs: "flex-start", md: "flex-end" }}
         justifyContent="space-between"
-        mb={6}
+        mb={{ xs: 5, md: 8 }}
         gap={4}
       >
-        <Box sx={{ position: "relative", maxWidth: "700px" }}>
-          <Typography
-            sx={{
-              fontFamily: "var(--font-satoshi)",
-              fontWeight: 700,
-              fontSize: "14px",
-              color: "var(--secondary)",
-              mb: 1.5,
-              textTransform: "uppercase",
-              display: "inline-block",
-              px: 2,
-              py: 0.5,
-              bgcolor: "rgba(254, 194, 77, 0.1)",
-              borderRadius: "50px",
-            }}
-          >
-            Our Programs
-          </Typography>
-
-          <Typography
-            component="h2"
-            sx={{
-              fontFamily: "var(--font-helvetica)",
-              fontWeight: 700,
-              fontSize: { xs: "28px", md: "48px" },
-              lineHeight: 1.2,
-              position: "relative",
-              zIndex: 2,
-              color: "var(--foreground)",
-            }}
-          >
-            Explore Our{" "}
-            <span style={{ color: "var(--secondary)" }}>Top-Rated</span> Courses
-          </Typography>
-
-          <Box
-            sx={{
-              position: "absolute",
-              right: -20,
-              top: -30,
-              display: { xs: "none", md: "block" },
-              zIndex: 1,
-              opacity: 0.8,
-            }}
-          >
-            <Image
-              src={AbstractLine}
-              alt="Decoration"
-              width={120}
-              height={50}
-            />
-          </Box>
-        </Box>
+        <SectionHeading
+          align="left"
+          eyebrow="Our Programs"
+          maxWidth={620}
+          sx={{ mb: 0 }}
+          title={
+            <>
+              Explore Our{" "}
+              <Box component="span" sx={{ color: "var(--secondary)" }}>
+                Top-Rated
+              </Box>{" "}
+              Courses
+            </>
+          }
+        />
 
         <Stack
           direction="row"
           gap={2}
-          sx={{ display: { xs: "none", md: "flex" } }}
+          sx={{ display: { xs: "none", md: "flex" }, flexShrink: 0 }}
         >
           <IconButton
             onClick={() => scroll(-450)}
@@ -184,6 +129,7 @@ const OurCourses = () => {
         ref={scrollRef}
         sx={{
           display: "flex",
+          alignItems: "stretch",
           gap: 3,
           overflowX: "auto",
           overflowY: "visible", // Allow hover effects to overflow
@@ -309,7 +255,7 @@ const OurCourses = () => {
           </Box>
         ))}
       </Box>
-    </Container>
+    </Section>
   );
 };
 

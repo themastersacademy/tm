@@ -78,7 +78,7 @@ const Footer = () => {
         }}
       />
 
-      <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
+      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
         {/* Newsletter Section */}
         <Box
           sx={{
@@ -91,7 +91,7 @@ const Footer = () => {
           }}
         >
           <Grid container alignItems="center" spacing={4}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Typography
                 sx={{
                   fontFamily: "var(--font-helvetica)",
@@ -115,7 +115,7 @@ const Footer = () => {
                 directly to your inbox.
               </Typography>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 component="form"
                 sx={{
@@ -177,7 +177,7 @@ const Footer = () => {
 
         <Grid container spacing={8}>
           {/* Brand Column */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Stack gap={3}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 {/* Logo wrapper for better visibility on dark bg */}
@@ -238,7 +238,7 @@ const Footer = () => {
           </Grid>
 
           {/* Quick Links */}
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Typography
               sx={{
                 color: "#fff",
@@ -275,7 +275,7 @@ const Footer = () => {
           </Grid>
 
           {/* Contact Details */}
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Typography
               sx={{
                 color: "#fff",

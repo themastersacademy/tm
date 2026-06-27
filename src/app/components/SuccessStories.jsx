@@ -36,7 +36,7 @@ const SuccessStories = () => {
 
   return (
     <Container
-      maxWidth="xl"
+      maxWidth="lg"
       id="success-stories"
       sx={{
         mt: { xs: 8, md: 16 },
@@ -91,13 +91,9 @@ const SuccessStories = () => {
         >
           {stories.map((story, index) => (
             <Grid
-              item
-              xs={12}
-              sm={6}
-              md={4}
+              size={{ xs: 12, sm: 6, md: 4 }}
               key={index}
-              display="flex"
-              justifyContent="center"
+              sx={{ display: "flex", justifyContent: "center" }}
             >
               <StoryCard story={story} />
             </Grid>

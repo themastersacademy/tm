@@ -85,7 +85,7 @@ const Founders = () => {
 
   return (
     <Container
-      maxWidth="xl"
+      maxWidth="lg"
       id="mentors"
       sx={{
         mt: { xs: 8, md: 16 },
@@ -133,12 +133,8 @@ const Founders = () => {
         {founders.map((founder, index) => (
           <Grid
             key={index}
-            item
-            xs={12}
-            md={6}
-            lg={4}
-            display="flex"
-            justifyContent="center"
+            size={{ xs: 12, md: 6, lg: 4 }}
+            sx={{ display: "flex", justifyContent: "center" }}
           >
             <FounderCard founder={founder} />
           </Grid>

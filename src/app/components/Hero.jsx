@@ -33,10 +33,10 @@ const Hero = () => {
         overflow: "hidden",
       }}
     >
-      <Container maxWidth="xl">
-        <Grid container spacing={{ xs: 4, md: 4 }} alignItems="center">
+      <Container maxWidth="lg" sx={{ px: { xs: 2.5, sm: 3 } }}>
+        <Grid container spacing={{ xs: 4, md: 6 }} alignItems="center">
           {/* Left Content */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Stack
               gap={3}
               sx={{
@@ -270,9 +270,7 @@ const Hero = () => {
 
           {/* Right Image */}
           <Grid
-            item
-            xs={12}
-            md={6}
+            size={{ xs: 12, md: 6 }}
             sx={{
               position: "relative",
               display: "flex",

@@ -43,10 +43,10 @@ const HowItWorks = () => {
 
   return (
     <Box sx={{ bgcolor: "#F5F7FA", py: { xs: 8, md: 12 }, mt: 8 }}>
-      <Container maxWidth="xl">
+      <Container maxWidth="lg">
         <Grid container spacing={4}>
           {/* Left Section - Promo */}
-          <Grid item xs={12} lg={7}>
+          <Grid size={{ xs: 12, lg: 7 }}>
             <Box
               sx={{
                 bgcolor: "var(--secondary)",
@@ -158,7 +158,7 @@ const HowItWorks = () => {
           </Grid>
 
           {/* Right Section - Steps */}
-          <Grid item xs={12} lg={5}>
+          <Grid size={{ xs: 12, lg: 5 }}>
             <Paper
               elevation={0}
               sx={{
@@ -184,7 +184,7 @@ const HowItWorks = () => {
 
               <Grid container spacing={4}>
                 {steps.map((step) => (
-                  <Grid item xs={12} sm={6} key={step.id}>
+                  <Grid size={{ xs: 12, sm: 6 }} key={step.id}>
                     <Stack direction="row" alignItems="center" gap={2}>
                       <Box
                         sx={{
